@@ -275,48 +275,69 @@ export default function GoalScreen() {
               style={[
                 styles.resultCard,
                 {
-                  backgroundColor: theme.colors.primarySoft,
+                  backgroundColor: theme.colors.card,
                   borderColor: theme.colors.border,
                 },
               ]}
             >
-              <Text
-                style={[styles.resultLabel, { color: theme.colors.primary }]}
-              >
-                {translate("dailyTarget", language)}
-              </Text>
-
-              <Text
-                style={[styles.resultCalories, { color: theme.colors.text }]}
-              >
-                {result.targetCalories.toLocaleString("tr-TR")} kcal
-              </Text>
-
-              <View style={styles.resultGrid}>
+              <View style={styles.resultHeader}>
                 <View
                   style={[
-                    styles.resultMiniCard,
+                    styles.resultIconBox,
                     {
-                      backgroundColor: theme.colors.card,
-                      borderColor: theme.colors.border,
+                      backgroundColor: theme.colors.primarySoft,
                     },
                   ]}
                 >
-                  <Text
-                    style={[styles.note, { color: theme.colors.mutedText }]}
-                  >
-                    {translate("goalSavedNote", language)}
-                  </Text>
+                  <Ionicons
+                    name="flame-outline"
+                    size={22}
+                    color={theme.colors.primary}
+                  />
+                </View>
 
+                <View style={styles.resultTitleArea}>
                   <Text
-                    style={[styles.note, { color: theme.colors.mutedText }]}
+                    style={[
+                      styles.resultLabel,
+                      { color: theme.colors.mutedText },
+                    ]}
                   >
-                    {translate("calorieEstimateNote", language)}
+                    {translate("dailyTarget", language)}
                   </Text>
 
                   <Text
                     style={[
-                      styles.resultMiniValue,
+                      styles.resultCalories,
+                      { color: theme.colors.text },
+                    ]}
+                  >
+                    {result.targetCalories.toLocaleString("tr-TR")} kcal
+                  </Text>
+                </View>
+              </View>
+
+              <View
+                style={[
+                  styles.resultDivider,
+                  { backgroundColor: theme.colors.border },
+                ]}
+              />
+
+              <View style={styles.resultRows}>
+                <View style={styles.resultRow}>
+                  <Text
+                    style={[
+                      styles.resultRowLabel,
+                      { color: theme.colors.mutedText },
+                    ]}
+                  >
+                    {translate("maintenance", language)}
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.resultRowValue,
                       { color: theme.colors.text },
                     ]}
                   >
@@ -324,18 +345,10 @@ export default function GoalScreen() {
                   </Text>
                 </View>
 
-                <View
-                  style={[
-                    styles.resultMiniCard,
-                    {
-                      backgroundColor: theme.colors.card,
-                      borderColor: theme.colors.border,
-                    },
-                  ]}
-                >
+                <View style={styles.resultRow}>
                   <Text
                     style={[
-                      styles.resultMiniLabel,
+                      styles.resultRowLabel,
                       { color: theme.colors.mutedText },
                     ]}
                   >
@@ -344,7 +357,7 @@ export default function GoalScreen() {
 
                   <Text
                     style={[
-                      styles.resultMiniValue,
+                      styles.resultRowValue,
                       { color: theme.colors.text },
                     ]}
                   >
@@ -353,9 +366,18 @@ export default function GoalScreen() {
                 </View>
               </View>
 
-              <Text style={[styles.note, { color: theme.colors.mutedText }]}>
-                {translate("calorieEstimateNote", language)}
-              </Text>
+              <View
+                style={[
+                  styles.noteBox,
+                  {
+                    backgroundColor: theme.colors.cardSoft,
+                  },
+                ]}
+              >
+                <Text style={[styles.note, { color: theme.colors.mutedText }]}>
+                  {translate("calorieEstimateNote", language)}
+                </Text>
+              </View>
             </View>
           ) : null}
 
@@ -509,49 +531,68 @@ const styles = StyleSheet.create({
   calculateButton: {
     marginTop: 4,
   },
+  homeButton: {
+    marginTop: 18,
+  },
   resultCard: {
     marginTop: 18,
     borderWidth: 1,
-    borderRadius: 30,
-    padding: 20,
+    borderRadius: 24,
+    padding: 18,
+  },
+  resultHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  resultIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  resultTitleArea: {
+    flex: 1,
   },
   resultLabel: {
-    fontSize: 13,
-    fontWeight: "900",
-    marginBottom: 6,
+    fontSize: 12,
+    fontWeight: "800",
+    marginBottom: 4,
   },
   resultCalories: {
-    fontSize: 38,
+    fontSize: 28,
     fontWeight: "900",
-    letterSpacing: -1,
+    letterSpacing: -0.6,
   },
-  resultGrid: {
-    marginTop: 18,
-    flexDirection: "row",
+  resultDivider: {
+    height: 1,
+    marginVertical: 16,
+  },
+  resultRows: {
     gap: 12,
   },
-  resultMiniCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 20,
-    padding: 14,
+  resultRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  resultMiniLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    marginBottom: 6,
+  resultRowLabel: {
+    fontSize: 13,
+    fontWeight: "700",
   },
-  resultMiniValue: {
-    fontSize: 15,
+  resultRowValue: {
+    fontSize: 14,
     fontWeight: "900",
   },
+  noteBox: {
+    marginTop: 16,
+    borderRadius: 18,
+    padding: 12,
+  },
   note: {
-    marginTop: 14,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: "600",
-  },
-  homeButton: {
-    marginTop: 18,
   },
 });

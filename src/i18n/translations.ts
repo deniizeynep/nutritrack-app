@@ -377,6 +377,55 @@ export const translations = {
     tr: "Bu hedef ana sayfadaki günlük kalori hedefin olarak kullanılacak.",
     en: "This goal will be used as your daily calorie target on the home screen.",
   },
+  mealName: {
+    tr: "Öğün Adı",
+    en: "Meal Name",
+  },
+
+  mealNamePlaceholder: {
+    tr: "Örn. Tavuklu salata",
+    en: "Ex. Chicken salad",
+  },
+
+  description: {
+    tr: "Açıklama",
+    en: "Description",
+  },
+
+  descriptionPlaceholder: {
+    tr: "Örn. Tavuk, marul, domates",
+    en: "Ex. Chicken, lettuce, tomato",
+  },
+
+  mealCategory: {
+    tr: "Öğün Tipi",
+    en: "Meal Type",
+  },
+
+  snack: {
+    tr: "Ara Öğün",
+    en: "Snack",
+  },
+
+  addMealSubtitle: {
+    tr: "Kalori ve makro değerlerini girerek günlük takibini güncelle.",
+    en: "Update your daily tracking by entering calories and macros.",
+  },
+
+  saveMeal: {
+    tr: "Öğünü Kaydet",
+    en: "Save Meal",
+  },
+
+  noMealsYet: {
+    tr: "Henüz öğün eklenmedi.",
+    en: "No meals added yet.",
+  },
+
+  noMealsSubtitle: {
+    tr: "Bugünkü kalori takibin için bir öğün ekle.",
+    en: "Add a meal to start tracking today.",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

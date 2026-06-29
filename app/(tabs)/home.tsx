@@ -7,6 +7,7 @@ import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
 import { useGoalStore } from "../../src/stores/goalStore";
+import { useMealStore } from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
 
 export default function HomeScreen() {
@@ -17,15 +18,26 @@ export default function HomeScreen() {
 
   const theme = getTheme(themeMode);
   const goal = useGoalStore((state) => state.goal);
+  const meals = useMealStore((state) => state.meals);
+  const deleteMeal = useMealStore((state) => state.deleteMeal);
 
-  const consumedCalories = 1420;
+  const consumedCalories = meals.reduce(
+    (total, meal) => total + meal.calories,
+    0,
+  );
+  const consumedProtein = meals.reduce(
+    (total, meal) => total + meal.protein,
+    0,
+  );
+  const consumedCarbs = meals.reduce((total, meal) => total + meal.carbs, 0);
+  const consumedFat = meals.reduce((total, meal) => total + meal.fat, 0);
+
   const targetCalories = goal?.targetCalories ?? 2000;
   const remainingCalories = targetCalories - consumedCalories;
   const progressPercent = Math.min(
     (consumedCalories / targetCalories) * 100,
     100,
   );
-
   return (
     <Screen>
       <ScrollView
@@ -192,21 +204,21 @@ export default function HomeScreen() {
           <View style={styles.macroRow}>
             <MacroProgress
               label={translate("protein", language)}
-              current={78}
+              current={consumedProtein}
               target={120}
               color={theme.colors.protein}
             />
 
             <MacroProgress
               label={translate("carbs", language)}
-              current={142}
+              current={consumedCarbs}
               target={250}
               color={theme.colors.carbs}
             />
 
             <MacroProgress
               label={translate("fat", language)}
-              current={48}
+              current={consumedFat}
               target={65}
               color={theme.colors.fat}
             />
@@ -307,30 +319,104 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.mealList}>
-          <MealCard
-            icon="🥣"
-            title={translate("breakfast", language)}
-            items="Yulaf ezmesi, muz, süt"
-            calories={520}
-          />
+          {meals.length > 0 ? (
+            meals.map((meal) => (
+              <MealCard
+                key={meal.id}
+                icon={getMealIcon(meal.category)}
+                title={meal.title}
+                items={
+                  meal.description ||
+                  getMealCategoryLabel(meal.category, language)
+                }
+                calories={meal.calories}
+                protein={meal.protein}
+                carbs={meal.carbs}
+                fat={meal.fat}
+                onDelete={() => deleteMeal(meal.id)}
+              />
+            ))
+          ) : (
+            <View
+              style={[
+                styles.emptyCard,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.emptyIconBox,
+                  {
+                    backgroundColor: theme.colors.primarySoft,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="restaurant-outline"
+                  size={26}
+                  color={theme.colors.primary}
+                />
+              </View>
 
-          <MealCard
-            icon="🍝"
-            title={translate("lunch", language)}
-            items="Penne makarna"
-            calories={450}
-          />
+              <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+                {translate("noMealsYet", language)}
+              </Text>
 
-          <MealCard
-            icon="🥗"
-            title={translate("dinner", language)}
-            items="Tavuklu salata"
-            calories={320}
-          />
+              <Text
+                style={[
+                  styles.emptySubtitle,
+                  { color: theme.colors.mutedText },
+                ]}
+              >
+                {translate("noMealsSubtitle", language)}
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </Screen>
   );
+}
+
+function getMealIcon(category: MealCategory) {
+  switch (category) {
+    case "breakfast":
+      return "🥣";
+    case "lunch":
+      return "🍝";
+    case "dinner":
+      return "🥗";
+    case "snack":
+      return "🍎";
+    default:
+      return "🍽️";
+  }
+}
+
+function getMealCategoryLabel(category: MealCategory, language: "tr" | "en") {
+  const labels = {
+    breakfast: {
+      tr: "Kahvaltı",
+      en: "Breakfast",
+    },
+    lunch: {
+      tr: "Öğle Yemeği",
+      en: "Lunch",
+    },
+    dinner: {
+      tr: "Akşam Yemeği",
+      en: "Dinner",
+    },
+    snack: {
+      tr: "Ara Öğün",
+      en: "Snack",
+    },
+  };
+
+  return labels[category][language];
 }
 
 const styles = StyleSheet.create({
@@ -501,5 +587,31 @@ const styles = StyleSheet.create({
   savedGoalText: {
     fontSize: 11,
     fontWeight: "900",
+  },
+  emptyCard: {
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 22,
+    alignItems: "center",
+  },
+  emptyIconBox: {
+    width: 54,
+    height: 54,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    marginTop: 6,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
