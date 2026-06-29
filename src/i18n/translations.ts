@@ -426,6 +426,45 @@ export const translations = {
     tr: "Bugünkü kalori takibin için bir öğün ekle.",
     en: "Add a meal to start tracking today.",
   },
+  calorieHistory: {
+    tr: "Kalori Geçmişi",
+    en: "Calorie History",
+  },
+
+  diarySubtitle: {
+    tr: "Geçmiş günlerde ne kadar kalori ve makro aldığını takip et.",
+    en: "Track how many calories and macros you consumed on previous days.",
+  },
+
+  totalCalories: {
+    tr: "Toplam Kalori",
+    en: "Total Calories",
+  },
+
+  macroSummary: {
+    tr: "Makro Özeti",
+    en: "Macro Summary",
+  },
+
+  entries: {
+    tr: "kayıt",
+    en: "entries",
+  },
+
+  noDiaryYet: {
+    tr: "Henüz günlük kaydı yok.",
+    en: "No diary entries yet.",
+  },
+
+  noDiarySubtitle: {
+    tr: "Öğün eklediğinde burada günlük geçmişin oluşacak.",
+    en: "Your daily history will appear here after adding meals.",
+  },
+
+  targetProgress: {
+    tr: "Hedef İlerlemesi",
+    en: "Target Progress",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
