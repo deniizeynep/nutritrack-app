@@ -150,6 +150,85 @@ export const translations = {
     tr: "Bu sayfayı birazdan tasarlayacağız.",
     en: "We will design this screen soon.",
   },
+  email: {
+    tr: "E-posta",
+    en: "Email",
+  },
+
+  emailPlaceholder: {
+    tr: "ornek@mail.com",
+    en: "example@mail.com",
+  },
+
+  password: {
+    tr: "Şifre",
+    en: "Password",
+  },
+
+  passwordPlaceholder: {
+    tr: "Şifreni gir",
+    en: "Enter your password",
+  },
+
+  fullName: {
+    tr: "Ad Soyad",
+    en: "Full Name",
+  },
+
+  fullNamePlaceholder: {
+    tr: "Adını ve soyadını gir",
+    en: "Enter your full name",
+  },
+
+  confirmPassword: {
+    tr: "Şifre Tekrar",
+    en: "Confirm Password",
+  },
+
+  confirmPasswordPlaceholder: {
+    tr: "Şifreni tekrar gir",
+    en: "Confirm your password",
+  },
+
+  forgotPassword: {
+    tr: "Şifremi unuttum",
+    en: "Forgot password",
+  },
+
+  loginSubtitle: {
+    tr: "Kalori ve makro takibine kaldığın yerden devam et.",
+    en: "Continue tracking your calories and macros.",
+  },
+
+  registerSubtitle: {
+    tr: "Hedeflerine uygun kişisel beslenme takibini başlat.",
+    en: "Start your personalized nutrition tracking journey.",
+  },
+
+  noAccount: {
+    tr: "Hesabın yok mu?",
+    en: "Don’t have an account?",
+  },
+
+  haveAccount: {
+    tr: "Zaten hesabın var mı?",
+    en: "Already have an account?",
+  },
+
+  or: {
+    tr: "veya",
+    en: "or",
+  },
+
+  continueWithGoogle: {
+    tr: "Google ile devam et",
+    en: "Continue with Google",
+  },
+
+  back: {
+    tr: "Geri",
+    en: "Back",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
