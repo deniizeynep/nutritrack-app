@@ -465,6 +465,55 @@ export const translations = {
     tr: "Hedef İlerlemesi",
     en: "Target Progress",
   },
+  weeklyStats: {
+    tr: "Haftalık İstatistik",
+    en: "Weekly Stats",
+  },
+
+  statsSubtitle: {
+    tr: "Son 7 gündeki kalori ve makro takibini incele.",
+    en: "Review your calorie and macro tracking from the last 7 days.",
+  },
+
+  thisWeek: {
+    tr: "Bu Hafta",
+    en: "This Week",
+  },
+
+  averageCalories: {
+    tr: "Ortalama Kalori",
+    en: "Average Calories",
+  },
+
+  highestDay: {
+    tr: "En Yüksek Gün",
+    en: "Highest Day",
+  },
+
+  targetHitDays: {
+    tr: "Hedefe Yakın Gün",
+    en: "Target Days",
+  },
+
+  weeklyCalories: {
+    tr: "Haftalık Kalori",
+    en: "Weekly Calories",
+  },
+
+  weeklyMacros: {
+    tr: "Haftalık Makrolar",
+    en: "Weekly Macros",
+  },
+
+  noStatsYet: {
+    tr: "Henüz istatistik yok.",
+    en: "No stats yet.",
+  },
+
+  noStatsSubtitle: {
+    tr: "Öğün ekledikçe burada haftalık analizlerin oluşacak.",
+    en: "Your weekly analysis will appear here as you add meals.",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
