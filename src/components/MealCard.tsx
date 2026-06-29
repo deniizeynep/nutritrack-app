@@ -11,6 +11,7 @@ type MealCardProps = {
   protein?: number;
   carbs?: number;
   fat?: number;
+  onPress?: () => void;
   onDelete?: () => void;
 };
 
@@ -22,18 +23,22 @@ export function MealCard({
   protein = 0,
   carbs = 0,
   fat = 0,
+  onPress,
   onDelete,
 }: MealCardProps) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
 
   return (
-    <View
-      style={[
+    <Pressable
+      disabled={!onPress}
+      onPress={onPress}
+      style={({ pressed }) => [
         styles.card,
         {
           backgroundColor: theme.colors.card,
           borderColor: theme.colors.border,
+          opacity: pressed ? 0.86 : 1,
         },
       ]}
     >
@@ -70,7 +75,13 @@ export function MealCard({
           </Text>
 
           {onDelete ? (
-            <Pressable onPress={onDelete} hitSlop={10}>
+            <Pressable
+              onPress={(event) => {
+                event.stopPropagation();
+                onDelete?.();
+              }}
+              hitSlop={10}
+            >
               <Ionicons
                 name="trash-outline"
                 size={18}
@@ -90,7 +101,7 @@ export function MealCard({
         <MacroPill label="C" value={carbs} color={theme.colors.carbs} />
         <MacroPill label="F" value={fat} color={theme.colors.fat} />
       </View>
-    </View>
+    </Pressable>
   );
 }
 

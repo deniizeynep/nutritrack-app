@@ -1,6 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { MacroProgress } from "../../src/components/MacroProgress";
 import { MealCard } from "../../src/components/MealCard";
 import { Screen } from "../../src/components/Screen";
@@ -21,16 +28,26 @@ export default function HomeScreen() {
   const meals = useMealStore((state) => state.meals);
   const deleteMeal = useMealStore((state) => state.deleteMeal);
 
-  const consumedCalories = meals.reduce(
+  const todayKey = new Date().toISOString().slice(0, 10);
+
+  const todaysMeals = meals.filter((meal) => {
+    const mealDate = meal.loggedAt ?? meal.createdAt;
+    return mealDate.slice(0, 10) === todayKey;
+  });
+
+  const consumedCalories = todaysMeals.reduce(
     (total, meal) => total + meal.calories,
     0,
   );
-  const consumedProtein = meals.reduce(
+  const consumedProtein = todaysMeals.reduce(
     (total, meal) => total + meal.protein,
     0,
   );
-  const consumedCarbs = meals.reduce((total, meal) => total + meal.carbs, 0);
-  const consumedFat = meals.reduce((total, meal) => total + meal.fat, 0);
+  const consumedCarbs = todaysMeals.reduce(
+    (total, meal) => total + meal.carbs,
+    0,
+  );
+  const consumedFat = todaysMeals.reduce((total, meal) => total + meal.fat, 0);
 
   const targetCalories = goal?.targetCalories ?? 2000;
   const remainingCalories = targetCalories - consumedCalories;
@@ -38,6 +55,25 @@ export default function HomeScreen() {
     (consumedCalories / targetCalories) * 100,
     100,
   );
+
+  const confirmDeleteMeal = (mealId: string) => {
+    Alert.alert(
+      translate("confirmDeleteMeal", language),
+      translate("confirmDeleteMealMessage", language),
+      [
+        {
+          text: translate("cancel", language),
+          style: "cancel",
+        },
+        {
+          text: translate("deleteMeal", language),
+          style: "destructive",
+          onPress: () => deleteMeal(mealId),
+        },
+      ],
+    );
+  };
+
   return (
     <Screen>
       <ScrollView
@@ -319,8 +355,8 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.mealList}>
-          {meals.length > 0 ? (
-            meals.map((meal) => (
+          {todaysMeals.length > 0 ? (
+            todaysMeals.map((meal) => (
               <MealCard
                 key={meal.id}
                 icon={getMealIcon(meal.category)}
@@ -333,7 +369,10 @@ export default function HomeScreen() {
                 protein={meal.protein}
                 carbs={meal.carbs}
                 fat={meal.fat}
-                onDelete={() => deleteMeal(meal.id)}
+                onPress={() =>
+                  router.push(`/meal-detail?mealId=${meal.id}` as Href)
+                }
+                onDelete={() => confirmDeleteMeal(meal.id)}
               />
             ))
           ) : (

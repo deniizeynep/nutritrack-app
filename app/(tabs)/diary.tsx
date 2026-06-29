@@ -1,6 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router, type Href } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { MealCard } from "../../src/components/MealCard";
 import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
@@ -29,11 +37,30 @@ export default function DiaryScreen() {
 
   const meals = useMealStore((state) => state.meals);
   const deleteMeal = useMealStore((state) => state.deleteMeal);
+
+  const confirmDeleteMeal = (mealId: string) => {
+    Alert.alert(
+      translate("confirmDeleteMeal", language),
+      translate("confirmDeleteMealMessage", language),
+      [
+        {
+          text: translate("cancel", language),
+          style: "cancel",
+        },
+        {
+          text: translate("deleteMeal", language),
+          style: "destructive",
+          onPress: () => deleteMeal(mealId),
+        },
+      ],
+    );
+  };
+
   const goal = useGoalStore((state) => state.goal);
 
   const daySummaries = useMemo(() => {
     const grouped = meals.reduce<Record<string, Meal[]>>((acc, meal) => {
-      const dateKey = meal.createdAt.slice(0, 10);
+      const dateKey = (meal.loggedAt ?? meal.createdAt).slice(0, 10);
 
       if (!acc[dateKey]) {
         acc[dateKey] = [];
@@ -301,7 +328,10 @@ export default function DiaryScreen() {
                       protein={meal.protein}
                       carbs={meal.carbs}
                       fat={meal.fat}
-                      onDelete={() => deleteMeal(meal.id)}
+                      onPress={() =>
+                        router.push(`/meal-detail?mealId=${meal.id}` as Href)
+                      }
+                      onDelete={() => confirmDeleteMeal(meal.id)}
                     />
                   ))}
                 </View>

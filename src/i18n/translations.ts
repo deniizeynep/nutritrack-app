@@ -573,6 +573,210 @@ export const translations = {
     tr: "Hedefi Temizle",
     en: "Clear Goal",
   },
+  barcodeScanner: {
+    tr: "Barkod Tarayıcı",
+    en: "Barcode Scanner",
+  },
+
+  barcodeSubtitle: {
+    tr: "Paketli gıdanın barkodunu okut, kalori ve makro bilgilerini bul.",
+    en: "Scan packaged foods to find calories and macros.",
+  },
+
+  cameraPermissionTitle: {
+    tr: "Kamera izni gerekiyor",
+    en: "Camera permission required",
+  },
+
+  cameraPermissionSubtitle: {
+    tr: "Barkod okutmak için kameraya erişim izni vermelisin.",
+    en: "You need to allow camera access to scan barcodes.",
+  },
+
+  allowCamera: {
+    tr: "Kamera İzni Ver",
+    en: "Allow Camera",
+  },
+
+  scanning: {
+    tr: "Taranıyor...",
+    en: "Scanning...",
+  },
+
+  pointBarcode: {
+    tr: "Barkodu çerçevenin içine getir",
+    en: "Place the barcode inside the frame",
+  },
+
+  productFound: {
+    tr: "Ürün Bulundu",
+    en: "Product Found",
+  },
+
+  productNotFound: {
+    tr: "Ürün bulunamadı",
+    en: "Product not found",
+  },
+
+  productNotFoundSubtitle: {
+    tr: "Bu barkod için ürün bilgisi bulunamadı. Manuel öğün ekleyebilirsin.",
+    en: "No product information was found for this barcode. You can add it manually.",
+  },
+
+  addAsMeal: {
+    tr: "Öğün Olarak Ekle",
+    en: "Add as Meal",
+  },
+
+  scanAgain: {
+    tr: "Tekrar Tara",
+    en: "Scan Again",
+  },
+
+  per100g: {
+    tr: "100g başına",
+    en: "per 100g",
+  },
+
+  barcodeNumber: {
+    tr: "Barkod",
+    en: "Barcode",
+  },
+  unsupportedBarcode: {
+    tr: "Desteklenmeyen Barkod",
+    en: "Unsupported Barcode",
+  },
+
+  unsupportedBarcodeSubtitle: {
+    tr: "Bu barkod gıda ürünü barkodu gibi görünmüyor. Lütfen paketin üzerindeki ürün barkodunu okut.",
+    en: "This barcode does not look like a food product barcode. Please scan the product barcode on the package.",
+  },
+  photoScanner: {
+    tr: "Fotoğraf Analizi",
+    en: "Photo Analysis",
+  },
+
+  photoScanSubtitle: {
+    tr: "Yemeğinin fotoğrafını yükle, kalori ve makro değerlerini tahmini olarak hesaplayalım.",
+    en: "Upload a meal photo and estimate calories and macros.",
+  },
+
+  takePhoto: {
+    tr: "Fotoğraf Çek",
+    en: "Take Photo",
+  },
+
+  chooseFromGallery: {
+    tr: "Galeriden Seç",
+    en: "Choose from Gallery",
+  },
+
+  analyzePhoto: {
+    tr: "Fotoğrafı Analiz Et",
+    en: "Analyze Photo",
+  },
+
+  analyzingPhoto: {
+    tr: "Fotoğraf analiz ediliyor...",
+    en: "Analyzing photo...",
+  },
+
+  estimatedResult: {
+    tr: "Tahmini Sonuç",
+    en: "Estimated Result",
+  },
+
+  estimatedFood: {
+    tr: "Tahmini Yemek",
+    en: "Estimated Food",
+  },
+
+  confidence: {
+    tr: "Güven",
+    en: "Confidence",
+  },
+
+  photoEstimateNote: {
+    tr: "Bu sonuç yapay zeka tahminidir. Kesin değerler için manuel düzenleme önerilir.",
+    en: "This is an AI estimate. Manual adjustment is recommended for accurate tracking.",
+  },
+
+  noPhotoSelected: {
+    tr: "Henüz fotoğraf seçilmedi.",
+    en: "No photo selected yet.",
+  },
+
+  photoPermissionTitle: {
+    tr: "Fotoğraf izni gerekiyor",
+    en: "Photo permission required",
+  },
+
+  photoPermissionSubtitle: {
+    tr: "Fotoğraf seçmek veya çekmek için izin vermelisin.",
+    en: "You need to allow access to select or take photos.",
+  },
+  mealDate: {
+    tr: "Öğün Tarihi",
+    en: "Meal Date",
+  },
+
+  todayLabel: {
+    tr: "Bugün",
+    en: "Today",
+  },
+
+  yesterday: {
+    tr: "Dün",
+    en: "Yesterday",
+  },
+
+  twoDaysAgo: {
+    tr: "2 Gün Önce",
+    en: "2 Days Ago",
+  },
+  editMeal: {
+    tr: "Öğünü Düzenle",
+    en: "Edit Meal",
+  },
+
+  editMealSubtitle: {
+    tr: "Yemek adı, kalori ve makro değerlerini güncelle.",
+    en: "Update meal name, calories and macro values.",
+  },
+
+  saveChanges: {
+    tr: "Değişiklikleri Kaydet",
+    en: "Save Changes",
+  },
+
+  mealNotFound: {
+    tr: "Öğün bulunamadı",
+    en: "Meal not found",
+  },
+
+  mealNotFoundSubtitle: {
+    tr: "Bu öğün silinmiş olabilir veya artık mevcut değil.",
+    en: "This meal may have been deleted or no longer exists.",
+  },
+
+  deleteMeal: {
+    tr: "Öğünü Sil",
+    en: "Delete Meal",
+  },
+  confirmDeleteMeal: {
+    tr: "Öğün silinsin mi?",
+    en: "Delete meal?",
+  },
+
+  confirmDeleteMealMessage: {
+    tr: "Bu öğün kalıcı olarak silinecek.",
+    en: "This meal will be permanently deleted.",
+  },
+
+  cancel: {
+    tr: "İptal",
+    en: "Cancel",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

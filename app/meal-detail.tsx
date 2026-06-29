@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, type Href } from "expo-router";
-import { useMemo, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,12 +19,18 @@ import { useAppStore } from "../src/stores/appStore";
 import { useMealStore, type MealCategory } from "../src/stores/mealStore";
 import { getTheme } from "../src/theme/theme";
 
-export default function AddMealScreen() {
+export default function MealDetailScreen() {
+  const params = useLocalSearchParams<{ mealId?: string }>();
+
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
 
-  const addMeal = useMealStore((state) => state.addMeal);
+  const meals = useMealStore((state) => state.meals);
+  const updateMeal = useMealStore((state) => state.updateMeal);
+  const deleteMeal = useMealStore((state) => state.deleteMeal);
+
+  const meal = meals.find((item) => item.id === params.mealId);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -32,22 +39,29 @@ export default function AddMealScreen() {
   const [protein, setProtein] = useState("");
   const [carbs, setCarbs] = useState("");
   const [fat, setFat] = useState("");
-  const [selectedDateOffset, setSelectedDateOffset] = useState(0);
 
-  const canSave = title.trim() && Number(calories) > 0;
-
-  const selectedLoggedAt = useMemo(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - selectedDateOffset);
-    return date.toISOString();
-  }, [selectedDateOffset]);
-
-  const handleSave = () => {
-    if (!canSave) {
+  useEffect(() => {
+    if (!meal) {
       return;
     }
 
-    addMeal({
+    setTitle(meal.title);
+    setDescription(meal.description);
+    setCategory(meal.category);
+    setCalories(String(meal.calories));
+    setProtein(String(meal.protein));
+    setCarbs(String(meal.carbs));
+    setFat(String(meal.fat));
+  }, [meal]);
+
+  const canSave = meal && title.trim() && Number(calories) > 0;
+
+  const handleSave = () => {
+    if (!meal || !canSave) {
+      return;
+    }
+
+    updateMeal(meal.id, {
       title: title.trim(),
       description: description.trim(),
       category,
@@ -55,11 +69,87 @@ export default function AddMealScreen() {
       protein: Number(protein) || 0,
       carbs: Number(carbs) || 0,
       fat: Number(fat) || 0,
-      loggedAt: selectedLoggedAt,
     });
 
-    router.replace("/(tabs)/home" as Href);
+    router.back();
   };
+
+  const handleDelete = () => {
+    if (!meal) {
+      return;
+    }
+
+    Alert.alert(
+      translate("confirmDeleteMeal", language),
+      translate("confirmDeleteMealMessage", language),
+      [
+        {
+          text: translate("cancel", language),
+          style: "cancel",
+        },
+        {
+          text: translate("deleteMeal", language),
+          style: "destructive",
+          onPress: () => {
+            deleteMeal(meal.id);
+            router.back();
+          },
+        },
+      ],
+    );
+  };
+
+  if (!meal) {
+    return (
+      <Screen>
+        <View
+          style={[
+            styles.emptyContainer,
+            {
+              backgroundColor: theme.colors.background,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.emptyCard,
+              {
+                backgroundColor: theme.colors.card,
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.logoBox,
+                {
+                  backgroundColor: theme.colors.primarySoft,
+                },
+              ]}
+            >
+              <Ionicons
+                name="alert-circle-outline"
+                size={32}
+                color={theme.colors.primary}
+              />
+            </View>
+
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+              {translate("mealNotFound", language)}
+            </Text>
+
+            <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
+              {translate("mealNotFoundSubtitle", language)}
+            </Text>
+
+            <Button onPress={() => router.back()}>
+              {translate("back", language)}
+            </Button>
+          </View>
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -96,10 +186,25 @@ export default function AddMealScreen() {
             </Pressable>
 
             <Text style={[styles.topTitle, { color: theme.colors.text }]}>
-              {translate("addMeal", language)}
+              {translate("editMeal", language)}
             </Text>
 
-            <View style={styles.fakeSpace} />
+            <Pressable
+              onPress={handleDelete}
+              style={[
+                styles.iconButton,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name="trash-outline"
+                size={20}
+                color={theme.colors.danger}
+              />
+            </Pressable>
           </View>
 
           <View style={styles.headerArea}>
@@ -119,11 +224,11 @@ export default function AddMealScreen() {
             </View>
 
             <Text style={[styles.title, { color: theme.colors.text }]}>
-              {translate("addMeal", language)}
+              {translate("editMeal", language)}
             </Text>
 
             <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
-              {translate("addMealSubtitle", language)}
+              {translate("editMealSubtitle", language)}
             </Text>
           </View>
 
@@ -151,30 +256,6 @@ export default function AddMealScreen() {
               value={description}
               onChangeText={setDescription}
             />
-
-            <Text style={[styles.groupTitle, { color: theme.colors.text }]}>
-              {translate("mealDate", language)}
-            </Text>
-
-            <View style={styles.chipWrap}>
-              <DateChip
-                label={translate("todayLabel", language)}
-                selected={selectedDateOffset === 0}
-                onPress={() => setSelectedDateOffset(0)}
-              />
-
-              <DateChip
-                label={translate("yesterday", language)}
-                selected={selectedDateOffset === 1}
-                onPress={() => setSelectedDateOffset(1)}
-              />
-
-              <DateChip
-                label={translate("twoDaysAgo", language)}
-                selected={selectedDateOffset === 2}
-                onPress={() => setSelectedDateOffset(2)}
-              />
-            </View>
 
             <Text style={[styles.groupTitle, { color: theme.colors.text }]}>
               {translate("mealCategory", language)}
@@ -252,49 +333,20 @@ export default function AddMealScreen() {
             </View>
 
             <Button onPress={handleSave} style={styles.saveButton}>
-              {translate("saveMeal", language)}
+              {translate("saveChanges", language)}
+            </Button>
+
+            <Button
+              variant="secondary"
+              onPress={handleDelete}
+              style={styles.deleteButton}
+            >
+              {translate("deleteMeal", language)}
             </Button>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
-  );
-}
-
-type DateChipProps = {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-};
-
-function DateChip({ label, selected, onPress }: DateChipProps) {
-  const themeMode = useAppStore((state) => state.themeMode);
-  const theme = getTheme(themeMode);
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[
-        styles.dateChip,
-        {
-          backgroundColor: selected
-            ? theme.colors.primary
-            : theme.colors.cardSoft,
-          borderColor: selected ? theme.colors.primary : theme.colors.border,
-        },
-      ]}
-    >
-      <Text
-        style={[
-          styles.chipText,
-          {
-            color: selected ? "#FFFFFF" : theme.colors.text,
-          },
-        ]}
-      >
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 
@@ -352,6 +404,18 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 34,
   },
+  emptyContainer: {
+    flex: 1,
+    padding: 20,
+    justifyContent: "center",
+  },
+  emptyCard: {
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+    gap: 12,
+  },
   topBar: {
     height: 46,
     flexDirection: "row",
@@ -370,9 +434,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
   },
-  fakeSpace: {
-    width: 40,
-  },
   headerArea: {
     marginTop: 20,
     marginBottom: 24,
@@ -387,7 +448,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: "900",
     letterSpacing: -0.8,
     textAlign: "center",
@@ -438,12 +499,7 @@ const styles = StyleSheet.create({
   saveButton: {
     marginTop: 4,
   },
-  dateChip: {
-    minHeight: 40,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
+  deleteButton: {
+    marginTop: 2,
   },
 });

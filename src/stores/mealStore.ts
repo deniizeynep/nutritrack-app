@@ -14,13 +14,17 @@ export type Meal = {
   carbs: number;
   fat: number;
   createdAt: string;
+  loggedAt?: string;
 };
 
 type NewMeal = Omit<Meal, "id" | "createdAt">;
 
+type MealUpdate = Partial<Omit<Meal, "id" | "createdAt">>;
+
 type MealState = {
   meals: Meal[];
   addMeal: (meal: NewMeal) => void;
+  updateMeal: (id: string, updates: MealUpdate) => void;
   deleteMeal: (id: string) => void;
   clearMeals: () => void;
 };
@@ -37,9 +41,22 @@ export const useMealStore = create<MealState>()(
               ...meal,
               id: Date.now().toString(),
               createdAt: new Date().toISOString(),
+              loggedAt: meal.loggedAt ?? new Date().toISOString(),
             },
             ...state.meals,
           ],
+        })),
+
+      updateMeal: (id, updates) =>
+        set((state) => ({
+          meals: state.meals.map((meal) =>
+            meal.id === id
+              ? {
+                  ...meal,
+                  ...updates,
+                }
+              : meal,
+          ),
         })),
 
       deleteMeal: (id) =>

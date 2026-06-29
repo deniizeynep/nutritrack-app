@@ -427,7 +427,7 @@ function MacroLine({ label, value, color }: MacroLineProps) {
 }
 
 function getMealDateKey(meal: Meal) {
-  return meal.createdAt.slice(0, 10);
+  return (meal.loggedAt ?? meal.createdAt).slice(0, 10);
 }
 
 function getLast7Days(language: "tr" | "en") {

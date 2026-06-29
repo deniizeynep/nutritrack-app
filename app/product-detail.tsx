@@ -5,7 +5,7 @@ import { Screen } from "../src/components/Screen";
 import { useAppStore } from "../src/stores/appStore";
 import { getTheme } from "../src/theme/theme";
 
-export default function SettingsScreen() {
+export default function ProductDetailScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
@@ -30,7 +30,7 @@ export default function SettingsScreen() {
           </Pressable>
 
           <Text style={[styles.topTitle, { color: theme.colors.text }]}>
-            {language === "tr" ? "Ayarlar" : "Settings"}
+            {language === "tr" ? "Ürün Detayı" : "Product Detail"}
           </Text>
 
           <View style={styles.fakeSpace} />
@@ -54,20 +54,22 @@ export default function SettingsScreen() {
             ]}
           >
             <Ionicons
-              name="settings-outline"
+              name="cube-outline"
               size={32}
               color={theme.colors.primary}
             />
           </View>
 
           <Text style={[styles.title, { color: theme.colors.text }]}>
-            {language === "tr" ? "Ayarlar yakında" : "Settings coming soon"}
+            {language === "tr"
+              ? "Ürün detayı yakında"
+              : "Product detail coming soon"}
           </Text>
 
           <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
             {language === "tr"
-              ? "Tema, dil ve veri yönetimi şimdilik Profil ekranında bulunuyor."
-              : "Theme, language and data management are currently available on the Profile screen."}
+              ? "Barkodla bulunan ürünleri daha detaylı göstermek için bu ekranı birazdan geliştireceğiz."
+              : "We will improve this screen soon to show barcode product details."}
           </Text>
         </View>
       </View>
