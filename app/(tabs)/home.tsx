@@ -6,6 +6,7 @@ import { MealCard } from "../../src/components/MealCard";
 import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
+import { useGoalStore } from "../../src/stores/goalStore";
 import { getTheme } from "../../src/theme/theme";
 
 export default function HomeScreen() {
@@ -15,9 +16,10 @@ export default function HomeScreen() {
   const setLanguage = useAppStore((state) => state.setLanguage);
 
   const theme = getTheme(themeMode);
+  const goal = useGoalStore((state) => state.goal);
 
   const consumedCalories = 1420;
-  const targetCalories = 2000;
+  const targetCalories = goal?.targetCalories ?? 2000;
   const remainingCalories = targetCalories - consumedCalories;
   const progressPercent = Math.min(
     (consumedCalories / targetCalories) * 100,
@@ -99,11 +101,33 @@ export default function HomeScreen() {
             },
           ]}
         >
-          <Text
-            style={[styles.sectionLabel, { color: theme.colors.mutedText }]}
-          >
-            {translate("dailySummary", language)}
-          </Text>
+          <View style={styles.summaryHeader}>
+            <Text
+              style={[styles.sectionLabel, { color: theme.colors.mutedText }]}
+            >
+              {translate("dailySummary", language)}
+            </Text>
+
+            {goal ? (
+              <View
+                style={[
+                  styles.savedGoalBadge,
+                  {
+                    backgroundColor: theme.colors.primarySoft,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.savedGoalText,
+                    { color: theme.colors.primary },
+                  ]}
+                >
+                  {translate("savedGoal", language)}
+                </Text>
+              </View>
+            ) : null}
+          </View>
 
           <View style={styles.calorieCenter}>
             <View
@@ -360,7 +384,6 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontWeight: "800",
-    marginBottom: 18,
   },
   calorieCenter: {
     alignItems: "center",
@@ -460,6 +483,23 @@ const styles = StyleSheet.create({
   },
   goalButtonText: {
     fontSize: 14,
+    fontWeight: "900",
+  },
+  summaryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 18,
+  },
+  savedGoalBadge: {
+    paddingHorizontal: 10,
+    height: 28,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  savedGoalText: {
+    fontSize: 11,
     fontWeight: "900",
   },
 });

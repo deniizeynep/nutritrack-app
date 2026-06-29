@@ -358,6 +358,25 @@ export const translations = {
     tr: "Bu değerler tahminidir. Sağlık durumuna göre uzman desteği alman önerilir.",
     en: "These values are estimates. Consider professional guidance based on your health status.",
   },
+  saveGoal: {
+    tr: "Hedefi Kaydet",
+    en: "Save Goal",
+  },
+
+  savedGoal: {
+    tr: "Kayıtlı Hedef",
+    en: "Saved Goal",
+  },
+
+  fillInfoToCalculate: {
+    tr: "Hesaplamak için bilgileri doldur",
+    en: "Fill in your info to calculate",
+  },
+
+  goalSavedNote: {
+    tr: "Bu hedef ana sayfadaki günlük kalori hedefin olarak kullanılacak.",
+    en: "This goal will be used as your daily calorie target on the home screen.",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

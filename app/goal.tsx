@@ -15,6 +15,7 @@ import { Input } from "../src/components/Input";
 import { Screen } from "../src/components/Screen";
 import { translate } from "../src/i18n/translations";
 import { useAppStore } from "../src/stores/appStore";
+import { useGoalStore } from "../src/stores/goalStore";
 import { getTheme } from "../src/theme/theme";
 import {
     calculateDailyCalories,
@@ -27,6 +28,7 @@ export default function GoalScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
+  const setGoal = useGoalStore((state) => state.setGoal);
 
   const [age, setAge] = useState("");
   const [heightCm, setHeightCm] = useState("");
@@ -54,6 +56,26 @@ export default function GoalScreen() {
       goalType,
     });
   }, [age, heightCm, weightKg, gender, activityLevel, goalType]);
+
+  const handleSaveGoal = () => {
+    if (!result) {
+      return;
+    }
+
+    setGoal({
+      age: Number(age),
+      heightCm: Number(heightCm),
+      weightKg: Number(weightKg),
+      gender,
+      activityLevel,
+      goalType,
+      bmr: result.bmr,
+      maintenanceCalories: result.maintenanceCalories,
+      targetCalories: result.targetCalories,
+    });
+
+    router.replace("/(tabs)/home" as Href);
+  };
 
   return (
     <Screen>
@@ -241,8 +263,10 @@ export default function GoalScreen() {
               />
             </View>
 
-            <Button style={styles.calculateButton}>
-              {translate("calculate", language)}
+            <Button onPress={handleSaveGoal} style={styles.calculateButton}>
+              {result
+                ? translate("saveGoal", language)
+                : translate("fillInfoToCalculate", language)}
             </Button>
           </View>
 
@@ -279,12 +303,15 @@ export default function GoalScreen() {
                   ]}
                 >
                   <Text
-                    style={[
-                      styles.resultMiniLabel,
-                      { color: theme.colors.mutedText },
-                    ]}
+                    style={[styles.note, { color: theme.colors.mutedText }]}
                   >
-                    {translate("maintenance", language)}
+                    {translate("goalSavedNote", language)}
+                  </Text>
+
+                  <Text
+                    style={[styles.note, { color: theme.colors.mutedText }]}
+                  >
+                    {translate("calorieEstimateNote", language)}
                   </Text>
 
                   <Text
