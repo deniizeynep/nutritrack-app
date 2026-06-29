@@ -1,0 +1,31 @@
+export const lightColors = {
+  background: "#FAF8F2",
+  card: "#FFFFFF",
+  cardSoft: "#F3EFE6",
+  text: "#1E1E1E",
+  mutedText: "#77736B",
+  primary: "#2F7D46",
+  primarySoft: "#E5F3E9",
+  border: "#E8E1D5",
+  danger: "#D9534F",
+  warning: "#F6B84B",
+  protein: "#2F80ED",
+  carbs: "#F2994A",
+  fat: "#9B51E0",
+};
+
+export const darkColors = {
+  background: "#101814",
+  card: "#18231D",
+  cardSoft: "#223026",
+  text: "#F5F5F0",
+  mutedText: "#A7B0A8",
+  primary: "#6ED28A",
+  primarySoft: "#203D2A",
+  border: "#2C3A31",
+  danger: "#FF7A75",
+  warning: "#F8C765",
+  protein: "#6BA8FF",
+  carbs: "#FFB36B",
+  fat: "#C58BFF",
+};
