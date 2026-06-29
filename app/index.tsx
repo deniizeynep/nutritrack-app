@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "../src/components/Button";
 import { Screen } from "../src/components/Screen";
@@ -92,12 +92,12 @@ export default function WelcomeScreen() {
         </View>
 
         <View style={styles.bottom}>
-          <Button onPress={() => router.push("/(auth)/register")}>
+          <Button onPress={() => router.push("/(auth)/register" as Href)}>
             {translate("start", language)}
           </Button>
 
           <Pressable
-            onPress={() => router.push("/(auth)/login")}
+            onPress={() => router.push("/(auth)/login" as Href)}
             style={styles.loginRow}
           >
             <Text style={[styles.loginText, { color: theme.colors.mutedText }]}>
@@ -117,7 +117,9 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 20,
   },
   topActions: {
     flexDirection: "row",
