@@ -514,6 +514,65 @@ export const translations = {
     tr: "Öğün ekledikçe burada haftalık analizlerin oluşacak.",
     en: "Your weekly analysis will appear here as you add meals.",
   },
+  profileSubtitle: {
+    tr: "Hedeflerini, tercihlerini ve uygulama ayarlarını yönet.",
+    en: "Manage your goals, preferences and app settings.",
+  },
+
+  preferences: {
+    tr: "Tercihler",
+    en: "Preferences",
+  },
+
+  language: {
+    tr: "Dil",
+    en: "Language",
+  },
+
+  theme: {
+    tr: "Tema",
+    en: "Theme",
+  },
+
+  lightTheme: {
+    tr: "Açık Tema",
+    en: "Light Theme",
+  },
+
+  darkTheme: {
+    tr: "Koyu Tema",
+    en: "Dark Theme",
+  },
+
+  goalSummary: {
+    tr: "Hedef Özeti",
+    en: "Goal Summary",
+  },
+
+  noGoalYet: {
+    tr: "Henüz hedef belirlenmedi.",
+    en: "No goal set yet.",
+  },
+
+  editGoal: {
+    tr: "Hedefi Düzenle",
+    en: "Edit Goal",
+  },
+
+  dataManagement: {
+    tr: "Veri Yönetimi",
+    en: "Data Management",
+  },
+
+  clearMeals: {
+    tr: "Öğünleri Temizle",
+    en: "Clear Meals",
+  },
+
+  clearGoal: {
+    tr: "Hedefi Temizle",
+    en: "Clear Goal",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
