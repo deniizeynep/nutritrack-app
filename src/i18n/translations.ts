@@ -229,6 +229,135 @@ export const translations = {
     tr: "Geri",
     en: "Back",
   },
+  goalSetup: {
+    tr: "Hedefini Belirle",
+    en: "Set Your Goal",
+  },
+
+  goalSubtitle: {
+    tr: "Boy, kilo ve hedef bilgilerine göre günlük kalori ihtiyacını tahmin edelim.",
+    en: "Estimate your daily calorie needs based on your body and goal.",
+  },
+
+  age: {
+    tr: "Yaş",
+    en: "Age",
+  },
+
+  agePlaceholder: {
+    tr: "Örn. 22",
+    en: "Ex. 22",
+  },
+
+  height: {
+    tr: "Boy",
+    en: "Height",
+  },
+
+  heightPlaceholder: {
+    tr: "Örn. 165",
+    en: "Ex. 165",
+  },
+
+  weight: {
+    tr: "Kilo",
+    en: "Weight",
+  },
+
+  weightPlaceholder: {
+    tr: "Örn. 58",
+    en: "Ex. 58",
+  },
+
+  gender: {
+    tr: "Cinsiyet",
+    en: "Gender",
+  },
+
+  female: {
+    tr: "Kadın",
+    en: "Female",
+  },
+
+  male: {
+    tr: "Erkek",
+    en: "Male",
+  },
+
+  activityLevel: {
+    tr: "Aktivite Seviyesi",
+    en: "Activity Level",
+  },
+
+  sedentary: {
+    tr: "Hareketsiz",
+    en: "Sedentary",
+  },
+
+  light: {
+    tr: "Hafif",
+    en: "Light",
+  },
+
+  moderate: {
+    tr: "Orta",
+    en: "Moderate",
+  },
+
+  active: {
+    tr: "Aktif",
+    en: "Active",
+  },
+
+  veryActive: {
+    tr: "Çok Aktif",
+    en: "Very Active",
+  },
+
+  goalType: {
+    tr: "Hedef",
+    en: "Goal",
+  },
+
+  loseWeight: {
+    tr: "Kilo Ver",
+    en: "Lose Weight",
+  },
+
+  maintainWeight: {
+    tr: "Koru",
+    en: "Maintain",
+  },
+
+  gainWeight: {
+    tr: "Kilo Al",
+    en: "Gain Weight",
+  },
+
+  calculate: {
+    tr: "Hesapla",
+    en: "Calculate",
+  },
+
+  dailyTarget: {
+    tr: "Günlük Hedef",
+    en: "Daily Target",
+  },
+
+  maintenance: {
+    tr: "Koruma Kalorisi",
+    en: "Maintenance",
+  },
+
+  estimatedBmr: {
+    tr: "Tahmini BMR",
+    en: "Estimated BMR",
+  },
+
+  calorieEstimateNote: {
+    tr: "Bu değerler tahminidir. Sağlık durumuna göre uzman desteği alman önerilir.",
+    en: "These values are estimates. Consider professional guidance based on your health status.",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

@@ -187,6 +187,27 @@ export default function HomeScreen() {
               color={theme.colors.fat}
             />
           </View>
+          <Pressable
+            onPress={() => router.push("/goal" as Href)}
+            style={[
+              styles.goalButton,
+              {
+                backgroundColor: theme.colors.primarySoft,
+              },
+            ]}
+          >
+            <Ionicons
+              name="flag-outline"
+              size={18}
+              color={theme.colors.primary}
+            />
+
+            <Text
+              style={[styles.goalButtonText, { color: theme.colors.primary }]}
+            >
+              {translate("goalSetup", language)}
+            </Text>
+          </Pressable>
         </View>
 
         <View style={styles.quickActions}>
@@ -427,5 +448,18 @@ const styles = StyleSheet.create({
   },
   mealList: {
     gap: 12,
+  },
+  goalButton: {
+    marginTop: 18,
+    height: 46,
+    borderRadius: 17,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  goalButtonText: {
+    fontSize: 14,
+    fontWeight: "900",
   },
 });
