@@ -15,69 +15,13 @@ import {
 import { Button } from "../src/components/Button";
 import { Screen } from "../src/components/Screen";
 import { translate } from "../src/i18n/translations";
+import { aiApi, type FoodPhotoEstimate } from "../src/services/aiApi";
 import { useAppStore } from "../src/stores/appStore";
 import { useAuthStore } from "../src/stores/authStore";
 import { useMealStore } from "../src/stores/mealStore";
 import { getTheme } from "../src/theme/theme";
 
-type PhotoEstimate = {
-  foodName: {
-    tr: string;
-    en: string;
-  };
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  confidence: number;
-};
-
-const mockEstimates: PhotoEstimate[] = [
-  {
-    foodName: {
-      tr: "Lahmacun",
-      en: "Lahmacun",
-    },
-    calories: 430,
-    protein: 18,
-    carbs: 48,
-    fat: 17,
-    confidence: 81,
-  },
-  {
-    foodName: {
-      tr: "Tavuklu Salata",
-      en: "Chicken Salad",
-    },
-    calories: 420,
-    protein: 34,
-    carbs: 22,
-    fat: 18,
-    confidence: 82,
-  },
-  {
-    foodName: {
-      tr: "Makarna",
-      en: "Pasta Bowl",
-    },
-    calories: 560,
-    protein: 18,
-    carbs: 78,
-    fat: 16,
-    confidence: 76,
-  },
-  {
-    foodName: {
-      tr: "Meyveli Yulaf",
-      en: "Oatmeal with Fruit",
-    },
-    calories: 390,
-    protein: 14,
-    carbs: 62,
-    fat: 9,
-    confidence: 79,
-  },
-];
+type PhotoEstimate = FoodPhotoEstimate;
 
 export default function ScanPhotoScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
@@ -138,7 +82,7 @@ export default function ScanPhotoScreen() {
     }
   };
 
-  const analyzePhoto = () => {
+  const analyzePhoto = async () => {
     if (!imageUri || isAnalyzing) {
       return;
     }
@@ -146,10 +90,17 @@ export default function ScanPhotoScreen() {
     setIsAnalyzing(true);
     setEstimate(null);
 
-    setTimeout(() => {
-      setEstimate(mockEstimates[0]);
+    try {
+      const result = await aiApi.analyzeFoodPhoto(imageUri);
+      setEstimate(result);
+    } catch {
+      Alert.alert(
+        translate("error", language),
+        translate("aiEstimateFailed", language),
+      );
+    } finally {
       setIsAnalyzing(false);
-    }, 1200);
+    }
   };
 
   const addEstimateAsMeal = async () => {
@@ -421,6 +372,17 @@ export default function ScanPhotoScreen() {
                 >
                   {translate("confidence", language)}: {estimate.confidence}%
                 </Text>
+
+                {estimate.source === "mock" ? (
+                  <Text
+                    style={[
+                      styles.sourceLabel,
+                      { color: theme.colors.mutedText },
+                    ]}
+                  >
+                    {translate("demoAiEstimate", language)}
+                  </Text>
+                ) : null}
               </View>
             </View>
 
@@ -682,6 +644,11 @@ const styles = StyleSheet.create({
   confidence: {
     marginTop: 4,
     fontSize: 12,
+    fontWeight: "700",
+  },
+  sourceLabel: {
+    marginTop: 3,
+    fontSize: 11,
     fontWeight: "700",
   },
   divider: {

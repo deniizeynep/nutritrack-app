@@ -701,6 +701,16 @@ export const translations = {
     en: "This is an AI estimate. Manual adjustment is recommended for accurate tracking.",
   },
 
+  demoAiEstimate: {
+    tr: "Demo AI tahmini",
+    en: "Demo AI estimate",
+  },
+
+  aiEstimateFailed: {
+    tr: "Fotoğraf analizi yapılamadı. Lütfen tekrar dene.",
+    en: "Photo analysis failed. Please try again.",
+  },
+
   noPhotoSelected: {
     tr: "Henüz fotoğraf seçilmedi.",
     en: "No photo selected yet.",
