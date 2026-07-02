@@ -8,6 +8,8 @@ type AuthState = {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasHydrated: boolean;
+  hasCheckedSession: boolean;
   error: string | null;
   register: (
     fullName: string,
@@ -18,6 +20,7 @@ type AuthState = {
   loadMe: () => Promise<void>;
   logout: () => void;
   clearError: () => void;
+  setHasHydrated: (hasHydrated: boolean) => void;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -27,6 +30,8 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
       isLoading: false,
+      hasHydrated: false,
+      hasCheckedSession: false,
       error: null,
 
       register: async (fullName, email, password) => {
@@ -47,6 +52,7 @@ export const useAuthStore = create<AuthState>()(
             token: response.token,
             isAuthenticated: true,
             isLoading: false,
+            hasCheckedSession: true,
             error: null,
           });
         } catch (error) {
@@ -79,6 +85,7 @@ export const useAuthStore = create<AuthState>()(
             token: response.token,
             isAuthenticated: true,
             isLoading: false,
+            hasCheckedSession: true,
             error: null,
           });
         } catch (error) {
@@ -98,15 +105,28 @@ export const useAuthStore = create<AuthState>()(
         const token = get().token;
 
         if (!token) {
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            hasCheckedSession: true,
+          });
           return;
         }
 
         try {
+          set({
+            isLoading: true,
+            error: null,
+          });
+
           const response = await authApi.me(token);
 
           set({
             user: response.user,
             isAuthenticated: true,
+            isLoading: false,
+            hasCheckedSession: true,
             error: null,
           });
         } catch {
@@ -114,6 +134,8 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             token: null,
             isAuthenticated: false,
+            isLoading: false,
+            hasCheckedSession: true,
           });
         }
       },
@@ -123,6 +145,7 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           token: null,
           isAuthenticated: false,
+          hasCheckedSession: true,
           error: null,
         }),
 
@@ -130,14 +153,20 @@ export const useAuthStore = create<AuthState>()(
         set({
           error: null,
         }),
+
+      setHasHydrated: (hasHydrated) =>
+        set({
+          hasHydrated,
+        }),
     }),
     {
       name: "nutritrack-auth-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
       partialize: (state) => ({
-        user: state.user,
         token: state.token,
-        isAuthenticated: state.isAuthenticated,
       }),
     },
   ),

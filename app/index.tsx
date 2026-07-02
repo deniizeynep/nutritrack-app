@@ -1,6 +1,13 @@
 import { router, type Href } from "expo-router";
 import { useEffect } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Button } from "../src/components/Button";
 import { Screen } from "../src/components/Screen";
 import { translate } from "../src/i18n/translations";
@@ -17,12 +24,46 @@ export default function WelcomeScreen() {
   const theme = getTheme(themeMode);
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const hasCheckedSession = useAuthStore((state) => state.hasCheckedSession);
+  const loadMe = useAuthStore((state) => state.loadMe);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (hasHydrated && !hasCheckedSession && !isLoading) {
+      loadMe();
+    }
+  }, [hasCheckedSession, hasHydrated, isLoading, loadMe]);
+
+  useEffect(() => {
+    if (hasCheckedSession && isAuthenticated) {
       router.replace("/(tabs)/home" as Href);
     }
-  }, [isAuthenticated]);
+  }, [hasCheckedSession, isAuthenticated]);
+
+  if (!hasCheckedSession) {
+    return (
+      <Screen>
+        <View
+          style={[
+            styles.loadingContainer,
+            {
+              backgroundColor: theme.colors.background,
+            },
+          ]}
+        >
+          <Text style={styles.loadingLogo}>🌿</Text>
+          <Text style={[styles.loadingTitle, { color: theme.colors.text }]}> 
+            {translate("appName", language)}
+          </Text>
+          <ActivityIndicator color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.mutedText }]}> 
+            {translate("loading", language)}
+          </Text>
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -130,6 +171,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 14,
+  },
+  loadingLogo: {
+    fontSize: 54,
+  },
+  loadingTitle: {
+    fontSize: 30,
+    fontWeight: "900",
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
   topActions: {
     flexDirection: "row",

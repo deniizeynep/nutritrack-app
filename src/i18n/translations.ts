@@ -41,6 +41,11 @@ export const translations = {
     en: "Continue for Now",
   },
 
+  loading: {
+    tr: "Yükleniyor...",
+    en: "Loading...",
+  },
+
   home: {
     tr: "Ana Sayfa",
     en: "Home",
