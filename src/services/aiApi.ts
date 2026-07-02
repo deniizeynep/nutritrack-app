@@ -1,4 +1,4 @@
-import { apiRequest } from "./apiClient";
+import { API_CONFIG } from "../config/api";
 
 export type FoodPhotoEstimate = {
   foodName: {
@@ -18,12 +18,27 @@ export type FoodPhotoEstimate = {
 };
 
 export const aiApi = {
-  analyzeFoodPhoto: (imageUri: string) => {
-    return apiRequest<FoodPhotoEstimate>("/ai/analyze-food", {
+  analyzeFoodPhoto: async (imageUri: string) => {
+    const formData = new FormData();
+
+    formData.append("photo", {
+      uri: imageUri,
+      name: "food-photo.jpg",
+      type: "image/jpeg",
+    } as unknown as Blob);
+
+    const response = await fetch(`${API_CONFIG.baseUrl}/ai/analyze-food`, {
       method: "POST",
-      body: {
-        imageUri,
-      },
+      body: formData,
     });
+
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : null;
+
+    if (!response.ok) {
+      throw new Error(data?.message || "Photo analysis failed");
+    }
+
+    return data as FoodPhotoEstimate;
   },
 };

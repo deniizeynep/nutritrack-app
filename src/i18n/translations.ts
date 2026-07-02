@@ -711,6 +711,16 @@ export const translations = {
     en: "Photo analysis failed. Please try again.",
   },
 
+  invalidPhotoFormat: {
+    tr: "Geçersiz fotoğraf formatı.",
+    en: "Invalid photo format.",
+  },
+
+  photoUploadFailed: {
+    tr: "Fotoğraf yüklenemedi. Lütfen tekrar dene.",
+    en: "Photo upload failed. Please try again.",
+  },
+
   noPhotoSelected: {
     tr: "Henüz fotoğraf seçilmedi.",
     en: "No photo selected yet.",
