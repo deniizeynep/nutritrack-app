@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  fullName     String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  meals Meal[]
+  goal  Goal?
+}
+
+model Meal {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @default("")
+  category    String
+  calories    Int
+  protein     Int      @default(0)
+  carbs       Int      @default(0)
+  fat         Int      @default(0)
+  loggedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Goal {
+  id                  String   @id @default(uuid())
+  age                 Int
+  heightCm            Int
+  weightKg            Int
+  gender              String
+  activityLevel       String
+  goalType            String
+  bmr                 Int
+  maintenanceCalories Int
+  targetCalories      Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

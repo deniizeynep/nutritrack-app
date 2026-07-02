@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,6 +16,7 @@ import { Input } from "../../src/components/Input";
 import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
+import { useAuthStore } from "../../src/stores/authStore";
 import { getTheme } from "../../src/theme/theme";
 
 export default function LoginScreen() {
@@ -24,6 +26,29 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const login = useAuthStore((state) => state.login);
+  const isLoading = useAuthStore((state) => state.isLoading);
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert(translate("requiredFields", language), "", [
+        { text: translate("ok", language) },
+      ]);
+      return;
+    }
+
+    try {
+      await login(email.trim(), password);
+      router.replace("/(tabs)/home" as Href);
+    } catch (error) {
+      Alert.alert(
+        translate("login", language),
+        error instanceof Error ? error.message : "Giriş yapılamadı.",
+        [{ text: translate("ok", language) }],
+      );
+    }
+  };
 
   return (
     <Screen>
@@ -122,8 +147,8 @@ export default function LoginScreen() {
                 </Text>
               </Pressable>
 
-              <Button onPress={() => router.replace("/(tabs)/home" as Href)}>
-                {translate("login", language)}
+              <Button onPress={handleLogin} disabled={isLoading}>
+                {isLoading ? "..." : translate("login", language)}
               </Button>
 
               <View style={styles.dividerRow}>

@@ -777,6 +777,79 @@ export const translations = {
     tr: "İptal",
     en: "Cancel",
   },
+  confirmClearMeals: {
+    tr: "Tüm öğünler temizlensin mi?",
+    en: "Clear all meals?",
+  },
+
+  confirmClearMealsMessage: {
+    tr: "Kayıtlı tüm öğünlerin kalıcı olarak silinecek.",
+    en: "All saved meals will be permanently deleted.",
+  },
+
+  confirmClearGoal: {
+    tr: "Hedef temizlensin mi?",
+    en: "Clear goal?",
+  },
+
+  confirmClearGoalMessage: {
+    tr: "Kayıtlı kalori hedefin silinecek.",
+    en: "Your saved calorie goal will be removed.",
+  },
+
+  clear: {
+    tr: "Temizle",
+    en: "Clear",
+  },
+  logout: {
+    tr: "Çıkış Yap",
+    en: "Log Out",
+  },
+
+  confirmLogout: {
+    tr: "Çıkış yapılsın mı?",
+    en: "Log out?",
+  },
+
+  confirmLogoutMessage: {
+    tr: "Hesabından çıkış yapılacak.",
+    en: "You will be logged out of your account.",
+  },
+
+  account: {
+    tr: "Hesap",
+    en: "Account",
+  },
+
+  guestUser: {
+    tr: "Misafir Kullanıcı",
+    en: "Guest User",
+  },
+
+  requiredFields: {
+    tr: "Lütfen gerekli alanları doldur.",
+    en: "Please fill in the required fields.",
+  },
+
+  passwordMismatch: {
+    tr: "Şifreler eşleşmiyor.",
+    en: "Passwords do not match.",
+  },
+
+  error: {
+    tr: "Hata",
+    en: "Error",
+  },
+
+  genericError: {
+    tr: "Bir hata oluştu. Lütfen tekrar dene.",
+    en: "Something went wrong. Please try again.",
+  },
+
+  ok: {
+    tr: "Tamam",
+    en: "OK",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,6 +16,7 @@ import { Input } from "../../src/components/Input";
 import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
+import { useAuthStore } from "../../src/stores/authStore";
 import { getTheme } from "../../src/theme/theme";
 
 export default function RegisterScreen() {
@@ -26,6 +28,36 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const register = useAuthStore((state) => state.register);
+  const isLoading = useAuthStore((state) => state.isLoading);
+
+  const handleRegister = async () => {
+    if (!fullName.trim() || !email.trim() || !password.trim()) {
+      Alert.alert(translate("requiredFields", language), "", [
+        { text: translate("ok", language) },
+      ]);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert(translate("passwordMismatch", language), "", [
+        { text: translate("ok", language) },
+      ]);
+      return;
+    }
+
+    try {
+      await register(fullName.trim(), email.trim(), password);
+      router.replace("/(tabs)/home" as Href);
+    } catch (error) {
+      Alert.alert(
+        translate("createAccount", language),
+        error instanceof Error ? error.message : "Kayıt oluşturulamadı.",
+        [{ text: translate("ok", language) }],
+      );
+    }
+  };
 
   return (
     <Screen>
@@ -133,8 +165,8 @@ export default function RegisterScreen() {
                 isPassword
               />
 
-              <Button onPress={() => router.replace("/(tabs)/home" as Href)}>
-                {translate("createAccount", language)}
+              <Button onPress={handleRegister} disabled={isLoading}>
+                {isLoading ? "..." : translate("createAccount", language)}
               </Button>
 
               <View style={styles.dividerRow}>

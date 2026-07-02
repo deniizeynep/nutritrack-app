@@ -8,6 +8,7 @@ import { router, type Href } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   StyleSheet,
   Text,
@@ -21,6 +22,7 @@ import {
   type OpenFoodProduct,
 } from "../src/services/openFoodFacts";
 import { useAppStore } from "../src/stores/appStore";
+import { useAuthStore } from "../src/stores/authStore";
 import { useMealStore } from "../src/stores/mealStore";
 import { getTheme } from "../src/theme/theme";
 
@@ -28,6 +30,7 @@ export default function ScanBarcodeScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
+  const token = useAuthStore((state) => state.token);
 
   const addMeal = useMealStore((state) => state.addMeal);
 
@@ -61,7 +64,7 @@ export default function ScanBarcodeScreen() {
       setBarcode(scannedBarcode);
       setProduct(null);
       setNotFound(false);
-      setUnsupportedBarcode(false);
+      setUnsupportedBarcode(true);
       return;
     }
 
@@ -70,6 +73,7 @@ export default function ScanBarcodeScreen() {
     setBarcode(scannedBarcode);
     setProduct(null);
     setNotFound(false);
+    setUnsupportedBarcode(false);
 
     try {
       const foundProduct = await getProductByBarcode(scannedBarcode);
@@ -96,24 +100,34 @@ export default function ScanBarcodeScreen() {
     setUnsupportedBarcode(false);
   };
 
-  const handleAddAsMeal = () => {
+  const handleAddAsMeal = async () => {
     if (!product) {
       return;
     }
 
-    addMeal({
-      title: product.name,
-      description: product.brand
-        ? `${product.brand} · ${translate("per100g", language)}`
-        : translate("per100g", language),
-      category: "snack",
-      calories: product.calories,
-      protein: product.protein,
-      carbs: product.carbs,
-      fat: product.fat,
-    });
+    try {
+      await addMeal(
+        {
+          title: product.name,
+          description: product.brand
+            ? `${product.brand} · ${translate("per100g", language)}`
+            : translate("per100g", language),
+          category: "snack",
+          calories: product.calories,
+          protein: product.protein,
+          carbs: product.carbs,
+          fat: product.fat,
+        },
+        token,
+      );
 
-    router.replace("/(tabs)/home" as Href);
+      router.replace("/(tabs)/home" as Href);
+    } catch (error) {
+      Alert.alert(
+        translate("error", language),
+        error instanceof Error ? error.message : translate("genericError", language),
+      );
+    }
   };
 
   if (!permission) {
@@ -607,7 +621,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(0,0,0,0.18)",

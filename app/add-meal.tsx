@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
 import { useMemo, useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,6 +16,7 @@ import { Input } from "../src/components/Input";
 import { Screen } from "../src/components/Screen";
 import { translate } from "../src/i18n/translations";
 import { useAppStore } from "../src/stores/appStore";
+import { useAuthStore } from "../src/stores/authStore";
 import { useMealStore, type MealCategory } from "../src/stores/mealStore";
 import { getTheme } from "../src/theme/theme";
 
@@ -22,8 +24,10 @@ export default function AddMealScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
+  const token = useAuthStore((state) => state.token);
 
   const addMeal = useMealStore((state) => state.addMeal);
+  const isLoading = useMealStore((state) => state.isLoading);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -42,23 +46,33 @@ export default function AddMealScreen() {
     return date.toISOString();
   }, [selectedDateOffset]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!canSave) {
       return;
     }
 
-    addMeal({
-      title: title.trim(),
-      description: description.trim(),
-      category,
-      calories: Number(calories),
-      protein: Number(protein) || 0,
-      carbs: Number(carbs) || 0,
-      fat: Number(fat) || 0,
-      loggedAt: selectedLoggedAt,
-    });
+    try {
+      await addMeal(
+        {
+          title: title.trim(),
+          description: description.trim(),
+          category,
+          calories: Number(calories),
+          protein: Number(protein) || 0,
+          carbs: Number(carbs) || 0,
+          fat: Number(fat) || 0,
+          loggedAt: selectedLoggedAt,
+        },
+        token,
+      );
 
-    router.replace("/(tabs)/home" as Href);
+      router.replace("/(tabs)/home" as Href);
+    } catch (error) {
+      Alert.alert(
+        translate("error", language),
+        error instanceof Error ? error.message : translate("genericError", language),
+      );
+    }
   };
 
   return (
@@ -251,7 +265,11 @@ export default function AddMealScreen() {
               </View>
             </View>
 
-            <Button onPress={handleSave} style={styles.saveButton}>
+            <Button
+              onPress={handleSave}
+              style={styles.saveButton}
+              disabled={!canSave || isLoading}
+            >
               {translate("saveMeal", language)}
             </Button>
           </View>

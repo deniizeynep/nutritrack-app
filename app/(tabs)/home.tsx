@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
+import { useEffect } from "react";
 import {
   Alert,
   Pressable,
@@ -13,8 +14,9 @@ import { MealCard } from "../../src/components/MealCard";
 import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
+import { useAuthStore } from "../../src/stores/authStore";
 import { useGoalStore } from "../../src/stores/goalStore";
-import { useMealStore } from "../../src/stores/mealStore";
+import { useMealStore, type MealCategory } from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
 
 export default function HomeScreen() {
@@ -24,9 +26,17 @@ export default function HomeScreen() {
   const setLanguage = useAppStore((state) => state.setLanguage);
 
   const theme = getTheme(themeMode);
+  const token = useAuthStore((state) => state.token);
   const goal = useGoalStore((state) => state.goal);
+  const fetchGoal = useGoalStore((state) => state.fetchGoal);
   const meals = useMealStore((state) => state.meals);
+  const fetchMeals = useMealStore((state) => state.fetchMeals);
   const deleteMeal = useMealStore((state) => state.deleteMeal);
+
+  useEffect(() => {
+    fetchMeals(token);
+    fetchGoal(token);
+  }, [fetchGoal, fetchMeals, token]);
 
   const todayKey = new Date().toISOString().slice(0, 10);
 
@@ -68,7 +78,7 @@ export default function HomeScreen() {
         {
           text: translate("deleteMeal", language),
           style: "destructive",
-          onPress: () => deleteMeal(mealId),
+          onPress: () => deleteMeal(mealId, token),
         },
       ],
     );

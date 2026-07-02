@@ -1,9 +1,11 @@
 import { router, type Href } from "expo-router";
+import { useEffect } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "../src/components/Button";
 import { Screen } from "../src/components/Screen";
 import { translate } from "../src/i18n/translations";
 import { useAppStore } from "../src/stores/appStore";
+import { useAuthStore } from "../src/stores/authStore";
 import { getTheme } from "../src/theme/theme";
 
 export default function WelcomeScreen() {
@@ -13,6 +15,14 @@ export default function WelcomeScreen() {
   const setLanguage = useAppStore((state) => state.setLanguage);
 
   const theme = getTheme(themeMode);
+
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/(tabs)/home" as Href);
+    }
+  }, [isAuthenticated]);
 
   return (
     <Screen>

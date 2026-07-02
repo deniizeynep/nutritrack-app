@@ -4,6 +4,7 @@ import { router, type Href } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -15,6 +16,7 @@ import { Button } from "../src/components/Button";
 import { Screen } from "../src/components/Screen";
 import { translate } from "../src/i18n/translations";
 import { useAppStore } from "../src/stores/appStore";
+import { useAuthStore } from "../src/stores/authStore";
 import { useMealStore } from "../src/stores/mealStore";
 import { getTheme } from "../src/theme/theme";
 
@@ -81,6 +83,7 @@ export default function ScanPhotoScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
+  const token = useAuthStore((state) => state.token);
 
   const addMeal = useMealStore((state) => state.addMeal);
 
@@ -149,25 +152,35 @@ export default function ScanPhotoScreen() {
     }, 1200);
   };
 
-  const addEstimateAsMeal = () => {
+  const addEstimateAsMeal = async () => {
     if (!estimate) {
       return;
     }
 
-    addMeal({
-      title: estimate.foodName,
-      description:
-        language === "tr"
-          ? "Fotoğraftan tahmini olarak eklendi"
-          : "Added from photo estimate",
-      category: "lunch",
-      calories: estimate.calories,
-      protein: estimate.protein,
-      carbs: estimate.carbs,
-      fat: estimate.fat,
-    });
+    try {
+      await addMeal(
+        {
+          title: estimate.foodName[language],
+          description:
+            language === "tr"
+              ? "Fotoğraftan tahmini olarak eklendi"
+              : "Added from photo estimate",
+          category: "lunch",
+          calories: estimate.calories,
+          protein: estimate.protein,
+          carbs: estimate.carbs,
+          fat: estimate.fat,
+        },
+        token,
+      );
 
-    router.replace("/(tabs)/home" as Href);
+      router.replace("/(tabs)/home" as Href);
+    } catch (error) {
+      Alert.alert(
+        translate("error", language),
+        error instanceof Error ? error.message : translate("genericError", language),
+      );
+    }
   };
 
   return (

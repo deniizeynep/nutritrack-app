@@ -1,10 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { goalApi } from "../services/goalApi";
 import type {
-    ActivityLevel,
-    Gender,
-    GoalType,
+  ActivityLevel,
+  Gender,
+  GoalType,
 } from "../utils/calorieCalculator";
 
 export type GoalData = {
@@ -21,22 +22,102 @@ export type GoalData = {
 
 type GoalState = {
   goal: GoalData | null;
-  setGoal: (goal: GoalData) => void;
-  clearGoal: () => void;
+  isLoading: boolean;
+  error: string | null;
+  fetchGoal: (token?: string | null) => Promise<void>;
+  setGoal: (goal: GoalData, token?: string | null) => Promise<void>;
+  clearGoal: (token?: string | null) => Promise<void>;
+  clearError: () => void;
 };
 
 export const useGoalStore = create<GoalState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       goal: null,
+      isLoading: false,
+      error: null,
 
-      setGoal: (goal) => set({ goal }),
+      fetchGoal: async (token) => {
+        if (!token) {
+          return;
+        }
 
-      clearGoal: () => set({ goal: null }),
+        try {
+          set({ isLoading: true, error: null });
+
+          const response = await goalApi.getGoal(token);
+
+          set({
+            goal: response.goal,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error:
+              error instanceof Error ? error.message : "Hedef bilgisi alınamadı.",
+          });
+        }
+      },
+
+      setGoal: async (goal, token) => {
+        if (!token) {
+          set({ goal });
+          return;
+        }
+
+        try {
+          set({ isLoading: true, error: null });
+
+          const response = await goalApi.saveGoal(goal, token);
+
+          set({
+            goal: response.goal,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error:
+              error instanceof Error ? error.message : "Hedef kaydedilemedi.",
+          });
+
+          throw error;
+        }
+      },
+
+      clearGoal: async (token) => {
+        const previousGoal = get().goal;
+
+        set({ goal: null });
+
+        if (!token) {
+          return;
+        }
+
+        try {
+          await goalApi.deleteGoal(token);
+        } catch (error) {
+          set({
+            goal: previousGoal,
+            error:
+              error instanceof Error ? error.message : "Hedef silinemedi.",
+          });
+
+          throw error;
+        }
+      },
+
+      clearError: () => set({ error: null }),
     }),
     {
       name: "nutritrack-goal-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        goal: state.goal,
+      }),
     },
   ),
 );

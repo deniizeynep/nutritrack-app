@@ -1,26 +1,27 @@
 import { LinearGradient } from "expo-linear-gradient";
-import type { ReactNode } from "react";
 import {
   Pressable,
   StyleSheet,
   Text,
-  type PressableProps,
   type ViewStyle,
 } from "react-native";
 import { useAppStore } from "../stores/appStore";
 import { getTheme } from "../theme/theme";
 
-type ButtonProps = PressableProps & {
-  children: ReactNode;
+type ButtonProps = {
+  children: React.ReactNode;
+  onPress: () => void;
   variant?: "primary" | "secondary";
   style?: ViewStyle;
+  disabled?: boolean;
 };
 
 export function Button({
   children,
+  onPress,
   variant = "primary",
   style,
-  ...props
+  disabled = false,
 }: ButtonProps) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
@@ -33,11 +34,12 @@ export function Button({
         style={({ pressed }) => [
           styles.pressable,
           {
-            opacity: pressed ? 0.85 : 1,
+            opacity: disabled ? 0.55 : pressed ? 0.86 : 1,
           },
           style,
         ]}
-        {...props}
+        onPress={onPress}
+        disabled={disabled}
       >
         <LinearGradient
           colors={
@@ -62,11 +64,12 @@ export function Button({
         {
           backgroundColor: theme.colors.card,
           borderColor: theme.colors.border,
-          opacity: pressed ? 0.8 : 1,
+          opacity: disabled ? 0.55 : pressed ? 0.8 : 1,
         },
         style,
       ]}
-      {...props}
+      onPress={onPress}
+      disabled={disabled}
     >
       <Text style={[styles.secondaryText, { color: theme.colors.text }]}>
         {children}

@@ -1,33 +1,38 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { Button } from "../src/components/Button";
 import { Input } from "../src/components/Input";
 import { Screen } from "../src/components/Screen";
 import { translate } from "../src/i18n/translations";
 import { useAppStore } from "../src/stores/appStore";
+import { useAuthStore } from "../src/stores/authStore";
 import { useGoalStore } from "../src/stores/goalStore";
 import { getTheme } from "../src/theme/theme";
 import {
-    calculateDailyCalories,
-    type ActivityLevel,
-    type Gender,
-    type GoalType,
+  calculateDailyCalories,
+  type ActivityLevel,
+  type Gender,
+  type GoalType,
 } from "../src/utils/calorieCalculator";
 
 export default function GoalScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
+  const token = useAuthStore((state) => state.token);
+  const savedGoal = useGoalStore((state) => state.goal);
+  const isLoading = useGoalStore((state) => state.isLoading);
   const setGoal = useGoalStore((state) => state.setGoal);
 
   const [age, setAge] = useState("");
@@ -37,6 +42,19 @@ export default function GoalScreen() {
   const [gender, setGender] = useState<Gender>("female");
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>("moderate");
   const [goalType, setGoalType] = useState<GoalType>("maintain");
+
+  useEffect(() => {
+    if (!savedGoal) {
+      return;
+    }
+
+    setAge(String(savedGoal.age));
+    setHeightCm(String(savedGoal.heightCm));
+    setWeightKg(String(savedGoal.weightKg));
+    setGender(savedGoal.gender);
+    setActivityLevel(savedGoal.activityLevel);
+    setGoalType(savedGoal.goalType);
+  }, [savedGoal]);
 
   const result = useMemo(() => {
     const parsedAge = Number(age);
@@ -57,24 +75,34 @@ export default function GoalScreen() {
     });
   }, [age, heightCm, weightKg, gender, activityLevel, goalType]);
 
-  const handleSaveGoal = () => {
+  const handleSaveGoal = async () => {
     if (!result) {
       return;
     }
 
-    setGoal({
-      age: Number(age),
-      heightCm: Number(heightCm),
-      weightKg: Number(weightKg),
-      gender,
-      activityLevel,
-      goalType,
-      bmr: result.bmr,
-      maintenanceCalories: result.maintenanceCalories,
-      targetCalories: result.targetCalories,
-    });
+    try {
+      await setGoal(
+        {
+          age: Number(age),
+          heightCm: Number(heightCm),
+          weightKg: Number(weightKg),
+          gender,
+          activityLevel,
+          goalType,
+          bmr: result.bmr,
+          maintenanceCalories: result.maintenanceCalories,
+          targetCalories: result.targetCalories,
+        },
+        token,
+      );
 
-    router.replace("/(tabs)/home" as Href);
+      router.replace("/(tabs)/home" as Href);
+    } catch (error) {
+      Alert.alert(
+        translate("error", language),
+        error instanceof Error ? error.message : translate("genericError", language),
+      );
+    }
   };
 
   return (
@@ -263,7 +291,11 @@ export default function GoalScreen() {
               />
             </View>
 
-            <Button onPress={handleSaveGoal} style={styles.calculateButton}>
+            <Button
+              onPress={handleSaveGoal}
+              style={styles.calculateButton}
+              disabled={!result || isLoading}
+            >
               {result
                 ? translate("saveGoal", language)
                 : translate("fillInfoToCalculate", language)}

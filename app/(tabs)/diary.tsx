@@ -13,6 +13,7 @@ import { MealCard } from "../../src/components/MealCard";
 import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
+import { useAuthStore } from "../../src/stores/authStore";
 import { useGoalStore } from "../../src/stores/goalStore";
 import {
   useMealStore,
@@ -34,6 +35,7 @@ export default function DiaryScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
+  const token = useAuthStore((state) => state.token);
 
   const meals = useMealStore((state) => state.meals);
   const deleteMeal = useMealStore((state) => state.deleteMeal);
@@ -50,7 +52,7 @@ export default function DiaryScreen() {
         {
           text: translate("deleteMeal", language),
           style: "destructive",
-          onPress: () => deleteMeal(mealId),
+          onPress: () => deleteMeal(mealId, token),
         },
       ],
     );

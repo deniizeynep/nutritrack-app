@@ -1,9 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
+import { useAuthStore } from "../../src/stores/authStore";
 import { useGoalStore } from "../../src/stores/goalStore";
 import { useMealStore } from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
@@ -19,9 +27,72 @@ export default function ProfileScreen() {
   const clearMeals = useMealStore((state) => state.clearMeals);
   const meals = useMealStore((state) => state.meals);
 
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const logout = useAuthStore((state) => state.logout);
+
   const theme = getTheme(themeMode);
 
   const totalCalories = meals.reduce((total, meal) => total + meal.calories, 0);
+
+  const confirmLogout = () => {
+    Alert.alert(
+      translate("confirmLogout", language),
+      translate("confirmLogoutMessage", language),
+      [
+        {
+          text: translate("cancel", language),
+          style: "cancel",
+        },
+        {
+          text: translate("logout", language),
+          style: "destructive",
+          onPress: () => {
+            clearMeals();
+            clearGoal();
+            logout();
+            router.replace("/" as Href);
+          },
+        },
+      ],
+    );
+  };
+
+  const confirmClearMeals = () => {
+    Alert.alert(
+      translate("confirmClearMeals", language),
+      translate("confirmClearMealsMessage", language),
+      [
+        {
+          text: translate("cancel", language),
+          style: "cancel",
+        },
+        {
+          text: translate("clear", language),
+          style: "destructive",
+          onPress: () => clearMeals(token),
+        },
+      ],
+    );
+  };
+
+  const confirmClearGoal = () => {
+    Alert.alert(
+      translate("confirmClearGoal", language),
+      translate("confirmClearGoalMessage", language),
+      [
+        {
+          text: translate("cancel", language),
+          style: "cancel",
+        },
+        {
+          text: translate("clear", language),
+          style: "destructive",
+          onPress: () => clearGoal(token),
+        },
+      ],
+    );
+  };
 
   return (
     <Screen>
@@ -47,11 +118,11 @@ export default function ProfileScreen() {
           </View>
 
           <Text style={[styles.title, { color: theme.colors.text }]}>
-            {translate("profile", language)}
+            {user?.fullName || translate("guestUser", language)}
           </Text>
 
           <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
-            {translate("profileSubtitle", language)}
+            {user?.email || translate("profileSubtitle", language)}
           </Text>
         </View>
 
@@ -179,13 +250,28 @@ export default function ProfileScreen() {
           <DangerRow
             icon="trash-outline"
             label={translate("clearMeals", language)}
-            onPress={clearMeals}
+            onPress={confirmClearMeals}
           />
 
           <DangerRow
             icon="close-circle-outline"
             label={translate("clearGoal", language)}
-            onPress={clearGoal}
+            onPress={confirmClearGoal}
+          />
+        </Section>
+
+        <Section title={translate("account", language)}>
+          <SettingRow
+            icon="mail-outline"
+            label={translate("email", language)}
+            value={user?.email || "-"}
+            onPress={() => {}}
+          />
+
+          <DangerRow
+            icon="log-out-outline"
+            label={translate("logout", language)}
+            onPress={confirmLogout}
           />
         </Section>
       </ScrollView>

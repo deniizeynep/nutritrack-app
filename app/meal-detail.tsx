@@ -16,6 +16,7 @@ import { Input } from "../src/components/Input";
 import { Screen } from "../src/components/Screen";
 import { translate } from "../src/i18n/translations";
 import { useAppStore } from "../src/stores/appStore";
+import { useAuthStore } from "../src/stores/authStore";
 import { useMealStore, type MealCategory } from "../src/stores/mealStore";
 import { getTheme } from "../src/theme/theme";
 
@@ -25,8 +26,10 @@ export default function MealDetailScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
+  const token = useAuthStore((state) => state.token);
 
   const meals = useMealStore((state) => state.meals);
+  const isLoading = useMealStore((state) => state.isLoading);
   const updateMeal = useMealStore((state) => state.updateMeal);
   const deleteMeal = useMealStore((state) => state.deleteMeal);
 
@@ -56,22 +59,33 @@ export default function MealDetailScreen() {
 
   const canSave = meal && title.trim() && Number(calories) > 0;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!meal || !canSave) {
       return;
     }
 
-    updateMeal(meal.id, {
-      title: title.trim(),
-      description: description.trim(),
-      category,
-      calories: Number(calories),
-      protein: Number(protein) || 0,
-      carbs: Number(carbs) || 0,
-      fat: Number(fat) || 0,
-    });
+    try {
+      await updateMeal(
+        meal.id,
+        {
+          title: title.trim(),
+          description: description.trim(),
+          category,
+          calories: Number(calories),
+          protein: Number(protein) || 0,
+          carbs: Number(carbs) || 0,
+          fat: Number(fat) || 0,
+        },
+        token,
+      );
 
-    router.back();
+      router.back();
+    } catch (error) {
+      Alert.alert(
+        translate("error", language),
+        error instanceof Error ? error.message : translate("genericError", language),
+      );
+    }
   };
 
   const handleDelete = () => {
@@ -90,9 +104,18 @@ export default function MealDetailScreen() {
         {
           text: translate("deleteMeal", language),
           style: "destructive",
-          onPress: () => {
-            deleteMeal(meal.id);
-            router.back();
+          onPress: async () => {
+            try {
+              await deleteMeal(meal.id, token);
+              router.back();
+            } catch (error) {
+              Alert.alert(
+                translate("error", language),
+                error instanceof Error
+                  ? error.message
+                  : translate("genericError", language),
+              );
+            }
           },
         },
       ],
@@ -332,7 +355,11 @@ export default function MealDetailScreen() {
               </View>
             </View>
 
-            <Button onPress={handleSave} style={styles.saveButton}>
+            <Button
+              onPress={handleSave}
+              style={styles.saveButton}
+              disabled={!canSave || isLoading}
+            >
               {translate("saveChanges", language)}
             </Button>
 
@@ -340,6 +367,7 @@ export default function MealDetailScreen() {
               variant="secondary"
               onPress={handleDelete}
               style={styles.deleteButton}
+              disabled={isLoading}
             >
               {translate("deleteMeal", language)}
             </Button>
