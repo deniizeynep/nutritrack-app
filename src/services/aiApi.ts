@@ -18,7 +18,7 @@ export type FoodPhotoEstimate = {
 };
 
 export const aiApi = {
-  analyzeFoodPhoto: async (imageUri: string) => {
+  analyzeFoodPhoto: async (imageUri: string, token?: string | null) => {
     const formData = new FormData();
 
     formData.append("photo", {
@@ -29,6 +29,9 @@ export const aiApi = {
 
     const response = await fetch(`${API_CONFIG.baseUrl}/ai/analyze-food`, {
       method: "POST",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: formData,
     });
 

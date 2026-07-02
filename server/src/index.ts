@@ -11,8 +11,15 @@ import mealRoutes from "./routes/meal.routes";
 const app = express();
 
 const port = Number(process.env.PORT) || 5000;
+const corsOrigin = process.env.CORS_ORIGIN || "*";
 
-app.use(cors());
+app.set("trust proxy", 1);
+
+app.use(
+  cors({
+    origin: corsOrigin === "*" ? true : corsOrigin,
+  }),
+);
 app.use(express.json());
 app.use("/api/ai", aiRoutes);
 app.use("/api/auth", authRoutes);

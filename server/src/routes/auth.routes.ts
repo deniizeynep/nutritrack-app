@@ -3,6 +3,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { authMiddleware, type AuthRequest } from "../middleware/authMiddleware";
+import { authRateLimiter } from "../middleware/rateLimit";
 import { createToken } from "../utils/token";
 
 const router = Router();
@@ -26,7 +27,7 @@ function formatUser(user: { id: string; fullName: string; email: string }) {
   };
 }
 
-router.post("/register", async (req, res) => {
+router.post("/register", authRateLimiter, async (req, res) => {
   try {
     const parsed = registerSchema.safeParse(req.body);
 
@@ -78,7 +79,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", authRateLimiter, async (req, res) => {
   try {
     const parsed = loginSchema.safeParse(req.body);
 
@@ -166,6 +167,48 @@ router.get("/me", authMiddleware, async (req, res) => {
 
     res.status(500).json({
       message: "Kullanıcı bilgileri alınamadı.",
+    });
+  }
+});
+
+router.delete("/me", authMiddleware, async (req, res) => {
+  try {
+    const userId = (req as AuthRequest).userId;
+
+    if (!userId) {
+      res.status(401).json({
+        message: "Kullanıcı doğrulanamadı.",
+      });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      res.status(404).json({
+        message: "Kullanıcı bulunamadı.",
+      });
+      return;
+    }
+
+    await prisma.user.delete({
+      where: {
+        id: userId,
+      },
+    });
+
+    res.json({
+      message: "Hesap silindi.",
+    });
+  } catch (error) {
+    console.error("DELETE ACCOUNT ERROR:", error);
+
+    res.status(500).json({
+      message: "Hesap silinemedi.",
     });
   }
 });

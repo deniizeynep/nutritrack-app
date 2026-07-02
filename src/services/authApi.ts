@@ -46,4 +46,11 @@ export const authApi = {
       token,
     });
   },
+
+  deleteAccount: (token: string) => {
+    return apiRequest<{ message: string }>("/auth/me", {
+      method: "DELETE",
+      token,
+    });
+  },
 };

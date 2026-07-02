@@ -87,11 +87,19 @@ export default function ScanPhotoScreen() {
       return;
     }
 
+    if (!token) {
+      Alert.alert(
+        translate("loginRequired", language),
+        translate("loginRequiredForAi", language),
+      );
+      return;
+    }
+
     setIsAnalyzing(true);
     setEstimate(null);
 
     try {
-      const result = await aiApi.analyzeFoodPhoto(imageUri);
+      const result = await aiApi.analyzeFoodPhoto(imageUri, token);
       setEstimate(result);
     } catch {
       Alert.alert(

@@ -18,6 +18,7 @@ type AuthState = {
   ) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   loadMe: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   logout: () => void;
   clearError: () => void;
   setHasHydrated: (hasHydrated: boolean) => void;
@@ -148,6 +149,47 @@ export const useAuthStore = create<AuthState>()(
           hasCheckedSession: true,
           error: null,
         }),
+
+      deleteAccount: async () => {
+        const token = get().token;
+
+        if (!token) {
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            hasCheckedSession: true,
+            error: null,
+          });
+          return;
+        }
+
+        try {
+          set({
+            isLoading: true,
+            error: null,
+          });
+
+          await authApi.deleteAccount(token);
+
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            isLoading: false,
+            hasCheckedSession: true,
+            error: null,
+          });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error:
+              error instanceof Error ? error.message : "Hesap silinemedi.",
+          });
+
+          throw error;
+        }
+      },
 
       clearError: () =>
         set({

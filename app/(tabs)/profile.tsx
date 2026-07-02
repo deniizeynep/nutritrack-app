@@ -30,6 +30,7 @@ export default function ProfileScreen() {
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const logout = useAuthStore((state) => state.logout);
+  const deleteAccount = useAuthStore((state) => state.deleteAccount);
 
   const theme = getTheme(themeMode);
 
@@ -89,6 +90,38 @@ export default function ProfileScreen() {
           text: translate("clear", language),
           style: "destructive",
           onPress: () => clearGoal(token),
+        },
+      ],
+    );
+  };
+
+  const confirmDeleteAccount = () => {
+    Alert.alert(
+      translate("confirmDeleteAccount", language),
+      translate("confirmDeleteAccountMessage", language),
+      [
+        {
+          text: translate("cancel", language),
+          style: "cancel",
+        },
+        {
+          text: translate("deleteAccount", language),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              clearMeals();
+              clearGoal();
+              router.replace("/" as Href);
+            } catch (error) {
+              Alert.alert(
+                translate("error", language),
+                error instanceof Error
+                  ? error.message
+                  : translate("accountDeleteFailed", language),
+              );
+            }
+          },
         },
       ],
     );
@@ -272,6 +305,12 @@ export default function ProfileScreen() {
             icon="log-out-outline"
             label={translate("logout", language)}
             onPress={confirmLogout}
+          />
+
+          <DangerRow
+            icon="person-remove-outline"
+            label={translate("deleteAccount", language)}
+            onPress={confirmDeleteAccount}
           />
         </Section>
       </ScrollView>

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "nutritrack",
+    "name": "NutriTrack",
     "slug": "nutritrack",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,6 +11,9 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.zeynepdeniz.nutritrack",
+      "versionCode": 1,
+      "permissions": ["CAMERA"],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

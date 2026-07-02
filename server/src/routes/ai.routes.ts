@@ -1,7 +1,11 @@
 import { Router } from "express";
 import multer from "multer";
+import { authMiddleware } from "../middleware/authMiddleware";
+import { aiRateLimiter } from "../middleware/rateLimit";
 
 const router = Router();
+
+router.use(authMiddleware);
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -20,7 +24,7 @@ const upload = multer({
   },
 });
 
-router.post("/analyze-food", (req, res) => {
+router.post("/analyze-food", aiRateLimiter, (req, res) => {
   upload.single("photo")(req, res, (error) => {
     if (error) {
       res.status(400).json({

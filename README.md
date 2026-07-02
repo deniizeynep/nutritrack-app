@@ -1,56 +1,140 @@
-# Welcome to your Expo app 👋
+# NutriTrack
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+NutriTrack is a React Native / Expo calorie tracking app with a Node.js, Express, Prisma and PostgreSQL backend.
 
-## Get started
+## Environment
 
-1. Install dependencies
+Do not commit real `.env` files. Use the example files as templates.
 
-   ```bash
-   npm install
-   ```
+Mobile `.env`:
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```env
+EXPO_PUBLIC_API_URL=http://YOUR_COMPUTER_IP:5000/api
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+For Expo Go on a physical phone, do not use `localhost`. Use your computer's LAN IP. For production APK builds, set `EXPO_PUBLIC_API_URL` to the live backend URL.
 
-### Other setup steps
+Server `.env`:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
+JWT_SECRET="generate_a_secure_secret_with_openssl_rand_base64_32"
+PORT=5000
+CORS_ORIGIN="*"
+```
 
-## Learn more
+Generate a JWT secret with:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+openssl rand -base64 32
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Backend
 
-## Join the community
+Install and run the API:
 
-Join our community of developers creating universal apps.
+```bash
+cd server
+npm install
+npm run db:migrate
+npm run dev
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+The API listens on `0.0.0.0:5000` by default so phones on the same Wi-Fi can reach it.
+
+## Deployment
+
+Server build command:
+
+```bash
+cd server && npm install && npm run db:generate && npm run build
+```
+
+Server start command:
+
+```bash
+cd server && npm run start
+```
+
+The production start script runs the compiled API from `dist/src/index.js`.
+
+Production migration command:
+
+```bash
+cd server && npm run db:deploy
+```
+
+Production backend environment variables:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `PORT`
+- `CORS_ORIGIN`
+
+Backend Docker build example:
+
+```bash
+cd server && docker build -t nutritrack-api .
+```
+
+Backend Docker run example:
+
+```bash
+docker run -p 5000:5000 --env-file .env nutritrack-api
+```
+
+In production, provide real environment variables through the deploy platform instead of baking them into the image. Run production migrations with `npm run db:deploy`. After deploy, check `/api/health` to verify the API and database connection.
+
+Mobile production `.env`:
+
+```env
+EXPO_PUBLIC_API_URL=https://YOUR_BACKEND_URL/api
+```
+
+## Android Builds
+
+Install EAS CLI:
+
+```bash
+npm install -g eas-cli
+```
+
+Login and configure the project:
+
+```bash
+eas login
+eas build:configure
+```
+
+Build a preview APK for internal testing:
+
+```bash
+eas build -p android --profile preview
+```
+
+Build a production AAB for Google Play:
+
+```bash
+eas build -p android --profile production
+```
+
+Before creating an APK or AAB, set `EXPO_PUBLIC_API_URL` to the live backend URL. If you build with a local IP address, the app will not reach the backend on your friends' phones. Deploy the backend first, then build the Android app.
+
+## Mobile
+
+Install and run the Expo app:
+
+```bash
+npm install
+npx expo start
+```
+
+## Security Notes
+
+- Keep `DATABASE_URL`, `JWT_SECRET`, AI keys and other secrets only on the backend.
+- Do not put database URLs or secret keys in the mobile app.
+- Commit `.env.example` files, not real `.env` files.
+- Configure `CORS_ORIGIN` to a specific origin in production when needed.
+- Auth register/login endpoints use rate limiting.
+- The AI photo analysis endpoint requires authentication and uses rate limiting.
+- Rate limit values can be made configurable with environment variables later.

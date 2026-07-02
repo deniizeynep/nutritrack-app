@@ -31,6 +31,16 @@ export const translations = {
     en: "Log In",
   },
 
+  loginRequired: {
+    tr: "Giriş gerekli",
+    en: "Login required",
+  },
+
+  loginRequiredForAi: {
+    tr: "Fotoğraf analizi için giriş yapmalısın.",
+    en: "You need to log in to analyze food photos.",
+  },
+
   createAccount: {
     tr: "Hesap Oluştur",
     en: "Create Account",
@@ -844,6 +854,31 @@ export const translations = {
   account: {
     tr: "Hesap",
     en: "Account",
+  },
+
+  deleteAccount: {
+    tr: "Hesabı Sil",
+    en: "Delete Account",
+  },
+
+  confirmDeleteAccount: {
+    tr: "Hesap silinsin mi?",
+    en: "Delete account?",
+  },
+
+  confirmDeleteAccountMessage: {
+    tr: "Hesabın, öğünlerin ve hedef bilgilerin kalıcı olarak silinecek.",
+    en: "Your account, meals and goal data will be permanently deleted.",
+  },
+
+  accountDeleted: {
+    tr: "Hesap silindi.",
+    en: "Account deleted.",
+  },
+
+  accountDeleteFailed: {
+    tr: "Hesap silinemedi. Lütfen tekrar dene.",
+    en: "Account could not be deleted. Please try again.",
   },
 
   guestUser: {
