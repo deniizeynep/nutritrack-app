@@ -21,6 +21,11 @@ DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
 JWT_SECRET="generate_a_secure_secret_with_openssl_rand_base64_32"
 PORT=5000
 CORS_ORIGIN="*"
+OPENAI_API_KEY="your_openai_api_key_here"
+OPENAI_FOOD_MODEL="gpt-4o-mini"
+GEMINI_API_KEY="your_gemini_api_key_here"
+GEMINI_FOOD_MODEL="gemini-2.5-flash"
+AI_PROVIDER="mock"
 ```
 
 Generate a JWT secret with:
@@ -41,6 +46,34 @@ npm run dev
 ```
 
 The API listens on `0.0.0.0:5000` by default so phones on the same Wi-Fi can reach it.
+
+## Backend Smoke Test
+
+Run the backend in one terminal:
+
+```bash
+cd server
+npm run dev
+```
+
+Run the smoke test in another terminal:
+
+```bash
+cd server
+npm run test:smoke
+PHOTO_PATH="$HOME/Downloads/food.jpg" npm run test:ai-upload
+npm run test:barcode
+```
+
+Use a deployed API URL:
+
+```bash
+API_URL=https://YOUR_BACKEND_URL/api npm run test:smoke
+API_URL=https://YOUR_BACKEND_URL/api PHOTO_PATH="$HOME/Downloads/food.jpg" npm run test:ai-upload
+API_URL=https://YOUR_BACKEND_URL/api npm run test:barcode
+```
+
+The smoke test covers health, auth, meal and goal endpoints. AI photo upload has a separate multipart test script. Barcode lookup has a separate script because it depends on the external Open Food Facts API.
 
 ## Deployment
 
@@ -70,6 +103,11 @@ Production backend environment variables:
 - `JWT_SECRET`
 - `PORT`
 - `CORS_ORIGIN`
+- `AI_PROVIDER`
+- `OPENAI_API_KEY`
+- `OPENAI_FOOD_MODEL`
+- `GEMINI_API_KEY`
+- `GEMINI_FOOD_MODEL`
 
 Backend Docker build example:
 
@@ -84,6 +122,12 @@ docker run -p 5000:5000 --env-file .env nutritrack-api
 ```
 
 In production, provide real environment variables through the deploy platform instead of baking them into the image. Run production migrations with `npm run db:deploy`. After deploy, check `/api/health` to verify the API and database connection.
+
+Food photo analysis uses `AI_PROVIDER=mock` by default. Use `AI_PROVIDER=openai` with `OPENAI_API_KEY` and `OPENAI_FOOD_MODEL` for OpenAI. Use `AI_PROVIDER=gemini` with `GEMINI_API_KEY` and `GEMINI_FOOD_MODEL` for Gemini. AI keys stay only in the server `.env`; never put them in the mobile app. Provider free tiers may be limited. Food analysis is an estimate and users should be able to edit the result.
+
+## AI Gateway
+
+The backend is structured as an AI Gateway so future mobile or web apps can call this backend instead of integrating AI providers directly. Provider selection is controlled by environment variables: `AI_PROVIDER=mock`, `AI_PROVIDER=gemini`, or `AI_PROVIDER=openai`. API keys stay only in the backend environment. AI usage metadata is stored in the database, including app name, feature, provider, model, input type, status, duration and safe error details. Photos, base64 payloads and API keys are not stored. Users can fetch their own recent usage with `GET /api/ai/usage/me`.
 
 Mobile production `.env`:
 

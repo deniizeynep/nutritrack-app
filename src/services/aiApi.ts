@@ -1,3 +1,4 @@
+import * as FileSystem from "expo-file-system/legacy";
 import { API_CONFIG } from "../config/api";
 
 export type FoodPhotoEstimate = {
@@ -17,29 +18,83 @@ export type FoodPhotoEstimate = {
   source: "mock" | "ai";
 };
 
+function detectMimeTypeFromUri(imageUri: string) {
+  const cleanUri = imageUri.split("?")[0] ?? imageUri;
+  const extension = cleanUri.split(".").pop()?.toLowerCase();
+
+  if (extension === "jpg" || extension === "jpeg") {
+    return "image/jpeg";
+  }
+
+  if (extension === "png") {
+    return "image/png";
+  }
+
+  if (extension === "webp") {
+    return "image/webp";
+  }
+
+  return "image/jpeg";
+}
+
+function getFileNameFromUri(imageUri: string, mimeType: string) {
+  const cleanUri = imageUri.split("?")[0] ?? imageUri;
+  const uriName = cleanUri.split("/").pop();
+
+  if (uriName?.includes(".")) {
+    return uriName;
+  }
+
+  const extension =
+    mimeType === "image/png"
+      ? "png"
+      : mimeType === "image/webp"
+        ? "webp"
+        : "jpg";
+
+  return `food-photo.${extension}`;
+}
+
 export const aiApi = {
   analyzeFoodPhoto: async (imageUri: string, token?: string | null) => {
-    const formData = new FormData();
+    const mimeType = detectMimeTypeFromUri(imageUri);
+    const fileName = getFileNameFromUri(imageUri, mimeType);
+    const uploadUrl = `${API_CONFIG.baseUrl}/ai/analyze-food`;
 
-    formData.append("photo", {
-      uri: imageUri,
-      name: "food-photo.jpg",
-      type: "image/jpeg",
-    } as unknown as Blob);
+    console.log("AI PHOTO UPLOAD DEBUG:", {
+      apiUrl: API_CONFIG.baseUrl,
+      uploadMethod: "expo-file-system",
+      hasToken: Boolean(token),
+      imageUri,
+      mimeType,
+      fileName,
+    });
 
-    const response = await fetch(`${API_CONFIG.baseUrl}/ai/analyze-food`, {
-      method: "POST",
+    const uploadResult = await FileSystem.uploadAsync(uploadUrl, imageUri, {
+      httpMethod: "POST",
+      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+      fieldName: "photo",
+      mimeType,
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: formData,
     });
 
-    const text = await response.text();
-    const data = text ? JSON.parse(text) : null;
+    let data: unknown = null;
 
-    if (!response.ok) {
-      throw new Error(data?.message || "Photo analysis failed");
+    try {
+      data = uploadResult.body ? JSON.parse(uploadResult.body) : null;
+    } catch {
+      throw new Error("AI yanıtı okunamadı.");
+    }
+
+    if (uploadResult.status < 200 || uploadResult.status >= 300) {
+      const message =
+        data && typeof data === "object" && "message" in data
+          ? String(data.message)
+          : "Fotoğraf analizi yapılamadı.";
+
+      throw new Error(message);
     }
 
     return data as FoodPhotoEstimate;

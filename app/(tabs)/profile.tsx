@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -9,7 +10,10 @@ import {
   View,
 } from "react-native";
 import { Screen } from "../../src/components/Screen";
+import { API_CONFIG } from "../../src/config/api";
 import { translate } from "../../src/i18n/translations";
+import { healthApi } from "../../src/services/healthApi";
+import { useAiUsageStore } from "../../src/stores/aiUsageStore";
 import { useAppStore } from "../../src/stores/appStore";
 import { useAuthStore } from "../../src/stores/authStore";
 import { useGoalStore } from "../../src/stores/goalStore";
@@ -31,10 +35,31 @@ export default function ProfileScreen() {
   const token = useAuthStore((state) => state.token);
   const logout = useAuthStore((state) => state.logout);
   const deleteAccount = useAuthStore((state) => state.deleteAccount);
+  const [isCheckingApi, setIsCheckingApi] = useState(false);
+
+  const aiUsageItems = useAiUsageStore((state) => state.items);
+  const aiUsageSummary = useAiUsageStore((state) => state.summary);
+  const isAiUsageLoading = useAiUsageStore((state) => state.isLoading);
+  const aiUsageError = useAiUsageStore((state) => state.error);
+  const fetchMyAiUsage = useAiUsageStore((state) => state.fetchMyAiUsage);
+  const clearAiUsage = useAiUsageStore((state) => state.clearAiUsage);
 
   const theme = getTheme(themeMode);
 
   const totalCalories = meals.reduce((total, meal) => total + meal.calories, 0);
+  const lastAiUsage = aiUsageItems[0];
+  const lastAiProvider = lastAiUsage
+    ? [lastAiUsage.provider, lastAiUsage.model].filter(Boolean).join(" / ")
+    : null;
+
+  useEffect(() => {
+    if (!token) {
+      clearAiUsage();
+      return;
+    }
+
+    fetchMyAiUsage(token);
+  }, [clearAiUsage, fetchMyAiUsage, token]);
 
   const confirmLogout = () => {
     Alert.alert(
@@ -51,6 +76,7 @@ export default function ProfileScreen() {
           onPress: () => {
             clearMeals();
             clearGoal();
+            clearAiUsage();
             logout();
             router.replace("/" as Href);
           },
@@ -112,6 +138,7 @@ export default function ProfileScreen() {
               await deleteAccount();
               clearMeals();
               clearGoal();
+              clearAiUsage();
               router.replace("/" as Href);
             } catch (error) {
               Alert.alert(
@@ -125,6 +152,31 @@ export default function ProfileScreen() {
         },
       ],
     );
+  };
+
+  const checkApiStatus = async () => {
+    setIsCheckingApi(true);
+
+    try {
+      const health = await healthApi.checkHealth();
+      const databaseMessage = health.database
+        ? `\n${translate("databaseStatus", language)}: ${health.database}`
+        : "";
+
+      Alert.alert(
+        translate("apiRunning", language),
+        `${health.message}${databaseMessage}`,
+      );
+    } catch (error) {
+      Alert.alert(
+        translate("apiConnectionFailed", language),
+        error instanceof Error
+          ? error.message
+          : translate("genericError", language),
+      );
+    } finally {
+      setIsCheckingApi(false);
+    }
   };
 
   return (
@@ -313,6 +365,75 @@ export default function ProfileScreen() {
             onPress={confirmDeleteAccount}
           />
         </Section>
+
+        <Section title={translate("aiUsage", language)}>
+          {token ? (
+            <View>
+              <InfoRow
+                label={translate("totalAnalyses", language)}
+                value={`${aiUsageSummary.total}`}
+              />
+              <InfoRow
+                label={translate("successfulAnalyses", language)}
+                value={`${aiUsageSummary.success}`}
+              />
+              <InfoRow
+                label={translate("failedAnalyses", language)}
+                value={`${aiUsageSummary.failed}`}
+              />
+
+              {lastAiProvider ? (
+                <InfoRow
+                  label={translate("lastAiProvider", language)}
+                  value={lastAiProvider}
+                />
+              ) : (
+                <Text
+                  style={[styles.emptyText, { color: theme.colors.mutedText }]}
+                >
+                  {translate("noAiUsageYet", language)}
+                </Text>
+              )}
+
+              {aiUsageError ? (
+                <Text
+                  style={[styles.emptyText, { color: theme.colors.danger }]}
+                >
+                  {aiUsageError}
+                </Text>
+              ) : null}
+
+              <SettingRow
+                icon="sparkles-outline"
+                label={translate("refreshAiUsage", language)}
+                value={isAiUsageLoading ? translate("loading", language) : ""}
+                onPress={() => fetchMyAiUsage(token)}
+                disabled={isAiUsageLoading}
+              />
+            </View>
+          ) : (
+            <Text
+              style={[styles.emptyText, { color: theme.colors.mutedText }]}
+            >
+              {translate("noAiUsageYet", language)}
+            </Text>
+          )}
+        </Section>
+
+        <Section title={translate("developer", language)}>
+          <InfoRow
+            label={translate("apiUrl", language)}
+            value={API_CONFIG.baseUrl}
+          />
+
+          <SettingRow
+            icon="cloud-outline"
+            label={translate("checkApi", language)}
+            value={isCheckingApi ? translate("loading", language) : ""}
+            onPress={checkApiStatus}
+            disabled={isCheckingApi}
+          />
+        </Section>
       </ScrollView>
     </Screen>
   );
@@ -412,14 +533,19 @@ type SettingRowProps = {
   label: string;
   value: string;
   onPress: () => void;
+  disabled?: boolean;
 };
 
-function SettingRow({ icon, label, value, onPress }: SettingRowProps) {
+function SettingRow({ icon, label, value, onPress, disabled }: SettingRowProps) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
 
   return (
-    <Pressable onPress={onPress} style={styles.settingRow}>
+    <Pressable
+      disabled={disabled}
+      onPress={onPress}
+      style={[styles.settingRow, disabled && styles.disabledRow]}
+    >
       <View style={styles.settingLeft}>
         <View
           style={[
@@ -601,6 +727,9 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 13,
     fontWeight: "900",
+    flexShrink: 1,
+    marginLeft: 12,
+    textAlign: "right",
   },
   emptyGoal: {
     gap: 14,
@@ -651,5 +780,10 @@ const styles = StyleSheet.create({
   settingValue: {
     fontSize: 13,
     fontWeight: "700",
+    maxWidth: 190,
+    textAlign: "right",
+  },
+  disabledRow: {
+    opacity: 0.6,
   },
 });

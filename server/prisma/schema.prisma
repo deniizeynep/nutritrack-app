@@ -15,8 +15,9 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  meals Meal[]
-  goal  Goal?
+  meals    Meal[]
+  goal     Goal?
+  aiUsages AiUsage[]
 }
 
 model Meal {
@@ -52,4 +53,21 @@ model Goal {
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AiUsage {
+  id           String   @id @default(uuid())
+  userId       String?
+  appName      String   @default("nutritrack")
+  feature      String
+  provider     String
+  model        String?
+  inputType    String
+  status       String
+  durationMs   Int?
+  errorCode    String?
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }

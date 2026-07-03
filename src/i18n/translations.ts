@@ -579,6 +579,71 @@ export const translations = {
     en: "Data Management",
   },
 
+  aiUsage: {
+    tr: "AI Kullanımı",
+    en: "AI Usage",
+  },
+
+  totalAnalyses: {
+    tr: "Toplam Analiz",
+    en: "Total Analyses",
+  },
+
+  successfulAnalyses: {
+    tr: "Başarılı",
+    en: "Successful",
+  },
+
+  failedAnalyses: {
+    tr: "Başarısız",
+    en: "Failed",
+  },
+
+  lastAiProvider: {
+    tr: "Son AI Sağlayıcı",
+    en: "Last AI Provider",
+  },
+
+  refreshAiUsage: {
+    tr: "AI Kullanımını Yenile",
+    en: "Refresh AI Usage",
+  },
+
+  noAiUsageYet: {
+    tr: "Henüz AI kullanımı yok",
+    en: "No AI usage yet",
+  },
+
+  developer: {
+    tr: "Geliştirici",
+    en: "Developer",
+  },
+
+  apiUrl: {
+    tr: "API URL",
+    en: "API URL",
+  },
+
+  checkApi: {
+    tr: "API'yi Kontrol Et",
+    en: "Check API",
+  },
+
+  apiRunning: {
+    tr: "API çalışıyor",
+    en: "API is running",
+  },
+
+  apiConnectionFailed: {
+    tr: "API bağlantısı başarısız",
+    en: "API connection failed",
+  },
+
+  databaseStatus: {
+    tr: "Database durumu",
+    en: "Database status",
+  },
+
   clearMeals: {
     tr: "Öğünleri Temizle",
     en: "Clear Meals",

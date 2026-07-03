@@ -101,10 +101,12 @@ export default function ScanPhotoScreen() {
     try {
       const result = await aiApi.analyzeFoodPhoto(imageUri, token);
       setEstimate(result);
-    } catch {
+    } catch (error) {
       Alert.alert(
         translate("error", language),
-        translate("aiEstimateFailed", language),
+        error instanceof Error
+          ? error.message
+          : translate("aiEstimateFailed", language),
       );
     } finally {
       setIsAnalyzing(false);
