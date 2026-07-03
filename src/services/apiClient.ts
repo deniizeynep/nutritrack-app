@@ -25,10 +25,16 @@ export async function apiRequest<T>(
 
   const text = await response.text();
 
-  const data = text ? JSON.parse(text) : null;
+  let data: { message?: string } | null = null;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error("Bir şeyler ters gitti. Lütfen tekrar dene.");
+  }
 
   if (!response.ok) {
-    throw new Error(data?.message || "Request failed");
+    throw new Error(data?.message || "Bir şeyler ters gitti. Lütfen tekrar dene.");
   }
 
   return data as T;

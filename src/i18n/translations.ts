@@ -452,6 +452,11 @@ export const translations = {
     en: "Description",
   },
 
+  smartNutritionTracking: {
+    tr: "Akıllı kalori takibi",
+    en: "Smart calorie tracking",
+  },
+
   descriptionPlaceholder: {
     tr: "Örn. Tavuk, marul, domates",
     en: "Ex. Chicken, lettuce, tomato",
@@ -531,8 +536,23 @@ export const translations = {
   },
 
   statsSubtitle: {
-    tr: "Son 7 gündeki kalori ve makro takibini incele.",
-    en: "Review your calorie and macro tracking from the last 7 days.",
+    tr: "Seçtiğin dönemdeki kalori ve makro takibini incele.",
+    en: "Review your calorie and macro tracking for the selected period.",
+  },
+
+  weekly: {
+    tr: "Haftalık",
+    en: "Weekly",
+  },
+
+  monthly: {
+    tr: "Aylık",
+    en: "Monthly",
+  },
+
+  yearly: {
+    tr: "Yıllık",
+    en: "Yearly",
   },
 
   thisWeek: {
@@ -543,6 +563,16 @@ export const translations = {
   averageCalories: {
     tr: "Ortalama Kalori",
     en: "Average Calories",
+  },
+
+  dailyAverage: {
+    tr: "Günlük Ortalama",
+    en: "Daily Average",
+  },
+
+  totalMeals: {
+    tr: "Toplam Öğün",
+    en: "Total Meals",
   },
 
   highestDay: {
@@ -563,6 +593,36 @@ export const translations = {
   weeklyMacros: {
     tr: "Haftalık Makrolar",
     en: "Weekly Macros",
+  },
+
+  macroTotals: {
+    tr: "Makro Toplamları",
+    en: "Macro Totals",
+  },
+
+  goalProgress: {
+    tr: "Hedef İlerlemesi",
+    en: "Goal Progress",
+  },
+
+  ofDailyTargetAverage: {
+    tr: "Seçili dönemdeki günlük ortalamanın kalori hedefine oranı.",
+    en: "Daily average for the selected period compared with your calorie goal.",
+  },
+
+  setGoalForBetterStats: {
+    tr: "Daha anlamlı istatistikler için bir kalori hedefi belirle.",
+    en: "Set a calorie goal to make your stats more meaningful.",
+  },
+
+  noRecordsForPeriod: {
+    tr: "Bu dönem için kayıt yok.",
+    en: "No records for this period.",
+  },
+
+  addMealsToBuildStats: {
+    tr: "Bu döneme öğün ekledikçe istatistiklerin burada oluşacak.",
+    en: "Your stats will appear here as you add meals for this period.",
   },
 
   noStatsYet: {
@@ -821,6 +881,21 @@ export const translations = {
   productFound: {
     tr: "Ürün Bulundu",
     en: "Product Found",
+  },
+
+  productDetail: {
+    tr: "Ürün Detayı",
+    en: "Product Detail",
+  },
+
+  findProductDetails: {
+    tr: "Ürün bilgilerini barkodla bul",
+    en: "Find product details by barcode",
+  },
+
+  findProductDetailsSubtitle: {
+    tr: "Paketli gıdanın barkodunu tarayarak kalori ve makro bilgilerini görüntüleyebilirsin.",
+    en: "Scan a packaged food barcode to view calories and macro details.",
   },
 
   productNotFound: {

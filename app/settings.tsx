@@ -15,7 +15,7 @@ import { useAppStore } from "../src/stores/appStore";
 import { useAuthStore } from "../src/stores/authStore";
 import { useGoalStore } from "../src/stores/goalStore";
 import { useMealStore } from "../src/stores/mealStore";
-import { getTheme, type ThemeMode } from "../src/theme/theme";
+import { getTheme } from "../src/theme/theme";
 import { calculateMacroTargets } from "../src/utils/calorieCalculator";
 
 export default function SettingsScreen() {
@@ -90,7 +90,7 @@ export default function SettingsScreen() {
             <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
           </Pressable>
 
-          <Text style={[styles.topTitle, { color: theme.colors.text }]}> 
+          <Text style={[styles.topTitle, { color: theme.colors.text }]}>
             {translate("settings", language)}
           </Text>
 
@@ -132,7 +132,10 @@ export default function SettingsScreen() {
             label={translate("fullName", language)}
             value={user?.fullName || translate("guestUser", language)}
           />
-          <InfoRow label={translate("email", language)} value={user?.email || "-"} />
+          <InfoRow
+            label={translate("email", language)}
+            value={user?.email || "-"}
+          />
           <Button
             variant="secondary"
             onPress={() => router.push("/(tabs)/profile" as Href)}
@@ -163,7 +166,7 @@ export default function SettingsScreen() {
               />
             </View>
           ) : (
-            <Text style={[styles.emptyText, { color: theme.colors.mutedText }]}> 
+            <Text style={[styles.emptyText, { color: theme.colors.mutedText }]}>
               {translate("noGoalYet", language)}
             </Text>
           )}
@@ -187,8 +190,12 @@ export default function SettingsScreen() {
               },
             ]}
           >
-            <Ionicons name="trash-outline" size={19} color={theme.colors.danger} />
-            <Text style={[styles.dangerText, { color: theme.colors.danger }]}> 
+            <Ionicons
+              name="trash-outline"
+              size={19}
+              color={theme.colors.danger}
+            />
+            <Text style={[styles.dangerText, { color: theme.colors.danger }]}>
               {translate("clearMeals", language)}
             </Text>
           </Pressable>
@@ -197,10 +204,9 @@ export default function SettingsScreen() {
         <Section title={translate("appInfo", language)}>
           <InfoRow label="NutriTrack" value="" />
           <InfoRow label={translate("version", language)} value="1.0.0" />
-          <InfoRow label={translate("aiProvider", language)} value="Gemini" />
           <InfoRow
-            label={translate("barcodeSource", language)}
-            value="Open Food Facts"
+            label={translate("description", language)}
+            value={translate("smartNutritionTracking", language)}
           />
         </Section>
       </ScrollView>
@@ -208,7 +214,13 @@ export default function SettingsScreen() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
 
@@ -222,7 +234,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
         },
       ]}
     >
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{title}</Text>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+        {title}
+      </Text>
       {children}
     </View>
   );
@@ -246,7 +260,9 @@ function ChoicePill({
       style={[
         styles.choicePill,
         {
-          backgroundColor: selected ? theme.colors.primary : theme.colors.cardSoft,
+          backgroundColor: selected
+            ? theme.colors.primary
+            : theme.colors.cardSoft,
           borderColor: selected ? theme.colors.primary : theme.colors.border,
         },
       ]}
@@ -271,10 +287,10 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
   return (
     <View style={styles.infoRow}>
-      <Text style={[styles.infoLabel, { color: theme.colors.mutedText }]}> 
+      <Text style={[styles.infoLabel, { color: theme.colors.mutedText }]}>
         {label}
       </Text>
-      <Text style={[styles.infoValue, { color: theme.colors.text }]}> 
+      <Text style={[styles.infoValue, { color: theme.colors.text }]}>
         {value}
       </Text>
     </View>

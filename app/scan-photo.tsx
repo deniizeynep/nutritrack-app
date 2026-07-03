@@ -314,7 +314,11 @@ export default function ScanPhotoScreen() {
           </Pressable>
         </View>
 
-        <Button onPress={analyzePhoto} style={styles.analyzeButton}>
+        <Button
+          onPress={analyzePhoto}
+          style={styles.analyzeButton}
+          disabled={!imageUri || isAnalyzing}
+        >
           {isAnalyzing
             ? translate("analyzingPhoto", language)
             : translate("analyzePhoto", language)}

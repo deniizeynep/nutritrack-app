@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import { useEffect, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -10,10 +9,7 @@ import {
   View,
 } from "react-native";
 import { Screen } from "../../src/components/Screen";
-import { API_CONFIG } from "../../src/config/api";
 import { translate } from "../../src/i18n/translations";
-import { healthApi } from "../../src/services/healthApi";
-import { useAiUsageStore } from "../../src/stores/aiUsageStore";
 import { useAppStore } from "../../src/stores/appStore";
 import { useAuthStore } from "../../src/stores/authStore";
 import { useGoalStore } from "../../src/stores/goalStore";
@@ -24,8 +20,6 @@ import { calculateMacroTargets } from "../../src/utils/calorieCalculator";
 export default function ProfileScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
-  const setLanguage = useAppStore((state) => state.setLanguage);
-  const toggleTheme = useAppStore((state) => state.toggleTheme);
 
   const goal = useGoalStore((state) => state.goal);
   const clearGoal = useGoalStore((state) => state.clearGoal);
@@ -33,25 +27,12 @@ export default function ProfileScreen() {
   const meals = useMealStore((state) => state.meals);
 
   const user = useAuthStore((state) => state.user);
-  const token = useAuthStore((state) => state.token);
   const logout = useAuthStore((state) => state.logout);
   const deleteAccount = useAuthStore((state) => state.deleteAccount);
-  const [isCheckingApi, setIsCheckingApi] = useState(false);
-
-  const aiUsageItems = useAiUsageStore((state) => state.items);
-  const aiUsageSummary = useAiUsageStore((state) => state.summary);
-  const isAiUsageLoading = useAiUsageStore((state) => state.isLoading);
-  const aiUsageError = useAiUsageStore((state) => state.error);
-  const fetchMyAiUsage = useAiUsageStore((state) => state.fetchMyAiUsage);
-  const clearAiUsage = useAiUsageStore((state) => state.clearAiUsage);
 
   const theme = getTheme(themeMode);
 
   const totalCalories = meals.reduce((total, meal) => total + meal.calories, 0);
-  const lastAiUsage = aiUsageItems[0];
-  const lastAiProvider = lastAiUsage
-    ? [lastAiUsage.provider, lastAiUsage.model].filter(Boolean).join(" / ")
-    : null;
   const fallbackMacroTargets = calculateMacroTargets(
     goal?.targetCalories ?? 2000,
     goal?.goalType ?? "maintain",
@@ -59,15 +40,6 @@ export default function ProfileScreen() {
   const targetProtein = goal?.targetProtein || fallbackMacroTargets.protein;
   const targetCarbs = goal?.targetCarbs || fallbackMacroTargets.carbs;
   const targetFat = goal?.targetFat || fallbackMacroTargets.fat;
-
-  useEffect(() => {
-    if (!token) {
-      clearAiUsage();
-      return;
-    }
-
-    fetchMyAiUsage(token);
-  }, [clearAiUsage, fetchMyAiUsage, token]);
 
   const confirmLogout = () => {
     Alert.alert(
@@ -84,46 +56,9 @@ export default function ProfileScreen() {
           onPress: () => {
             clearMeals();
             clearGoal();
-            clearAiUsage();
             logout();
             router.replace("/" as Href);
           },
-        },
-      ],
-    );
-  };
-
-  const confirmClearMeals = () => {
-    Alert.alert(
-      translate("confirmClearMeals", language),
-      translate("confirmClearMealsMessage", language),
-      [
-        {
-          text: translate("cancel", language),
-          style: "cancel",
-        },
-        {
-          text: translate("clear", language),
-          style: "destructive",
-          onPress: () => clearMeals(token),
-        },
-      ],
-    );
-  };
-
-  const confirmClearGoal = () => {
-    Alert.alert(
-      translate("confirmClearGoal", language),
-      translate("confirmClearGoalMessage", language),
-      [
-        {
-          text: translate("cancel", language),
-          style: "cancel",
-        },
-        {
-          text: translate("clear", language),
-          style: "destructive",
-          onPress: () => clearGoal(token),
         },
       ],
     );
@@ -146,7 +81,6 @@ export default function ProfileScreen() {
               await deleteAccount();
               clearMeals();
               clearGoal();
-              clearAiUsage();
               router.replace("/" as Href);
             } catch (error) {
               Alert.alert(
@@ -160,31 +94,6 @@ export default function ProfileScreen() {
         },
       ],
     );
-  };
-
-  const checkApiStatus = async () => {
-    setIsCheckingApi(true);
-
-    try {
-      const health = await healthApi.checkHealth();
-      const databaseMessage = health.database
-        ? `\n${translate("databaseStatus", language)}: ${health.database}`
-        : "";
-
-      Alert.alert(
-        translate("apiRunning", language),
-        `${health.message}${databaseMessage}`,
-      );
-    } catch (error) {
-      Alert.alert(
-        translate("apiConnectionFailed", language),
-        error instanceof Error
-          ? error.message
-          : translate("genericError", language),
-      );
-    } finally {
-      setIsCheckingApi(false);
-    }
   };
 
   return (
@@ -331,48 +240,7 @@ export default function ProfileScreen() {
           )}
         </Section>
 
-        <Section title={translate("preferences", language)}>
-          <SettingRow
-            icon="language-outline"
-            label={translate("language", language)}
-            value={language === "tr" ? "Türkçe" : "English"}
-            onPress={() => setLanguage(language === "tr" ? "en" : "tr")}
-          />
-
-          <SettingRow
-            icon="moon-outline"
-            label={translate("theme", language)}
-            value={
-              themeMode === "dark"
-                ? translate("darkTheme", language)
-                : translate("lightTheme", language)
-            }
-            onPress={toggleTheme}
-          />
-        </Section>
-
-        <Section title={translate("dataManagement", language)}>
-          <DangerRow
-            icon="trash-outline"
-            label={translate("clearMeals", language)}
-            onPress={confirmClearMeals}
-          />
-
-          <DangerRow
-            icon="close-circle-outline"
-            label={translate("clearGoal", language)}
-            onPress={confirmClearGoal}
-          />
-        </Section>
-
         <Section title={translate("account", language)}>
-          <SettingRow
-            icon="mail-outline"
-            label={translate("email", language)}
-            value={user?.email || "-"}
-            onPress={() => {}}
-          />
-
           <DangerRow
             icon="log-out-outline"
             label={translate("logout", language)}
@@ -386,74 +254,6 @@ export default function ProfileScreen() {
           />
         </Section>
 
-        <Section title={translate("aiUsage", language)}>
-          {token ? (
-            <View>
-              <InfoRow
-                label={translate("totalAnalyses", language)}
-                value={`${aiUsageSummary.total}`}
-              />
-              <InfoRow
-                label={translate("successfulAnalyses", language)}
-                value={`${aiUsageSummary.success}`}
-              />
-              <InfoRow
-                label={translate("failedAnalyses", language)}
-                value={`${aiUsageSummary.failed}`}
-              />
-
-              {lastAiProvider ? (
-                <InfoRow
-                  label={translate("lastAiProvider", language)}
-                  value={lastAiProvider}
-                />
-              ) : (
-                <Text
-                  style={[styles.emptyText, { color: theme.colors.mutedText }]}
-                >
-                  {translate("noAiUsageYet", language)}
-                </Text>
-              )}
-
-              {aiUsageError ? (
-                <Text
-                  style={[styles.emptyText, { color: theme.colors.danger }]}
-                >
-                  {aiUsageError}
-                </Text>
-              ) : null}
-
-              <SettingRow
-                icon="sparkles-outline"
-                label={translate("refreshAiUsage", language)}
-                value={isAiUsageLoading ? translate("loading", language) : ""}
-                onPress={() => fetchMyAiUsage(token)}
-                disabled={isAiUsageLoading}
-              />
-            </View>
-          ) : (
-            <Text
-              style={[styles.emptyText, { color: theme.colors.mutedText }]}
-            >
-              {translate("noAiUsageYet", language)}
-            </Text>
-          )}
-        </Section>
-
-        <Section title={translate("developer", language)}>
-          <InfoRow
-            label={translate("apiUrl", language)}
-            value={API_CONFIG.baseUrl}
-          />
-
-          <SettingRow
-            icon="cloud-outline"
-            label={translate("checkApi", language)}
-            value={isCheckingApi ? translate("loading", language) : ""}
-            onPress={checkApiStatus}
-            disabled={isCheckingApi}
-          />
-        </Section>
       </ScrollView>
     </Screen>
   );
@@ -545,56 +345,6 @@ function InfoRow({ label, value }: InfoRowProps) {
         {value}
       </Text>
     </View>
-  );
-}
-
-type SettingRowProps = {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-  onPress: () => void;
-  disabled?: boolean;
-};
-
-function SettingRow({ icon, label, value, onPress, disabled }: SettingRowProps) {
-  const themeMode = useAppStore((state) => state.themeMode);
-  const theme = getTheme(themeMode);
-
-  return (
-    <Pressable
-      disabled={disabled}
-      onPress={onPress}
-      style={[styles.settingRow, disabled && styles.disabledRow]}
-    >
-      <View style={styles.settingLeft}>
-        <View
-          style={[
-            styles.settingIcon,
-            {
-              backgroundColor: theme.colors.primarySoft,
-            },
-          ]}
-        >
-          <Ionicons name={icon} size={19} color={theme.colors.primary} />
-        </View>
-
-        <Text style={[styles.settingLabel, { color: theme.colors.text }]}>
-          {label}
-        </Text>
-      </View>
-
-      <View style={styles.settingRight}>
-        <Text style={[styles.settingValue, { color: theme.colors.mutedText }]}>
-          {value}
-        </Text>
-
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color={theme.colors.mutedText}
-        />
-      </View>
-    </Pressable>
   );
 }
 
@@ -791,19 +541,5 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 14,
     fontWeight: "800",
-  },
-  settingRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  settingValue: {
-    fontSize: 13,
-    fontWeight: "700",
-    maxWidth: 190,
-    textAlign: "right",
-  },
-  disabledRow: {
-    opacity: 0.6,
   },
 });

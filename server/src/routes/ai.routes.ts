@@ -88,13 +88,6 @@ router.post("/analyze-food", aiRateLimiter, (req, res) => {
     const photo = req.file;
     const providerConfig = getFoodAnalysisProviderConfig();
 
-    console.log("AI PHOTO UPLOAD DEBUG:", {
-      originalname: photo.originalname,
-      mimetype: photo.mimetype,
-      size: photo.size,
-      hasBuffer: Boolean(photo.buffer),
-    });
-
     try {
       const result = await runAIGatewayCall({
         userId: authReq.userId,

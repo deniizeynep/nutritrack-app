@@ -50,9 +50,6 @@ export default function ScanBarcodeScreen() {
 
     const scannedBarcode = result.data;
 
-    console.log("SCANNED BARCODE:", scannedBarcode);
-    console.log("BARCODE TYPE:", result.type);
-
     const isUnsupportedBarcode =
       scannedBarcode.startsWith("978") ||
       scannedBarcode.startsWith("979") ||

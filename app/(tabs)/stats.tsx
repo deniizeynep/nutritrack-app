@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
@@ -17,18 +17,23 @@ type DayStats = {
   fat: number;
 };
 
+type StatsPeriod = "weekly" | "monthly" | "yearly";
+
+const PERIODS: StatsPeriod[] = ["weekly", "monthly", "yearly"];
+
 export default function StatsScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
+  const [period, setPeriod] = useState<StatsPeriod>("weekly");
 
   const meals = useMealStore((state) => state.meals);
   const goal = useGoalStore((state) => state.goal);
 
   const targetCalories = goal?.targetCalories ?? 2000;
 
-  const weekData = useMemo(() => {
-    return getLast7Days(language).map((day) => {
+  const periodData = useMemo(() => {
+    return getPeriodDays(period, language).map((day) => {
       const dayMeals = meals.filter((meal) => {
         return getMealDateKey(meal) === day.dateKey;
       });
@@ -42,44 +47,49 @@ export default function StatsScreen() {
         fat: dayMeals.reduce((total, meal) => total + meal.fat, 0),
       };
     });
-  }, [meals, language]);
+  }, [meals, period, language]);
 
-  const totalCalories = weekData.reduce(
+  const chartData = useMemo(() => {
+    if (period !== "yearly") {
+      return periodData;
+    }
+
+    return getYearlyChartData(periodData, language);
+  }, [period, periodData, language]);
+
+  const filteredMeals = useMemo(() => {
+    const periodDateKeys = new Set(periodData.map((day) => day.dateKey));
+
+    return meals.filter((meal) => periodDateKeys.has(getMealDateKey(meal)));
+  }, [meals, periodData]);
+
+  const totalCalories = periodData.reduce(
     (total, day) => total + day.calories,
     0,
   );
-  const totalProtein = weekData.reduce((total, day) => total + day.protein, 0);
-  const totalCarbs = weekData.reduce((total, day) => total + day.carbs, 0);
-  const totalFat = weekData.reduce((total, day) => total + day.fat, 0);
+  const totalProtein = periodData.reduce((total, day) => total + day.protein, 0);
+  const totalCarbs = periodData.reduce((total, day) => total + day.carbs, 0);
+  const totalFat = periodData.reduce((total, day) => total + day.fat, 0);
 
-  const activeDays = weekData.filter((day) => day.calories > 0).length;
+  const dailyAverage =
+    periodData.length > 0 ? Math.round(totalCalories / periodData.length) : 0;
 
-  const averageCalories =
-    activeDays > 0 ? Math.round(totalCalories / activeDays) : 0;
-
-  const highestDay = weekData.reduce(
+  const highestDay = periodData.reduce(
     (highest, day) => (day.calories > highest.calories ? day : highest),
-    weekData[0],
+    periodData[0],
   );
 
-  const targetHitDays = weekData.filter((day) => {
-    if (day.calories === 0) {
-      return false;
-    }
-
-    const lowerLimit = targetCalories * 0.9;
-    const upperLimit = targetCalories * 1.1;
-
-    return day.calories >= lowerLimit && day.calories <= upperLimit;
-  }).length;
+  const goalProgress = goal && goal.targetCalories > 0
+    ? Math.min((dailyAverage / goal.targetCalories) * 100, 999)
+    : 0;
 
   const maxChartValue = Math.max(
-    ...weekData.map((day) => day.calories),
+    ...chartData.map((day) => day.calories),
     targetCalories,
     1,
   );
 
-  const hasMeals = meals.length > 0;
+  const hasPeriodMeals = filteredMeals.length > 0;
 
   return (
     <Screen>
@@ -109,8 +119,8 @@ export default function StatsScreen() {
             />
           </View>
 
-          <Text style={[styles.title, { color: theme.colors.text }]}>
-            {translate("weeklyStats", language)}
+          <Text style={[styles.title, { color: theme.colors.text }]}> 
+            {translate("stats", language)}
           </Text>
 
           <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
@@ -118,13 +128,54 @@ export default function StatsScreen() {
           </Text>
         </View>
 
-        {hasMeals ? (
+        <View style={styles.periodSelector}>
+          {PERIODS.map((periodOption) => {
+            const selected = periodOption === period;
+
+            return (
+              <Pressable
+                key={periodOption}
+                onPress={() => setPeriod(periodOption)}
+                style={[
+                  styles.periodPill,
+                  {
+                    backgroundColor: selected
+                      ? theme.colors.primary
+                      : theme.colors.card,
+                    borderColor: selected
+                      ? theme.colors.primary
+                      : theme.colors.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.periodPillText,
+                    {
+                      color: selected ? "#FFFFFF" : theme.colors.text,
+                    },
+                  ]}
+                >
+                  {translate(periodOption, language)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {hasPeriodMeals ? (
           <>
             <View style={styles.statGrid}>
               <StatCard
                 icon="flame-outline"
-                label={translate("averageCalories", language)}
-                value={`${averageCalories} kcal`}
+                label={translate("totalCalories", language)}
+                value={`${totalCalories} kcal`}
+              />
+
+              <StatCard
+                icon="analytics-outline"
+                label={translate("dailyAverage", language)}
+                value={`${dailyAverage} kcal`}
               />
 
               <StatCard
@@ -138,9 +189,9 @@ export default function StatsScreen() {
               />
 
               <StatCard
-                icon="flag-outline"
-                label={translate("targetHitDays", language)}
-                value={`${targetHitDays}/7`}
+                icon="restaurant-outline"
+                label={translate("totalMeals", language)}
+                value={`${filteredMeals.length}`}
               />
             </View>
 
@@ -163,7 +214,7 @@ export default function StatsScreen() {
                       },
                     ]}
                   >
-                    {translate("thisWeek", language)}
+                    {translate(period, language)}
                   </Text>
 
                   <Text
@@ -174,7 +225,7 @@ export default function StatsScreen() {
                       },
                     ]}
                   >
-                    {translate("weeklyCalories", language)}
+                    {translate("calorieHistory", language)}
                   </Text>
                 </View>
 
@@ -206,7 +257,7 @@ export default function StatsScreen() {
               </View>
 
               <View style={styles.chartArea}>
-                {weekData.map((day) => (
+                {chartData.map((day) => (
                   <DayBar
                     key={day.dateKey}
                     label={day.label}
@@ -226,8 +277,8 @@ export default function StatsScreen() {
                 },
               ]}
             >
-              <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
-                {translate("weeklyMacros", language)}
+              <Text style={[styles.cardTitle, { color: theme.colors.text }]}> 
+                {translate("macroTotals", language)}
               </Text>
 
               <View style={styles.macroList}>
@@ -249,6 +300,57 @@ export default function StatsScreen() {
                   color={theme.colors.fat}
                 />
               </View>
+            </View>
+
+            <View
+              style={[
+                styles.goalCard,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <View style={styles.goalHeader}>
+                <Text style={[styles.cardTitle, { color: theme.colors.text }]}> 
+                  {translate("goalProgress", language)}
+                </Text>
+
+                <Text style={[styles.goalPercent, { color: theme.colors.primary }]}> 
+                  {goal ? `${Math.round(goalProgress)}%` : "-"}
+                </Text>
+              </View>
+
+              {goal ? (
+                <>
+                  <View
+                    style={[
+                      styles.goalTrack,
+                      { backgroundColor: theme.colors.cardSoft },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.goalFill,
+                        {
+                          width: `${Math.min(goalProgress, 100)}%`,
+                          backgroundColor: theme.colors.primary,
+                        },
+                      ]}
+                    />
+                  </View>
+
+                  <Text
+                    style={[styles.goalText, { color: theme.colors.mutedText }]}
+                  >
+                    {translate("ofDailyTargetAverage", language)}
+                  </Text>
+                </>
+              ) : (
+                <Text style={[styles.goalText, { color: theme.colors.mutedText }]}> 
+                  {translate("setGoalForBetterStats", language)}
+                </Text>
+              )}
             </View>
           </>
         ) : (
@@ -276,14 +378,14 @@ export default function StatsScreen() {
               />
             </View>
 
-            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
-              {translate("noStatsYet", language)}
+            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}> 
+              {translate("noRecordsForPeriod", language)}
             </Text>
 
             <Text
               style={[styles.emptySubtitle, { color: theme.colors.mutedText }]}
             >
-              {translate("noStatsSubtitle", language)}
+              {translate("addMealsToBuildStats", language)}
             </Text>
           </View>
         )}
@@ -427,24 +529,46 @@ function MacroLine({ label, value, color }: MacroLineProps) {
 }
 
 function getMealDateKey(meal: Meal) {
-  return (meal.loggedAt ?? meal.createdAt).slice(0, 10);
+  return getDateKey(new Date(meal.loggedAt ?? meal.createdAt));
 }
 
-function getLast7Days(language: "tr" | "en") {
+function getDateKey(date: Date) {
+  const normalizedDate = new Date(date);
+  normalizedDate.setHours(0, 0, 0, 0);
+
+  const year = normalizedDate.getFullYear();
+  const month = String(normalizedDate.getMonth() + 1).padStart(2, "0");
+  const day = String(normalizedDate.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getPeriodDays(period: StatsPeriod, language: "tr" | "en") {
   const days = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  for (let index = 6; index >= 0; index--) {
-    const date = new Date();
-    date.setDate(date.getDate() - index);
+  const startDate = new Date(today);
 
-    const dateKey = date.toISOString().slice(0, 10);
+  if (period === "weekly") {
+    startDate.setDate(today.getDate() - 6);
+  }
 
-    const label = date.toLocaleDateString(
-      language === "tr" ? "tr-TR" : "en-US",
-      {
-        weekday: "short",
-      },
-    );
+  if (period === "monthly") {
+    startDate.setDate(1);
+  }
+
+  if (period === "yearly") {
+    startDate.setMonth(0, 1);
+  }
+
+  for (
+    const date = new Date(startDate);
+    date <= today;
+    date.setDate(date.getDate() + 1)
+  ) {
+    const dateKey = getDateKey(date);
+    const label = getDayLabel(date, period, language);
 
     days.push({
       dateKey,
@@ -453,6 +577,60 @@ function getLast7Days(language: "tr" | "en") {
   }
 
   return days;
+}
+
+function getDayLabel(date: Date, period: StatsPeriod, language: "tr" | "en") {
+  const locale = language === "tr" ? "tr-TR" : "en-US";
+
+  if (period === "weekly") {
+    return date.toLocaleDateString(locale, {
+      weekday: "short",
+    });
+  }
+
+  if (period === "monthly") {
+    return String(date.getDate());
+  }
+
+  return date.toLocaleDateString(locale, {
+    month: "short",
+  });
+}
+
+function getYearlyChartData(days: DayStats[], language: "tr" | "en") {
+  const locale = language === "tr" ? "tr-TR" : "en-US";
+  const months = new Map<string, DayStats>();
+
+  days.forEach((day) => {
+    const date = new Date(`${day.dateKey}T00:00:00`);
+    const monthKey = day.dateKey.slice(0, 7);
+    const existingMonth = months.get(monthKey);
+
+    if (!existingMonth) {
+      months.set(monthKey, {
+        dateKey: monthKey,
+        label: date.toLocaleDateString(locale, {
+          month: "short",
+        }),
+        calories: day.calories,
+        protein: day.protein,
+        carbs: day.carbs,
+        fat: day.fat,
+      });
+
+      return;
+    }
+
+    months.set(monthKey, {
+      ...existingMonth,
+      calories: existingMonth.calories + day.calories,
+      protein: existingMonth.protein + day.protein,
+      carbs: existingMonth.carbs + day.carbs,
+      fat: existingMonth.fat + day.fat,
+    });
+  });
+
+  return Array.from(months.values());
 }
 
 const styles = StyleSheet.create({
@@ -491,13 +669,33 @@ const styles = StyleSheet.create({
     textAlign: "center",
     maxWidth: 315,
   },
-  statGrid: {
+  periodSelector: {
     flexDirection: "row",
     gap: 10,
     marginBottom: 16,
   },
-  statCard: {
+  periodPill: {
     flex: 1,
+    minHeight: 42,
+    borderWidth: 1,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  periodPillText: {
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "capitalize",
+  },
+  statGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 16,
+  },
+  statCard: {
+    width: "48%",
     borderWidth: 1,
     borderRadius: 22,
     padding: 12,
@@ -628,6 +826,38 @@ const styles = StyleSheet.create({
   macroFill: {
     height: "100%",
     borderRadius: 999,
+  },
+  goalCard: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 18,
+  },
+  goalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 16,
+  },
+  goalPercent: {
+    fontSize: 20,
+    fontWeight: "900",
+  },
+  goalTrack: {
+    height: 10,
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+  goalFill: {
+    height: "100%",
+    borderRadius: 999,
+  },
+  goalText: {
+    marginTop: 10,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
   },
   emptyCard: {
     borderWidth: 1,

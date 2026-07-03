@@ -61,15 +61,6 @@ export const aiApi = {
     const fileName = getFileNameFromUri(imageUri, mimeType);
     const uploadUrl = `${API_CONFIG.baseUrl}/ai/analyze-food`;
 
-    console.log("AI PHOTO UPLOAD DEBUG:", {
-      apiUrl: API_CONFIG.baseUrl,
-      uploadMethod: "expo-file-system",
-      hasToken: Boolean(token),
-      imageUri,
-      mimeType,
-      fileName,
-    });
-
     const uploadResult = await FileSystem.uploadAsync(uploadUrl, imageUri, {
       httpMethod: "POST",
       uploadType: FileSystem.FileSystemUploadType.MULTIPART,

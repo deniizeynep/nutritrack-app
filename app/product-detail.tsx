@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Button } from "../src/components/Button";
 import { Screen } from "../src/components/Screen";
+import { translate } from "../src/i18n/translations";
 import { useAppStore } from "../src/stores/appStore";
 import { getTheme } from "../src/theme/theme";
 
@@ -29,8 +31,8 @@ export default function ProductDetailScreen() {
             <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
           </Pressable>
 
-          <Text style={[styles.topTitle, { color: theme.colors.text }]}>
-            {language === "tr" ? "Ürün Detayı" : "Product Detail"}
+          <Text style={[styles.topTitle, { color: theme.colors.text }]}> 
+            {translate("productDetail", language)}
           </Text>
 
           <View style={styles.fakeSpace} />
@@ -60,17 +62,20 @@ export default function ProductDetailScreen() {
             />
           </View>
 
-          <Text style={[styles.title, { color: theme.colors.text }]}>
-            {language === "tr"
-              ? "Ürün detayı yakında"
-              : "Product detail coming soon"}
+          <Text style={[styles.title, { color: theme.colors.text }]}> 
+            {translate("findProductDetails", language)}
           </Text>
 
-          <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
-            {language === "tr"
-              ? "Barkodla bulunan ürünleri daha detaylı göstermek için bu ekranı birazdan geliştireceğiz."
-              : "We will improve this screen soon to show barcode product details."}
+          <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}> 
+            {translate("findProductDetailsSubtitle", language)}
           </Text>
+
+          <Button
+            onPress={() => router.replace("/scan-barcode" as Href)}
+            style={styles.actionButton}
+          >
+            {translate("scanBarcode", language)}
+          </Button>
         </View>
       </View>
     </Screen>
@@ -130,5 +135,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: "600",
     textAlign: "center",
+  },
+  actionButton: {
+    alignSelf: "stretch",
+    marginTop: 20,
   },
 });
