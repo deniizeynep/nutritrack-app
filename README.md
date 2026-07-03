@@ -20,12 +20,12 @@ Server `.env`:
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
 JWT_SECRET="generate_a_secure_secret_with_openssl_rand_base64_32"
 PORT=5000
-CORS_ORIGIN="*"
-OPENAI_API_KEY="your_openai_api_key_here"
+CORS_ORIGIN="https://YOUR_FRONTEND_DOMAIN"
+AI_PROVIDER="gemini"
+OPENAI_API_KEY=""
 OPENAI_FOOD_MODEL="gpt-4o-mini"
-GEMINI_API_KEY="your_gemini_api_key_here"
+GEMINI_API_KEY=""
 GEMINI_FOOD_MODEL="gemini-2.5-flash"
-AI_PROVIDER="mock"
 ```
 
 Generate a JWT secret with:
@@ -108,6 +108,14 @@ Production backend environment variables:
 - `OPENAI_FOOD_MODEL`
 - `GEMINI_API_KEY`
 - `GEMINI_FOOD_MODEL`
+
+### Backend Deploy Checklist
+
+- Set `DATABASE_URL`, `JWT_SECRET`, `PORT`, and `CORS_ORIGIN`
+- Choose `AI_PROVIDER=gemini`, `openai`, or `mock`
+- Set the matching AI provider keys and model names
+- Run `npm run db:deploy` after the backend is live
+- Check `GET /api/health` after deploy
 
 Backend Docker build example:
 
