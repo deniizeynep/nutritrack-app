@@ -285,6 +285,16 @@ export const translations = {
     en: "Continue with Google",
   },
 
+  googleSignInFailed: {
+    tr: "Google ile giriş başarısız oldu.",
+    en: "Google sign-in failed.",
+  },
+
+  googlePlayServicesUnavailable: {
+    tr: "Bu cihazda Google Play Hizmetleri kullanılamıyor olabilir.",
+    en: "Google Play Services may not be available on this device.",
+  },
+
   back: {
     tr: "Geri",
     en: "Back",

@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { Router } from "express";
+import { OAuth2Client } from "google-auth-library";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { authMiddleware, type AuthRequest } from "../middleware/authMiddleware";
@@ -19,12 +20,39 @@ const loginSchema = z.object({
   password: z.string().min(6),
 });
 
+const googleAuthSchema = z.object({
+  idToken: z.string().min(1),
+});
+
+type GoogleTokenPayload = {
+  email?: string;
+  sub?: string;
+  email_verified?: boolean;
+  name?: string | null;
+  picture?: string | null;
+};
+
+const googleWebClientId = process.env.GOOGLE_WEB_CLIENT_ID;
+const googleOAuthClient = googleWebClientId
+  ? new OAuth2Client(googleWebClientId)
+  : null;
+
 function formatUser(user: { id: string; fullName: string; email: string }) {
   return {
     id: user.id,
     fullName: user.fullName,
     email: user.email,
   };
+}
+
+function getGoogleDisplayName(email: string, name?: string | null) {
+  const trimmedName = name?.trim();
+
+  if (trimmedName) {
+    return trimmedName;
+  }
+
+  return email.split("@")[0] || email;
 }
 
 router.post("/register", authRateLimiter, async (req, res) => {
@@ -106,6 +134,13 @@ router.post("/login", authRateLimiter, async (req, res) => {
       return;
     }
 
+    if (!user.passwordHash) {
+      res.status(401).json({
+        message: "Bu hesap Google ile oluşturulmuş. Lütfen Google ile giriş yap.",
+      });
+      return;
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
@@ -126,6 +161,128 @@ router.post("/login", authRateLimiter, async (req, res) => {
 
     res.status(500).json({
       message: "Giriş yapılamadı.",
+    });
+  }
+});
+
+router.post("/google", authRateLimiter, async (req, res) => {
+  try {
+    const parsed = googleAuthSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        message: "Google giriş bilgileri geçersiz.",
+      });
+      return;
+    }
+
+    if (!googleOAuthClient || !googleWebClientId) {
+      console.error("GOOGLE_WEB_CLIENT_ID is missing");
+
+      res.status(500).json({
+        message: "Google ile giriş yapılandırılmamış.",
+      });
+      return;
+    }
+
+    let payload:
+      | GoogleTokenPayload
+      | null = null;
+
+    try {
+      const ticket = await googleOAuthClient.verifyIdToken({
+        idToken: parsed.data.idToken,
+        audience: googleWebClientId,
+      });
+
+      const rawPayload = ticket.getPayload();
+      payload = rawPayload ? (rawPayload as GoogleTokenPayload) : null;
+    } catch (error) {
+      console.error("GOOGLE TOKEN VERIFY ERROR:", error);
+
+      res.status(401).json({
+        message: "Google hesabı doğrulanamadı.",
+      });
+      return;
+    }
+
+    if (!payload?.email || !payload.sub || payload.email_verified !== true) {
+      res.status(401).json({
+        message: "Google hesabı doğrulanamadı.",
+      });
+      return;
+    }
+
+    const googleId = payload.sub;
+    const email = payload.email.trim().toLowerCase();
+    const fullName = getGoogleDisplayName(email, payload.name);
+    const avatarUrl = payload.picture?.trim() || null;
+
+    const existingByGoogleId = await prisma.user.findUnique({
+      where: {
+        googleId,
+      },
+    });
+
+    if (existingByGoogleId) {
+      const token = createToken(existingByGoogleId.id);
+
+      res.json({
+        token,
+        user: formatUser(existingByGoogleId),
+      });
+      return;
+    }
+
+    const existingByEmail = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (existingByEmail) {
+      const linkedUser = await prisma.user.update({
+        where: {
+          email,
+        },
+        data: {
+          googleId,
+          avatarUrl: avatarUrl ?? existingByEmail.avatarUrl ?? null,
+          authProvider: existingByEmail.passwordHash ? "email_google" : "google",
+          fullName: existingByEmail.fullName.trim() || fullName,
+        },
+      });
+
+      const token = createToken(linkedUser.id);
+
+      res.json({
+        token,
+        user: formatUser(linkedUser),
+      });
+      return;
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        fullName,
+        email,
+        googleId,
+        avatarUrl,
+        authProvider: "google",
+      },
+    });
+
+    const token = createToken(user.id);
+
+    res.status(201).json({
+      token,
+      user: formatUser(user),
+    });
+  } catch (error) {
+    console.error("GOOGLE LOGIN ERROR:", error);
+
+    res.status(500).json({
+      message: "Google ile giriş yapılamadı.",
     });
   }
 });

@@ -10,7 +10,10 @@ Mobile `.env`:
 
 ```env
 EXPO_PUBLIC_API_URL=http://YOUR_COMPUTER_IP:5000/api
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=
 ```
+
+Google Sign-In on mobile also needs `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`.
 
 For Expo Go on a physical phone, do not use `localhost`. Use your computer's LAN IP. For production APK builds, set `EXPO_PUBLIC_API_URL` to the live backend URL.
 
@@ -22,6 +25,7 @@ JWT_SECRET="generate_a_secure_secret_with_openssl_rand_base64_32"
 PORT=5000
 CORS_ORIGIN="https://YOUR_FRONTEND_DOMAIN"
 AI_PROVIDER="gemini"
+GOOGLE_WEB_CLIENT_ID=""
 OPENAI_API_KEY=""
 OPENAI_FOOD_MODEL="gpt-4o-mini"
 GEMINI_API_KEY=""
@@ -108,10 +112,12 @@ Production backend environment variables:
 - `OPENAI_FOOD_MODEL`
 - `GEMINI_API_KEY`
 - `GEMINI_FOOD_MODEL`
+- `GOOGLE_WEB_CLIENT_ID`
 
 ### Backend Deploy Checklist
 
 - Set `DATABASE_URL`, `JWT_SECRET`, `PORT`, and `CORS_ORIGIN`
+- Set `GOOGLE_WEB_CLIENT_ID` for Google sign-in
 - Choose `AI_PROVIDER=gemini`, `openai`, or `mock`
 - Set the matching AI provider keys and model names
 - Run `npm run db:deploy` after the backend is live

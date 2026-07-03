@@ -17,6 +17,7 @@ import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
 import { useAuthStore } from "../../src/stores/authStore";
+import { GoogleSignInError } from "../../src/services/googleAuth";
 import { getTheme } from "../../src/theme/theme";
 
 export default function RegisterScreen() {
@@ -30,6 +31,7 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const register = useAuthStore((state) => state.register);
+  const signInWithGoogle = useAuthStore((state) => state.signInWithGoogle);
   const isLoading = useAuthStore((state) => state.isLoading);
 
   const handleRegister = async () => {
@@ -54,6 +56,29 @@ export default function RegisterScreen() {
       Alert.alert(
         translate("createAccount", language),
         error instanceof Error ? error.message : "Kayıt oluşturulamadı.",
+        [{ text: translate("ok", language) }],
+      );
+    }
+  };
+
+  const handleGoogleRegister = async () => {
+    try {
+      await signInWithGoogle();
+      router.replace("/(tabs)/home" as Href);
+    } catch (error) {
+      if (error instanceof GoogleSignInError && error.code === "CANCELLED") {
+        return;
+      }
+
+      Alert.alert(
+        translate("createAccount", language),
+        error instanceof GoogleSignInError
+          ? error.code === "PLAY_SERVICES_NOT_AVAILABLE"
+            ? translate("googlePlayServicesUnavailable", language)
+            : translate("googleSignInFailed", language)
+          : error instanceof Error
+            ? error.message
+            : translate("googleSignInFailed", language),
         [{ text: translate("ok", language) }],
       );
     }
@@ -192,12 +217,15 @@ export default function RegisterScreen() {
               </View>
 
               <Pressable
+                disabled={isLoading}
+                onPress={handleGoogleRegister}
                 style={[
                   styles.googleButton,
                   {
                     backgroundColor:
                       themeMode === "dark" ? theme.colors.cardSoft : "#FFFFFF",
                     borderColor: theme.colors.border,
+                    opacity: isLoading ? 0.6 : 1,
                   },
                 ]}
               >
@@ -207,8 +235,10 @@ export default function RegisterScreen() {
                   color={theme.colors.text}
                 />
 
-                <Text style={[styles.googleText, { color: theme.colors.text }]}>
-                  {translate("continueWithGoogle", language)}
+                <Text style={[styles.googleText, { color: theme.colors.text }]}> 
+                  {isLoading
+                    ? translate("loading", language)
+                    : translate("continueWithGoogle", language)}
                 </Text>
               </Pressable>
             </View>

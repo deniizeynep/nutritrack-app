@@ -26,6 +26,10 @@ export type LoginPayload = {
   password: string;
 };
 
+export type GoogleSignInPayload = {
+  idToken: string;
+};
+
 export const authApi = {
   register: (payload: RegisterPayload) => {
     return apiRequest<AuthResponse>("/auth/register", {
@@ -38,6 +42,15 @@ export const authApi = {
     return apiRequest<AuthResponse>("/auth/login", {
       method: "POST",
       body: payload,
+    });
+  },
+
+  signInWithGoogle: (idToken: string) => {
+    return apiRequest<AuthResponse>("/auth/google", {
+      method: "POST",
+      body: {
+        idToken,
+      } satisfies GoogleSignInPayload,
     });
   },
 
