@@ -1,11 +1,19 @@
 export class GoogleSignInError extends Error {
-  code: "FAILED";
+  code: "FAILED" | "UNAVAILABLE";
 
   constructor(message: string) {
     super(message);
     this.name = "GoogleSignInError";
     this.code = "FAILED";
   }
+}
+
+export function isGoogleSignInAvailable() {
+  return false;
+}
+
+export function isExpoGoBuild() {
+  return false;
 }
 
 export async function signInWithGoogleProvider() {

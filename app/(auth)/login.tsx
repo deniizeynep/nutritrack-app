@@ -17,7 +17,11 @@ import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
 import { useAuthStore } from "../../src/stores/authStore";
-import { GoogleSignInError } from "../../src/services/googleAuth";
+import {
+  GoogleSignInError,
+  isExpoGoBuild,
+  isGoogleSignInAvailable,
+} from "../../src/services/googleAuth";
 import { getTheme } from "../../src/theme/theme";
 
 export default function LoginScreen() {
@@ -31,6 +35,10 @@ export default function LoginScreen() {
   const login = useAuthStore((state) => state.login);
   const signInWithGoogle = useAuthStore((state) => state.signInWithGoogle);
   const isLoading = useAuthStore((state) => state.isLoading);
+  const canUseGoogleSignIn = isGoogleSignInAvailable();
+  const googleSignInHint = isExpoGoBuild()
+    ? translate("googleSignInRequiresBuild", language)
+    : translate("googleSignInUnavailable", language);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -64,7 +72,9 @@ export default function LoginScreen() {
       Alert.alert(
         translate("login", language),
         error instanceof GoogleSignInError
-          ? error.code === "PLAY_SERVICES_NOT_AVAILABLE"
+          ? error.code === "UNAVAILABLE"
+            ? translate("googleSignInRequiresBuild", language)
+            : error.code === "PLAY_SERVICES_NOT_AVAILABLE"
             ? translate("googlePlayServicesUnavailable", language)
             : translate("googleSignInFailed", language)
           : error instanceof Error
@@ -199,7 +209,7 @@ export default function LoginScreen() {
               </View>
 
               <Pressable
-                disabled={isLoading}
+                disabled={isLoading || !canUseGoogleSignIn}
                 onPress={handleGoogleLogin}
                 style={[
                   styles.googleButton,
@@ -207,7 +217,7 @@ export default function LoginScreen() {
                     backgroundColor:
                       themeMode === "dark" ? theme.colors.cardSoft : "#FFFFFF",
                     borderColor: theme.colors.border,
-                    opacity: isLoading ? 0.6 : 1,
+                    opacity: isLoading || !canUseGoogleSignIn ? 0.6 : 1,
                   },
                 ]}
               >
@@ -223,6 +233,17 @@ export default function LoginScreen() {
                     : translate("continueWithGoogle", language)}
                 </Text>
               </Pressable>
+
+              {!canUseGoogleSignIn ? (
+                <Text
+                  style={[
+                    styles.googleNote,
+                    { color: theme.colors.mutedText },
+                  ]}
+                >
+                  {googleSignInHint}
+                </Text>
+              ) : null}
             </View>
           </View>
 
@@ -359,6 +380,13 @@ const styles = StyleSheet.create({
   googleText: {
     fontSize: 15,
     fontWeight: "900",
+  },
+  googleNote: {
+    marginTop: 10,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
+    textAlign: "center",
   },
   bottomLink: {
     paddingTop: 24,

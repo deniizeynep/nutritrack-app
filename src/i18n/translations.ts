@@ -295,6 +295,16 @@ export const translations = {
     en: "Google Play Services may not be available on this device.",
   },
 
+  googleSignInRequiresBuild: {
+    tr: "Google ile giriş APK sürümünde test edilebilir.",
+    en: "Google sign-in can be tested in the APK build.",
+  },
+
+  googleSignInUnavailable: {
+    tr: "Google ile giriş şu anda kullanılamıyor.",
+    en: "Google sign-in is currently unavailable.",
+  },
+
   back: {
     tr: "Geri",
     en: "Back",

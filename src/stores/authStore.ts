@@ -126,14 +126,17 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
         } catch (error) {
+          const shouldSilenceGoogleError =
+            error instanceof GoogleSignInError &&
+            (error.code === "CANCELLED" || error.code === "UNAVAILABLE");
+
           set({
             isLoading: false,
-            error:
-              error instanceof GoogleSignInError && error.code === "CANCELLED"
-                ? null
-                : error instanceof Error
-                  ? error.message
-                  : "Google ile giriş yapılamadı.",
+            error: shouldSilenceGoogleError
+              ? null
+              : error instanceof Error
+                ? error.message
+                : "Google ile giriş yapılamadı.",
           });
 
           throw error;
