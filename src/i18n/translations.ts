@@ -76,6 +76,51 @@ export const translations = {
     en: "Profile",
   },
 
+  menu: {
+    tr: "Menü",
+    en: "Menu",
+  },
+
+  accountSummary: {
+    tr: "Hesap Bilgileri",
+    en: "Account Summary",
+  },
+
+  todaySummary: {
+    tr: "Bugün",
+    en: "Today",
+  },
+
+  quickActions: {
+    tr: "Kısa Yollar",
+    en: "Quick Actions",
+  },
+
+  setGoal: {
+    tr: "Hedef Belirle",
+    en: "Set Goal",
+  },
+
+  myGoal: {
+    tr: "Hedefim",
+    en: "My Goal",
+  },
+
+  settings: {
+    tr: "Ayarlar",
+    en: "Settings",
+  },
+
+  targetCalories: {
+    tr: "Kalori Hedefi",
+    en: "Calorie Target",
+  },
+
+  todayCalories: {
+    tr: "Bugünkü Kalori",
+    en: "Today’s Calories",
+  },
+
   today: {
     tr: "Bugün",
     en: "Today",
@@ -539,9 +584,24 @@ export const translations = {
     en: "Preferences",
   },
 
+  appearance: {
+    tr: "Görünüm",
+    en: "Appearance",
+  },
+
   language: {
     tr: "Dil",
     en: "Language",
+  },
+
+  turkish: {
+    tr: "Türkçe",
+    en: "Turkish",
+  },
+
+  english: {
+    tr: "İngilizce",
+    en: "English",
   },
 
   theme: {
@@ -562,6 +622,31 @@ export const translations = {
   goalSummary: {
     tr: "Hedef Özeti",
     en: "Goal Summary",
+  },
+
+  recommendedMacros: {
+    tr: "Önerilen Makrolar",
+    en: "Recommended Macros",
+  },
+
+  targetProtein: {
+    tr: "Protein Hedefi",
+    en: "Protein Target",
+  },
+
+  targetCarbs: {
+    tr: "Karbonhidrat Hedefi",
+    en: "Carbs Target",
+  },
+
+  targetFat: {
+    tr: "Yağ Hedefi",
+    en: "Fat Target",
+  },
+
+  macroTargetsNote: {
+    tr: "Bu değerler başlangıç önerisidir, kişisel ihtiyaçlara göre değişebilir.",
+    en: "These values are starting suggestions and may vary by personal needs.",
   },
 
   noGoalYet: {
@@ -647,6 +732,51 @@ export const translations = {
   clearMeals: {
     tr: "Öğünleri Temizle",
     en: "Clear Meals",
+  },
+
+  clearMealsTitle: {
+    tr: "Öğünleri temizle",
+    en: "Clear meals",
+  },
+
+  clearMealsMessage: {
+    tr: "Tüm öğün kayıtların silinecek. Emin misin?",
+    en: "All your meal records will be deleted. Are you sure?",
+  },
+
+  mealsCleared: {
+    tr: "Öğünler temizlendi.",
+    en: "Meals cleared.",
+  },
+
+  data: {
+    tr: "Veri",
+    en: "Data",
+  },
+
+  goToProfile: {
+    tr: "Profile Git",
+    en: "Go to Profile",
+  },
+
+  appInfo: {
+    tr: "Uygulama Bilgisi",
+    en: "App Info",
+  },
+
+  version: {
+    tr: "Sürüm",
+    en: "Version",
+  },
+
+  aiProvider: {
+    tr: "AI Sağlayıcı",
+    en: "AI Provider",
+  },
+
+  barcodeSource: {
+    tr: "Barkod Kaynağı",
+    en: "Barcode Source",
   },
 
   clearGoal: {

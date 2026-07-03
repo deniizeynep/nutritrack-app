@@ -19,6 +19,7 @@ import { useAuthStore } from "../../src/stores/authStore";
 import { useGoalStore } from "../../src/stores/goalStore";
 import { useMealStore } from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
+import { calculateMacroTargets } from "../../src/utils/calorieCalculator";
 
 export default function ProfileScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
@@ -51,6 +52,13 @@ export default function ProfileScreen() {
   const lastAiProvider = lastAiUsage
     ? [lastAiUsage.provider, lastAiUsage.model].filter(Boolean).join(" / ")
     : null;
+  const fallbackMacroTargets = calculateMacroTargets(
+    goal?.targetCalories ?? 2000,
+    goal?.goalType ?? "maintain",
+  );
+  const targetProtein = goal?.targetProtein || fallbackMacroTargets.protein;
+  const targetCarbs = goal?.targetCarbs || fallbackMacroTargets.carbs;
+  const targetFat = goal?.targetFat || fallbackMacroTargets.fat;
 
   useEffect(() => {
     if (!token) {
@@ -284,6 +292,18 @@ export default function ProfileScreen() {
               <InfoRow
                 label={translate("estimatedBmr", language)}
                 value={`${goal.bmr} kcal`}
+              />
+              <InfoRow
+                label={translate("targetProtein", language)}
+                value={`${targetProtein}g`}
+              />
+              <InfoRow
+                label={translate("targetCarbs", language)}
+                value={`${targetCarbs}g`}
+              />
+              <InfoRow
+                label={translate("targetFat", language)}
+                value={`${targetFat}g`}
               />
             </View>
           ) : (

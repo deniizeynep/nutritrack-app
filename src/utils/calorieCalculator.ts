@@ -16,6 +16,12 @@ type CalculateCaloriesParams = {
   goalType: GoalType;
 };
 
+export type MacroTargets = {
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
 const activityMultipliers: Record<ActivityLevel, number> = {
   sedentary: 1.2,
   light: 1.375,
@@ -28,6 +34,31 @@ const goalAdjustments: Record<GoalType, number> = {
   lose: -400,
   maintain: 0,
   gain: 300,
+};
+
+const macroRatios: Record<
+  GoalType,
+  {
+    protein: number;
+    carbs: number;
+    fat: number;
+  }
+> = {
+  lose: {
+    protein: 0.3,
+    carbs: 0.4,
+    fat: 0.3,
+  },
+  maintain: {
+    protein: 0.25,
+    carbs: 0.45,
+    fat: 0.3,
+  },
+  gain: {
+    protein: 0.25,
+    carbs: 0.5,
+    fat: 0.25,
+  },
 };
 
 export function calculateBmr({
@@ -56,5 +87,18 @@ export function calculateDailyCalories(params: CalculateCaloriesParams) {
     bmr: Math.round(bmr),
     maintenanceCalories: Math.round(maintenanceCalories),
     targetCalories: Math.round(targetCalories),
+  };
+}
+
+export function calculateMacroTargets(
+  calories: number,
+  goalType: GoalType,
+): MacroTargets {
+  const ratios = macroRatios[goalType];
+
+  return {
+    protein: Math.round((calories * ratios.protein) / 4),
+    carbs: Math.round((calories * ratios.carbs) / 4),
+    fat: Math.round((calories * ratios.fat) / 9),
   };
 }

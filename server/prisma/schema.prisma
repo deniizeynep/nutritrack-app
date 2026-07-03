@@ -48,6 +48,9 @@ model Goal {
   bmr                 Int
   maintenanceCalories Int
   targetCalories      Int
+  targetProtein       Int      @default(0)
+  targetCarbs         Int      @default(0)
+  targetFat           Int      @default(0)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 

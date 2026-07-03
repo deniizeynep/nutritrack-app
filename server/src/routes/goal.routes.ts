@@ -23,6 +23,9 @@ const goalSchema = z.object({
   bmr: z.number().int().positive(),
   maintenanceCalories: z.number().int().positive(),
   targetCalories: z.number().int().positive(),
+  targetProtein: z.number().int().nonnegative().optional().default(0),
+  targetCarbs: z.number().int().nonnegative().optional().default(0),
+  targetFat: z.number().int().nonnegative().optional().default(0),
 });
 
 function getUserId(req: AuthRequest) {
@@ -44,6 +47,9 @@ function formatGoal(goal: {
   bmr: number;
   maintenanceCalories: number;
   targetCalories: number;
+  targetProtein: number;
+  targetCarbs: number;
+  targetFat: number;
   createdAt: Date;
   updatedAt: Date;
 }) {
@@ -58,6 +64,9 @@ function formatGoal(goal: {
     bmr: goal.bmr,
     maintenanceCalories: goal.maintenanceCalories,
     targetCalories: goal.targetCalories,
+    targetProtein: goal.targetProtein,
+    targetCarbs: goal.targetCarbs,
+    targetFat: goal.targetFat,
     createdAt: goal.createdAt.toISOString(),
     updatedAt: goal.updatedAt.toISOString(),
   };
@@ -112,6 +121,9 @@ router.put("/", async (req, res) => {
         bmr: parsed.data.bmr,
         maintenanceCalories: parsed.data.maintenanceCalories,
         targetCalories: parsed.data.targetCalories,
+        targetProtein: parsed.data.targetProtein,
+        targetCarbs: parsed.data.targetCarbs,
+        targetFat: parsed.data.targetFat,
       },
       create: {
         age: parsed.data.age,
@@ -123,6 +135,9 @@ router.put("/", async (req, res) => {
         bmr: parsed.data.bmr,
         maintenanceCalories: parsed.data.maintenanceCalories,
         targetCalories: parsed.data.targetCalories,
+        targetProtein: parsed.data.targetProtein,
+        targetCarbs: parsed.data.targetCarbs,
+        targetFat: parsed.data.targetFat,
         userId,
       },
     });

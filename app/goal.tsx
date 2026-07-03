@@ -21,6 +21,7 @@ import { useGoalStore } from "../src/stores/goalStore";
 import { getTheme } from "../src/theme/theme";
 import {
   calculateDailyCalories,
+  calculateMacroTargets,
   type ActivityLevel,
   type Gender,
   type GoalType,
@@ -65,7 +66,7 @@ export default function GoalScreen() {
       return null;
     }
 
-    return calculateDailyCalories({
+    const calorieResult = calculateDailyCalories({
       gender,
       age: parsedAge,
       heightCm: parsedHeight,
@@ -73,6 +74,14 @@ export default function GoalScreen() {
       activityLevel,
       goalType,
     });
+
+    return {
+      ...calorieResult,
+      macroTargets: calculateMacroTargets(
+        calorieResult.targetCalories,
+        goalType,
+      ),
+    };
   }, [age, heightCm, weightKg, gender, activityLevel, goalType]);
 
   const handleSaveGoal = async () => {
@@ -92,6 +101,9 @@ export default function GoalScreen() {
           bmr: result.bmr,
           maintenanceCalories: result.maintenanceCalories,
           targetCalories: result.targetCalories,
+          targetProtein: result.macroTargets.protein,
+          targetCarbs: result.macroTargets.carbs,
+          targetFat: result.macroTargets.fat,
         },
         token,
       );
@@ -356,6 +368,83 @@ export default function GoalScreen() {
                 ]}
               />
 
+              <View style={styles.macroTargetBlock}>
+                <Text
+                  style={[styles.macroTitle, { color: theme.colors.text }]}
+                >
+                  {translate("recommendedMacros", language)}
+                </Text>
+
+                <View style={styles.resultRows}>
+                  <View style={styles.resultRow}>
+                    <Text
+                      style={[
+                        styles.resultRowLabel,
+                        { color: theme.colors.mutedText },
+                      ]}
+                    >
+                      {translate("protein", language)}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.resultRowValue,
+                        { color: theme.colors.text },
+                      ]}
+                    >
+                      {result.macroTargets.protein}g
+                    </Text>
+                  </View>
+
+                  <View style={styles.resultRow}>
+                    <Text
+                      style={[
+                        styles.resultRowLabel,
+                        { color: theme.colors.mutedText },
+                      ]}
+                    >
+                      {translate("carbs", language)}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.resultRowValue,
+                        { color: theme.colors.text },
+                      ]}
+                    >
+                      {result.macroTargets.carbs}g
+                    </Text>
+                  </View>
+
+                  <View style={styles.resultRow}>
+                    <Text
+                      style={[
+                        styles.resultRowLabel,
+                        { color: theme.colors.mutedText },
+                      ]}
+                    >
+                      {translate("fat", language)}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.resultRowValue,
+                        { color: theme.colors.text },
+                      ]}
+                    >
+                      {result.macroTargets.fat}g
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View
+                style={[
+                  styles.resultDivider,
+                  { backgroundColor: theme.colors.border },
+                ]}
+              />
+
               <View style={styles.resultRows}>
                 <View style={styles.resultRow}>
                   <Text
@@ -408,6 +497,8 @@ export default function GoalScreen() {
               >
                 <Text style={[styles.note, { color: theme.colors.mutedText }]}>
                   {translate("calorieEstimateNote", language)}
+                  {"\n"}
+                  {translate("macroTargetsNote", language)}
                 </Text>
               </View>
             </View>
@@ -603,6 +694,13 @@ const styles = StyleSheet.create({
   },
   resultRows: {
     gap: 12,
+  },
+  macroTargetBlock: {
+    gap: 12,
+  },
+  macroTitle: {
+    fontSize: 14,
+    fontWeight: "900",
   },
   resultRow: {
     flexDirection: "row",

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -12,12 +12,14 @@ import {
 import { MacroProgress } from "../../src/components/MacroProgress";
 import { MealCard } from "../../src/components/MealCard";
 import { Screen } from "../../src/components/Screen";
+import { SideDrawer } from "../../src/components/SideDrawer";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
 import { useAuthStore } from "../../src/stores/authStore";
 import { useGoalStore } from "../../src/stores/goalStore";
 import { useMealStore, type MealCategory } from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
+import { calculateMacroTargets } from "../../src/utils/calorieCalculator";
 
 export default function HomeScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
@@ -32,6 +34,7 @@ export default function HomeScreen() {
   const meals = useMealStore((state) => state.meals);
   const fetchMeals = useMealStore((state) => state.fetchMeals);
   const deleteMeal = useMealStore((state) => state.deleteMeal);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   useEffect(() => {
     fetchMeals(token);
@@ -60,6 +63,13 @@ export default function HomeScreen() {
   const consumedFat = todaysMeals.reduce((total, meal) => total + meal.fat, 0);
 
   const targetCalories = goal?.targetCalories ?? 2000;
+  const fallbackMacroTargets = calculateMacroTargets(
+    goal?.targetCalories ?? 2000,
+    goal?.goalType ?? "maintain",
+  );
+  const targetProtein = goal?.targetProtein || fallbackMacroTargets.protein;
+  const targetCarbs = goal?.targetCarbs || fallbackMacroTargets.carbs;
+  const targetFat = goal?.targetFat || fallbackMacroTargets.fat;
   const remainingCalories = targetCalories - consumedCalories;
   const progressPercent = Math.min(
     (consumedCalories / targetCalories) * 100,
@@ -98,6 +108,7 @@ export default function HomeScreen() {
       >
         <View style={styles.header}>
           <Pressable
+            onPress={() => setIsDrawerOpen(true)}
             style={[
               styles.iconButton,
               {
@@ -251,21 +262,21 @@ export default function HomeScreen() {
             <MacroProgress
               label={translate("protein", language)}
               current={consumedProtein}
-              target={120}
+              target={targetProtein}
               color={theme.colors.protein}
             />
 
             <MacroProgress
               label={translate("carbs", language)}
               current={consumedCarbs}
-              target={250}
+              target={targetCarbs}
               color={theme.colors.carbs}
             />
 
             <MacroProgress
               label={translate("fat", language)}
               current={consumedFat}
-              target={65}
+              target={targetFat}
               color={theme.colors.fat}
             />
           </View>
@@ -426,6 +437,11 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      <SideDrawer
+        visible={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
     </Screen>
   );
 }

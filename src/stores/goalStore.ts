@@ -18,6 +18,9 @@ export type GoalData = {
   bmr: number;
   maintenanceCalories: number;
   targetCalories: number;
+  targetProtein?: number;
+  targetCarbs?: number;
+  targetFat?: number;
 };
 
 type GoalState = {
