@@ -1,13 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
@@ -20,19 +13,16 @@ import { calculateMacroTargets } from "../../src/utils/calorieCalculator";
 export default function ProfileScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
-
+  const setThemeMode = useAppStore((state) => state.setThemeMode);
+  const setLanguage = useAppStore((state) => state.setLanguage);
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const logout = useAuthStore((state) => state.logout);
+  const deleteAccount = useAuthStore((state) => state.deleteAccount);
   const goal = useGoalStore((state) => state.goal);
   const clearGoal = useGoalStore((state) => state.clearGoal);
   const clearMeals = useMealStore((state) => state.clearMeals);
-  const meals = useMealStore((state) => state.meals);
-
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
-  const deleteAccount = useAuthStore((state) => state.deleteAccount);
-
   const theme = getTheme(themeMode);
-
-  const totalCalories = meals.reduce((total, meal) => total + meal.calories, 0);
   const fallbackMacroTargets = calculateMacroTargets(
     goal?.targetCalories ?? 2000,
     goal?.goalType ?? "maintain",
@@ -41,15 +31,40 @@ export default function ProfileScreen() {
   const targetCarbs = goal?.targetCarbs || fallbackMacroTargets.carbs;
   const targetFat = goal?.targetFat || fallbackMacroTargets.fat;
 
+  const confirmClearMeals = () => {
+    Alert.alert(
+      translate("clearMealsTitle", language),
+      translate("clearMealsMessage", language),
+      [
+        { text: translate("cancel", language), style: "cancel" },
+        {
+          text: translate("clear", language),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearMeals(token);
+              Alert.alert(
+                translate("clearMeals", language),
+                translate("mealsCleared", language),
+              );
+            } catch (error) {
+              Alert.alert(
+                translate("error", language),
+                error instanceof Error ? error.message : translate("genericError", language),
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const confirmLogout = () => {
     Alert.alert(
       translate("confirmLogout", language),
       translate("confirmLogoutMessage", language),
       [
-        {
-          text: translate("cancel", language),
-          style: "cancel",
-        },
+        { text: translate("cancel", language), style: "cancel" },
         {
           text: translate("logout", language),
           style: "destructive",
@@ -69,10 +84,7 @@ export default function ProfileScreen() {
       translate("confirmDeleteAccount", language),
       translate("confirmDeleteAccountMessage", language),
       [
-        {
-          text: translate("cancel", language),
-          style: "cancel",
-        },
+        { text: translate("cancel", language), style: "cancel" },
         {
           text: translate("deleteAccount", language),
           style: "destructive",
@@ -104,103 +116,40 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerArea}>
-          <View
-            style={[
-              styles.avatarBox,
-              {
-                backgroundColor: theme.colors.primarySoft,
-              },
-            ]}
-          >
-            <Ionicons
-              name="person-outline"
-              size={34}
-              color={theme.colors.primary}
-            />
+          <View style={[styles.avatarBox, { backgroundColor: theme.colors.primarySoft }]}> 
+            <Ionicons name="person-outline" size={34} color={theme.colors.primary} />
           </View>
 
-          <Text style={[styles.title, { color: theme.colors.text }]}>
+          <Text style={[styles.title, { color: theme.colors.text }]}> 
             {user?.fullName || translate("guestUser", language)}
           </Text>
-
-          <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
-            {user?.email || translate("profileSubtitle", language)}
+          <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}> 
+            {translate("profileSubtitle", language)}
           </Text>
         </View>
 
-        <View style={styles.statsRow}>
-          <MiniStat
-            icon="flame-outline"
-            label={translate("calories", language)}
-            value={`${totalCalories} kcal`}
+        <Section title={translate("account", language)}>
+          <InfoRow
+            label={translate("fullName", language)}
+            value={user?.fullName || translate("guestUser", language)}
           />
-
-          <MiniStat
-            icon="restaurant-outline"
-            label={translate("meals", language)}
-            value={`${meals.length}`}
+          <InfoRow label={translate("email", language)} value={user?.email || "-"} />
+          <InfoRow
+            label={translate("emailVerificationStatus", language)}
+            value={
+              user?.emailVerified
+                ? translate("emailVerified", language)
+                : translate("emailNotVerifiedStatus", language)
+            }
           />
-        </View>
+        </Section>
 
         <Section title={translate("goalSummary", language)}>
           {goal ? (
             <View>
-              <View style={styles.goalRow}>
-                <View>
-                  <Text
-                    style={[
-                      styles.goalLabel,
-                      { color: theme.colors.mutedText },
-                    ]}
-                  >
-                    {translate("dailyTarget", language)}
-                  </Text>
-
-                  <Text
-                    style={[styles.goalValue, { color: theme.colors.text }]}
-                  >
-                    {goal.targetCalories} kcal
-                  </Text>
-                </View>
-
-                <Pressable
-                  onPress={() => router.push("/goal" as Href)}
-                  style={[
-                    styles.smallAction,
-                    {
-                      backgroundColor: theme.colors.primarySoft,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.smallActionText,
-                      { color: theme.colors.primary },
-                    ]}
-                  >
-                    {translate("editGoal", language)}
-                  </Text>
-                </Pressable>
-              </View>
-
-              <View
-                style={[
-                  styles.divider,
-                  { backgroundColor: theme.colors.border },
-                ]}
-              />
-
               <InfoRow
-                label={translate("weight", language)}
-                value={`${goal.weightKg} kg`}
-              />
-              <InfoRow
-                label={translate("height", language)}
-                value={`${goal.heightCm} cm`}
-              />
-              <InfoRow
-                label={translate("estimatedBmr", language)}
-                value={`${goal.bmr} kcal`}
+                label={translate("targetCalories", language)}
+                value={`${goal.targetCalories} kcal`}
               />
               <InfoRow
                 label={translate("targetProtein", language)}
@@ -210,116 +159,97 @@ export default function ProfileScreen() {
                 label={translate("targetCarbs", language)}
                 value={`${targetCarbs}g`}
               />
-              <InfoRow
-                label={translate("targetFat", language)}
-                value={`${targetFat}g`}
-              />
+              <InfoRow label={translate("targetFat", language)} value={`${targetFat}g`} />
             </View>
           ) : (
-            <View style={styles.emptyGoal}>
-              <Text
-                style={[styles.emptyText, { color: theme.colors.mutedText }]}
-              >
-                {translate("noGoalYet", language)}
-              </Text>
-
-              <Pressable
-                onPress={() => router.push("/goal" as Href)}
-                style={[
-                  styles.fullAction,
-                  {
-                    backgroundColor: theme.colors.primary,
-                  },
-                ]}
-              >
-                <Text style={styles.fullActionText}>
-                  {translate("goalSetup", language)}
-                </Text>
-              </Pressable>
-            </View>
+            <Text style={[styles.emptyText, { color: theme.colors.mutedText }]}> 
+              {translate("noGoalYet", language)}
+            </Text>
           )}
+
+          <ActionButton
+            label={translate("editGoal", language)}
+            icon="flag-outline"
+            onPress={() => router.push("/goal" as Href)}
+          />
         </Section>
 
-        <Section title={translate("account", language)}>
-          <DangerRow
+        <Section title={translate("preferences", language)}>
+          <Text style={[styles.groupLabel, { color: theme.colors.mutedText }]}> 
+            {translate("theme", language)}
+          </Text>
+          <View style={styles.segmentRow}>
+            <ChoicePill
+              label={translate("lightTheme", language)}
+              selected={themeMode === "light"}
+              onPress={() => setThemeMode("light")}
+            />
+            <ChoicePill
+              label={translate("darkTheme", language)}
+              selected={themeMode === "dark"}
+              onPress={() => setThemeMode("dark")}
+            />
+          </View>
+
+          <Text style={[styles.groupLabel, { color: theme.colors.mutedText }]}> 
+            {translate("language", language)}
+          </Text>
+          <View style={styles.segmentRow}>
+            <ChoicePill
+              label={translate("turkish", language)}
+              selected={language === "tr"}
+              onPress={() => setLanguage("tr")}
+            />
+            <ChoicePill
+              label={translate("english", language)}
+              selected={language === "en"}
+              onPress={() => setLanguage("en")}
+            />
+          </View>
+        </Section>
+
+        <Section title={translate("data", language)}>
+          <DangerButton
+            icon="trash-outline"
+            label={translate("clearMeals", language)}
+            onPress={confirmClearMeals}
+          />
+        </Section>
+
+        <Section title={translate("appInfo", language)}>
+          <InfoRow label="NutriTrack" value="" />
+          <InfoRow label={translate("version", language)} value="1.0.0" />
+          <InfoRow
+            label={translate("description", language)}
+            value={translate("smartNutritionTracking", language)}
+          />
+        </Section>
+
+        <Section title={translate("accountActions", language)}>
+          <DangerButton
             icon="log-out-outline"
             label={translate("logout", language)}
             onPress={confirmLogout}
           />
-
-          <DangerRow
+          <View style={styles.actionGap} />
+          <DangerButton
             icon="person-remove-outline"
             label={translate("deleteAccount", language)}
             onPress={confirmDeleteAccount}
           />
         </Section>
-
       </ScrollView>
     </Screen>
   );
 }
 
-type MiniStatProps = {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-};
-
-function MiniStat({ icon, label, value }: MiniStatProps) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
 
   return (
-    <View
-      style={[
-        styles.miniStat,
-        {
-          backgroundColor: theme.colors.card,
-          borderColor: theme.colors.border,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.miniIconBox,
-          {
-            backgroundColor: theme.colors.primarySoft,
-          },
-        ]}
-      >
-        <Ionicons name={icon} size={20} color={theme.colors.primary} />
-      </View>
-
-      <Text style={[styles.miniValue, { color: theme.colors.text }]}>
-        {value}
-      </Text>
-      <Text style={[styles.miniLabel, { color: theme.colors.mutedText }]}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-type SectionProps = {
-  title: string;
-  children: React.ReactNode;
-};
-
-function Section({ title, children }: SectionProps) {
-  const themeMode = useAppStore((state) => state.themeMode);
-  const theme = getTheme(themeMode);
-
-  return (
-    <View
-      style={[
-        styles.section,
-        {
-          backgroundColor: theme.colors.card,
-          borderColor: theme.colors.border,
-        },
-      ]}
-    >
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+    <View style={[styles.section, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}> 
+      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}> 
         {title}
       </Text>
       {children}
@@ -327,55 +257,98 @@ function Section({ title, children }: SectionProps) {
   );
 }
 
-type InfoRowProps = {
-  label: string;
-  value: string;
-};
-
-function InfoRow({ label, value }: InfoRowProps) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
 
   return (
     <View style={styles.infoRow}>
-      <Text style={[styles.infoLabel, { color: theme.colors.mutedText }]}>
+      <Text style={[styles.infoLabel, { color: theme.colors.mutedText }]}> 
         {label}
       </Text>
-      <Text style={[styles.infoValue, { color: theme.colors.text }]}>
+      <Text style={[styles.infoValue, { color: theme.colors.text }]}> 
         {value}
       </Text>
     </View>
   );
 }
 
-type DangerRowProps = {
-  icon: keyof typeof Ionicons.glyphMap;
+function ChoicePill({
+  label,
+  selected,
+  onPress,
+}: {
   label: string;
+  selected: boolean;
   onPress: () => void;
-};
-
-function DangerRow({ icon, label, onPress }: DangerRowProps) {
+}) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
 
   return (
-    <Pressable onPress={onPress} style={styles.settingRow}>
-      <View style={styles.settingLeft}>
-        <View
-          style={[
-            styles.settingIcon,
-            {
-              backgroundColor: theme.colors.cardSoft,
-            },
-          ]}
-        >
-          <Ionicons name={icon} size={19} color={theme.colors.danger} />
-        </View>
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.choicePill,
+        {
+          backgroundColor: selected ? theme.colors.primary : theme.colors.cardSoft,
+          borderColor: selected ? theme.colors.primary : theme.colors.border,
+        },
+      ]}
+    >
+      <Text style={[styles.choiceText, { color: selected ? "#FFFFFF" : theme.colors.text }]}> 
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
 
-        <Text style={[styles.settingLabel, { color: theme.colors.danger }]}>
-          {label}
-        </Text>
-      </View>
+function ActionButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  const themeMode = useAppStore((state) => state.themeMode);
+  const theme = getTheme(themeMode);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.actionButton, { backgroundColor: theme.colors.primarySoft }]}
+    >
+      <Ionicons name={icon} size={18} color={theme.colors.primary} />
+      <Text style={[styles.actionText, { color: theme.colors.primary }]}> 
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function DangerButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  const themeMode = useAppStore((state) => state.themeMode);
+  const theme = getTheme(themeMode);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.dangerButton, { backgroundColor: theme.colors.cardSoft }]}
+    >
+      <Ionicons name={icon} size={19} color={theme.colors.danger} />
+      <Text style={[styles.dangerText, { color: theme.colors.danger }]}> 
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -405,7 +378,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "900",
-    letterSpacing: -0.8,
     textAlign: "center",
   },
   subtitle: {
@@ -415,34 +387,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
     maxWidth: 315,
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  miniStat: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 22,
-    padding: 14,
-  },
-  miniIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  miniValue: {
-    fontSize: 17,
-    fontWeight: "900",
-  },
-  miniLabel: {
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: "700",
   },
   section: {
     borderWidth: 1,
@@ -455,91 +399,79 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     marginBottom: 16,
   },
-  goalRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  goalLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    marginBottom: 4,
-  },
-  goalValue: {
-    fontSize: 26,
-    fontWeight: "900",
-  },
-  smallAction: {
-    minHeight: 38,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  smallActionText: {
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  divider: {
-    height: 1,
-    marginVertical: 16,
-  },
   infoRow: {
-    minHeight: 32,
+    minHeight: 34,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 12,
   },
   infoLabel: {
+    flex: 1,
     fontSize: 13,
     fontWeight: "700",
   },
   infoValue: {
+    flex: 1,
     fontSize: 13,
     fontWeight: "900",
-    flexShrink: 1,
-    marginLeft: 12,
     textAlign: "right",
-  },
-  emptyGoal: {
-    gap: 14,
   },
   emptyText: {
     fontSize: 13,
-    fontWeight: "700",
     lineHeight: 19,
+    fontWeight: "700",
   },
-  fullAction: {
-    height: 48,
-    borderRadius: 17,
+  groupLabel: {
+    marginTop: 2,
+    marginBottom: 10,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  segmentRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 16,
+  },
+  choicePill: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 999,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 12,
   },
-  fullActionText: {
-    color: "#FFFFFF",
+  choiceText: {
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  actionButton: {
+    marginTop: 16,
+    minHeight: 48,
+    borderRadius: 17,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  actionText: {
     fontSize: 14,
     fontWeight: "900",
   },
-  settingRow: {
-    minHeight: 54,
+  dangerButton: {
+    minHeight: 48,
+    borderRadius: 17,
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  settingLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  settingIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
   },
-  settingLabel: {
+  dangerText: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "900",
+  },
+  actionGap: {
+    height: 10,
   },
 });

@@ -57,7 +57,15 @@ export default function GoalScreen() {
     setGoalType(savedGoal.goalType);
   }, [savedGoal]);
 
+  const validationMessage = useMemo(() => {
+    return getGoalValidationMessage(age, heightCm, weightKg, language);
+  }, [age, heightCm, weightKg, language]);
+
   const result = useMemo(() => {
+    if (validationMessage) {
+      return null;
+    }
+
     const parsedAge = Number(age);
     const parsedHeight = Number(heightCm);
     const parsedWeight = Number(weightKg);
@@ -82,9 +90,16 @@ export default function GoalScreen() {
         goalType,
       ),
     };
-  }, [age, heightCm, weightKg, gender, activityLevel, goalType]);
+  }, [age, heightCm, weightKg, gender, activityLevel, goalType, validationMessage]);
 
   const handleSaveGoal = async () => {
+    if (validationMessage) {
+      Alert.alert(translate("error", language), validationMessage, [
+        { text: translate("ok", language) },
+      ]);
+      return;
+    }
+
     if (!result) {
       return;
     }
@@ -225,6 +240,12 @@ export default function GoalScreen() {
               onChangeText={setWeightKg}
             />
 
+            {validationMessage ? (
+              <Text style={[styles.errorText, { color: theme.colors.danger }]}> 
+                {validationMessage}
+              </Text>
+            ) : null}
+
             <Text style={[styles.groupTitle, { color: theme.colors.text }]}>
               {translate("gender", language)}
             </Text>
@@ -306,7 +327,7 @@ export default function GoalScreen() {
             <Button
               onPress={handleSaveGoal}
               style={styles.calculateButton}
-              disabled={!result || isLoading}
+              disabled={!result || Boolean(validationMessage) || isLoading}
             >
               {result
                 ? translate("saveGoal", language)
@@ -517,6 +538,49 @@ export default function GoalScreen() {
   );
 }
 
+function parsePositiveNumber(value: string) {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function getGoalValidationMessage(
+  age: string,
+  heightCm: string,
+  weightKg: string,
+  language: "tr" | "en",
+) {
+  const parsedAge = parsePositiveNumber(age);
+  const parsedHeight = parsePositiveNumber(heightCm);
+  const parsedWeight = parsePositiveNumber(weightKg);
+
+  if (parsedAge === null || parsedHeight === null || parsedWeight === null) {
+    return translate("invalidValue", language);
+  }
+
+  if (parsedAge < 13 || parsedAge > 100) {
+    return translate("ageRangeError", language);
+  }
+
+  if (parsedHeight < 100 || parsedHeight > 230) {
+    return translate("heightRangeError", language);
+  }
+
+  if (parsedWeight < 30 || parsedWeight > 250) {
+    return translate("weightRangeError", language);
+  }
+
+  return null;
+}
+
 type OptionChipProps = {
   label: string;
   selected: boolean;
@@ -629,6 +693,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "900",
     marginTop: 2,
+  },
+  errorText: {
+    marginTop: -2,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "800",
   },
   chipRow: {
     flexDirection: "row",

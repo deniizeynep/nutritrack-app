@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { authApi, type AuthUser } from "../services/authApi";
+import { authApi, type AuthResult, type AuthUser } from "../services/authApi";
 import {
   GoogleSignInError,
   signInWithGoogleProvider,
@@ -14,6 +14,8 @@ type AuthState = {
   isLoading: boolean;
   hasHydrated: boolean;
   hasCheckedSession: boolean;
+  pendingVerificationEmail: string | null;
+  requiresEmailVerification: boolean;
   error: string | null;
   register: (
     fullName: string,
@@ -22,6 +24,9 @@ type AuthState = {
   ) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  verifyEmail: (email: string, code: string) => Promise<void>;
+  resendVerification: (email: string) => Promise<void>;
+  clearPendingVerification: () => void;
   loadMe: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   logout: () => void;
@@ -38,6 +43,8 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       hasHydrated: false,
       hasCheckedSession: false,
+      pendingVerificationEmail: null,
+      requiresEmailVerification: false,
       error: null,
 
       register: async (fullName, email, password) => {
@@ -53,14 +60,7 @@ export const useAuthStore = create<AuthState>()(
             password,
           });
 
-          set({
-            user: response.user,
-            token: response.token,
-            isAuthenticated: true,
-            isLoading: false,
-            hasCheckedSession: true,
-            error: null,
-          });
+          applyAuthResult(response, set);
         } catch (error) {
           set({
             isLoading: false,
@@ -86,14 +86,7 @@ export const useAuthStore = create<AuthState>()(
             password,
           });
 
-          set({
-            user: response.user,
-            token: response.token,
-            isAuthenticated: true,
-            isLoading: false,
-            hasCheckedSession: true,
-            error: null,
-          });
+          applyAuthResult(response, set);
         } catch (error) {
           set({
             isLoading: false,
@@ -123,6 +116,8 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
             hasCheckedSession: true,
+            pendingVerificationEmail: null,
+            requiresEmailVerification: false,
             error: null,
           });
         } catch (error) {
@@ -143,6 +138,66 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      verifyEmail: async (email, code) => {
+        try {
+          set({
+            isLoading: true,
+            error: null,
+          });
+
+          const response = await authApi.verifyEmail({ email, code });
+
+          set({
+            user: response.user,
+            token: response.token,
+            isAuthenticated: true,
+            isLoading: false,
+            hasCheckedSession: true,
+            pendingVerificationEmail: null,
+            requiresEmailVerification: false,
+            error: null,
+          });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Email doğrulanamadı.",
+          });
+
+          throw error;
+        }
+      },
+
+      resendVerification: async (email) => {
+        try {
+          set({ isLoading: true, error: null });
+          await authApi.resendVerification(email);
+          set({
+            isLoading: false,
+            pendingVerificationEmail: email,
+            requiresEmailVerification: true,
+            error: null,
+          });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error:
+              error instanceof Error ? error.message : "Kod gönderilemedi.",
+          });
+
+          throw error;
+        }
+      },
+
+      clearPendingVerification: () =>
+        set({
+          pendingVerificationEmail: null,
+          requiresEmailVerification: false,
+          error: null,
+        }),
+
       loadMe: async () => {
         const token = get().token;
 
@@ -152,6 +207,8 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             isLoading: false,
             hasCheckedSession: true,
+            pendingVerificationEmail: null,
+            requiresEmailVerification: false,
           });
           return;
         }
@@ -169,6 +226,8 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
             hasCheckedSession: true,
+            pendingVerificationEmail: null,
+            requiresEmailVerification: false,
             error: null,
           });
         } catch {
@@ -178,6 +237,8 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             isLoading: false,
             hasCheckedSession: true,
+            pendingVerificationEmail: null,
+            requiresEmailVerification: false,
           });
         }
       },
@@ -188,6 +249,8 @@ export const useAuthStore = create<AuthState>()(
           token: null,
           isAuthenticated: false,
           hasCheckedSession: true,
+          pendingVerificationEmail: null,
+          requiresEmailVerification: false,
           error: null,
         }),
 
@@ -200,6 +263,8 @@ export const useAuthStore = create<AuthState>()(
             token: null,
             isAuthenticated: false,
             hasCheckedSession: true,
+            pendingVerificationEmail: null,
+            requiresEmailVerification: false,
             error: null,
           });
           return;
@@ -219,6 +284,8 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             isLoading: false,
             hasCheckedSession: true,
+            pendingVerificationEmail: null,
+            requiresEmailVerification: false,
             error: null,
           });
         } catch (error) {
@@ -254,3 +321,39 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+
+function isEmailVerificationRequired(
+  response: AuthResult,
+): response is Extract<AuthResult, { requiresEmailVerification: true }> {
+  return "requiresEmailVerification" in response;
+}
+
+function applyAuthResult(
+  response: AuthResult,
+  set: (partial: Partial<AuthState>) => void,
+) {
+  if (isEmailVerificationRequired(response)) {
+    set({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+      hasCheckedSession: true,
+      pendingVerificationEmail: response.email,
+      requiresEmailVerification: true,
+      error: null,
+    });
+    return;
+  }
+
+  set({
+    user: response.user,
+    token: response.token,
+    isAuthenticated: true,
+    isLoading: false,
+    hasCheckedSession: true,
+    pendingVerificationEmail: null,
+    requiresEmailVerification: false,
+    error: null,
+  });
+}

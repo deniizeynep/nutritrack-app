@@ -310,6 +310,61 @@ export const translations = {
     en: "Google sign-in is currently unavailable.",
   },
 
+  verifyEmail: {
+    tr: "Email doğrulama",
+    en: "Verify Email",
+  },
+
+  enterVerificationCode: {
+    tr: "Gmail adresine gönderilen 6 haneli kodu gir.",
+    en: "Enter the 6-digit code sent to your Gmail address.",
+  },
+
+  verificationCode: {
+    tr: "Doğrulama Kodu",
+    en: "Verification Code",
+  },
+
+  verifyCode: {
+    tr: "Kodu Doğrula",
+    en: "Verify Code",
+  },
+
+  resendCode: {
+    tr: "Kodu Tekrar Gönder",
+    en: "Resend Code",
+  },
+
+  codeSentAgain: {
+    tr: "Kod yeniden gönderildi.",
+    en: "Code sent again.",
+  },
+
+  invalidOrExpiredCode: {
+    tr: "Kod hatalı veya süresi dolmuş.",
+    en: "The code is invalid or expired.",
+  },
+
+  emailNotVerified: {
+    tr: "Email doğrulanmadı.",
+    en: "Email is not verified.",
+  },
+
+  onlyGmailAccepted: {
+    tr: "Sadece Gmail adresleri kabul edilir.",
+    en: "Only Gmail addresses are accepted.",
+  },
+
+  verificationCodeSent: {
+    tr: "Doğrulama kodu gönderildi.",
+    en: "Verification code sent.",
+  },
+
+  googleEmailVerified: {
+    tr: "Google email adresi doğrulandı.",
+    en: "Google email is verified.",
+  },
+
   back: {
     tr: "Geri",
     en: "Back",
@@ -334,6 +389,11 @@ export const translations = {
     en: "Ex. 22",
   },
 
+  ageRangeError: {
+    tr: "Yaş 13 ile 100 arasında olmalı.",
+    en: "Age must be between 13 and 100.",
+  },
+
   height: {
     tr: "Boy",
     en: "Height",
@@ -344,6 +404,11 @@ export const translations = {
     en: "Ex. 165",
   },
 
+  heightRangeError: {
+    tr: "Boy 100 cm ile 230 cm arasında olmalı.",
+    en: "Height must be between 100 cm and 230 cm.",
+  },
+
   weight: {
     tr: "Kilo",
     en: "Weight",
@@ -352,6 +417,16 @@ export const translations = {
   weightPlaceholder: {
     tr: "Örn. 58",
     en: "Ex. 58",
+  },
+
+  weightRangeError: {
+    tr: "Kilo 30 kg ile 250 kg arasında olmalı.",
+    en: "Weight must be between 30 kg and 250 kg.",
+  },
+
+  invalidValue: {
+    tr: "Lütfen geçerli bir değer gir.",
+    en: "Please enter a valid value.",
   },
 
   gender: {
@@ -729,6 +804,26 @@ export const translations = {
     en: "Fat Target",
   },
 
+  emailVerificationStatus: {
+    tr: "Email Durumu",
+    en: "Email Status",
+  },
+
+  emailVerified: {
+    tr: "Doğrulandı",
+    en: "Verified",
+  },
+
+  emailNotVerifiedStatus: {
+    tr: "Doğrulanmadı",
+    en: "Not verified",
+  },
+
+  accountActions: {
+    tr: "Hesap İşlemleri",
+    en: "Account Actions",
+  },
+
   macroTargetsNote: {
     tr: "Bu değerler başlangıç önerisidir, kişisel ihtiyaçlara göre değişebilir.",
     en: "These values are starting suggestions and may vary by personal needs.",
@@ -832,6 +927,11 @@ export const translations = {
   mealsCleared: {
     tr: "Öğünler temizlendi.",
     en: "Meals cleared.",
+  },
+
+  foodNotDetected: {
+    tr: "Yemek tespit edilemedi. Lütfen daha net bir yemek fotoğrafı dene.",
+    en: "No food was detected. Please try a clearer food photo.",
   },
 
   data: {
@@ -1187,6 +1287,31 @@ export const translations = {
   },
 
   passwordMismatch: {
+    tr: "Şifreler eşleşmiyor.",
+    en: "Passwords do not match.",
+  },
+
+  fullNameMinError: {
+    tr: "Ad soyad en az 2 karakter olmalı.",
+    en: "Full name must be at least 2 characters.",
+  },
+
+  validGmailError: {
+    tr: "Lütfen geçerli bir Gmail adresi gir.",
+    en: "Please enter a valid Gmail address.",
+  },
+
+  passwordMinError: {
+    tr: "Şifre en az 8 karakter olmalı.",
+    en: "Password must be at least 8 characters.",
+  },
+
+  passwordLetterNumberError: {
+    tr: "Şifre en az bir harf ve bir rakam içermeli.",
+    en: "Password must include at least one letter and one number.",
+  },
+
+  passwordsDoNotMatch: {
     tr: "Şifreler eşleşmiyor.",
     en: "Passwords do not match.",
   },

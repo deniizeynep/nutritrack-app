@@ -3,6 +3,8 @@ import OpenAI from "openai";
 import { z } from "zod";
 
 export type FoodAnalysisResult = {
+  isFood: boolean;
+  message?: string;
   foodName: {
     tr: string;
     en: string;
@@ -62,9 +64,11 @@ type ProviderErrorDetails = {
 };
 
 const foodAnalysisSchema = z.object({
+  isFood: z.boolean(),
+  message: z.string().optional(),
   foodName: z.object({
-    tr: z.string().min(1),
-    en: z.string().min(1),
+    tr: z.string(),
+    en: z.string(),
   }),
   portion: z.object({
     tr: z.string().min(1),
@@ -78,6 +82,7 @@ const foodAnalysisSchema = z.object({
 });
 
 const mockFoodAnalysis: FoodAnalysisResult = {
+  isFood: true,
   foodName: {
     tr: "Lahmacun",
     en: "Lahmacun",
@@ -98,6 +103,8 @@ const foodAnalysisJsonSchema = {
   type: "object",
   additionalProperties: false,
   properties: {
+    isFood: { type: "boolean" },
+    message: { type: "string" },
     foodName: {
       type: "object",
       additionalProperties: false,
@@ -123,6 +130,8 @@ const foodAnalysisJsonSchema = {
     confidence: { type: "number", minimum: 0, maximum: 100 },
   },
   required: [
+    "isFood",
+    "message",
     "foodName",
     "portion",
     "calories",
@@ -136,6 +145,8 @@ const foodAnalysisJsonSchema = {
 const geminiFoodAnalysisSchema: Schema = {
   type: Type.OBJECT,
   properties: {
+    isFood: { type: Type.BOOLEAN },
+    message: { type: Type.STRING },
     foodName: {
       type: Type.OBJECT,
       properties: {
@@ -159,6 +170,8 @@ const geminiFoodAnalysisSchema: Schema = {
     confidence: { type: Type.NUMBER, minimum: 0, maximum: 100 },
   },
   required: [
+    "isFood",
+    "message",
     "foodName",
     "portion",
     "calories",
@@ -319,8 +332,8 @@ async function analyzeFoodPhotoWithOpenAI(
           content: [
             {
               type: "input_text",
-              text:
-                "Analyze this food photo for a calorie tracking app. Return only the requested JSON fields. Estimate calories and macros for the visible portion. If the food is unclear, return your best estimate with lower confidence. Do not claim medical certainty; this is only a nutrition estimate that the user can edit.",
+      text:
+                "Analyze this food photo for a calorie tracking app. Return only the requested JSON fields. Set isFood to false if no edible food is visible; in that case set calories, protein, carbs and fat to 0, confidence to 0, foodName to 'No food detected' / 'Yemek tespit edilemedi', portion to 'N/A', and include a short message. If food is visible, set isFood to true and estimate calories and macros for the visible portion. Do not claim medical certainty; this is only a nutrition estimate that the user can edit.",
             },
             {
               type: "input_image",
@@ -381,7 +394,7 @@ async function analyzeFoodPhotoWithGemini(
       contents: [
         {
           text:
-            "Analyze this food photo for a calorie tracking app. Return only JSON that matches the response schema. Estimate calories and macros for the visible portion. If the food is unclear, return your best estimate with lower confidence. Do not claim medical certainty; this is only a nutrition estimate that the user can edit.",
+            "Analyze this food photo for a calorie tracking app. Return only JSON that matches the response schema. Set isFood to false if no edible food is visible; in that case set calories, protein, carbs and fat to 0, confidence to 0, foodName to 'No food detected' / 'Yemek tespit edilemedi', portion to 'N/A', and include a short message. If food is visible, set isFood to true and estimate calories and macros for the visible portion. Do not claim medical certainty; this is only a nutrition estimate that the user can edit.",
         },
         {
           inlineData: {

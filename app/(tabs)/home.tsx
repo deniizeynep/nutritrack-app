@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   Alert,
   Pressable,
@@ -12,7 +12,6 @@ import {
 import { MacroProgress } from "../../src/components/MacroProgress";
 import { MealCard } from "../../src/components/MealCard";
 import { Screen } from "../../src/components/Screen";
-import { SideDrawer } from "../../src/components/SideDrawer";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
 import { useAuthStore } from "../../src/stores/authStore";
@@ -34,7 +33,6 @@ export default function HomeScreen() {
   const meals = useMealStore((state) => state.meals);
   const fetchMeals = useMealStore((state) => state.fetchMeals);
   const deleteMeal = useMealStore((state) => state.deleteMeal);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   useEffect(() => {
     fetchMeals(token);
@@ -107,18 +105,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Pressable
-            onPress={() => setIsDrawerOpen(true)}
-            style={[
-              styles.iconButton,
-              {
-                backgroundColor: theme.colors.card,
-                borderColor: theme.colors.border,
-              },
-            ]}
-          >
-            <Ionicons name="menu-outline" size={24} color={theme.colors.text} />
-          </Pressable>
+          <View style={styles.headerSpacer} />
 
           <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
             {translate("today", language)}
@@ -438,10 +425,6 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      <SideDrawer
-        visible={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-      />
     </Screen>
   );
 }
@@ -499,13 +482,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
+  headerSpacer: {
+    width: 84,
   },
   headerTitle: {
     fontSize: 18,

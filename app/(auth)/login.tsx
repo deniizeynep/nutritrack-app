@@ -25,6 +25,8 @@ import {
 } from "../../src/services/googleAuth";
 import { getTheme } from "../../src/theme/theme";
 
+const gmailRegex = /^[^\s@]+@gmail\.com$/i;
+
 export default function LoginScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
@@ -52,8 +54,19 @@ export default function LoginScreen() {
       return;
     }
 
+    if (!gmailRegex.test(email.trim())) {
+      Alert.alert(translate("login", language), translate("validGmailError", language), [
+        { text: translate("ok", language) },
+      ]);
+      return;
+    }
+
     try {
       await login(email.trim(), password);
+      if (useAuthStore.getState().requiresEmailVerification) {
+        router.replace("/(auth)/verify-email" as Href);
+        return;
+      }
       router.replace("/(tabs)/home" as Href);
     } catch (error) {
       Alert.alert(

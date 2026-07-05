@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -25,6 +25,9 @@ import {
 } from "../../src/services/googleAuth";
 import { getTheme } from "../../src/theme/theme";
 
+const gmailRegex = /^[^\s@]+@gmail\.com$/i;
+const passwordHasLetterAndNumber = /^(?=.*[A-Za-z])(?=.*\d).+$/;
+
 export default function RegisterScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
@@ -40,6 +43,17 @@ export default function RegisterScreen() {
   const isLoading = useAuthStore((state) => state.isLoading);
   const canUseGoogleSignIn = isGoogleSignInAvailable();
   const hasGoogleConfig = hasGoogleSignInConfig();
+  const registerValidationMessage = useMemo(
+    () =>
+      getRegisterValidationMessage({
+        fullName,
+        email,
+        password,
+        confirmPassword,
+        language,
+      }),
+    [confirmPassword, email, fullName, language, password],
+  );
   const googleSignInHint = isExpoGoBuild()
     ? translate("googleSignInRequiresBuild", language)
     : !hasGoogleConfig
@@ -47,15 +61,8 @@ export default function RegisterScreen() {
     : translate("googleSignInUnavailable", language);
 
   const handleRegister = async () => {
-    if (!fullName.trim() || !email.trim() || !password.trim()) {
-      Alert.alert(translate("requiredFields", language), "", [
-        { text: translate("ok", language) },
-      ]);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert(translate("passwordMismatch", language), "", [
+    if (registerValidationMessage) {
+      Alert.alert(translate("createAccount", language), registerValidationMessage, [
         { text: translate("ok", language) },
       ]);
       return;
@@ -63,6 +70,10 @@ export default function RegisterScreen() {
 
     try {
       await register(fullName.trim(), email.trim(), password);
+      if (useAuthStore.getState().requiresEmailVerification) {
+        router.replace("/(auth)/verify-email" as Href);
+        return;
+      }
       router.replace("/(tabs)/home" as Href);
     } catch (error) {
       Alert.alert(
@@ -204,7 +215,16 @@ export default function RegisterScreen() {
                 isPassword
               />
 
-              <Button onPress={handleRegister} disabled={isLoading}>
+              {registerValidationMessage ? (
+                <Text style={[styles.validationText, { color: theme.colors.danger }]}> 
+                  {registerValidationMessage}
+                </Text>
+              ) : null}
+
+              <Button
+                onPress={handleRegister}
+                disabled={isLoading || Boolean(registerValidationMessage)}
+              >
                 {isLoading ? "..." : translate("createAccount", language)}
               </Button>
 
@@ -292,6 +312,51 @@ export default function RegisterScreen() {
       </KeyboardAvoidingView>
     </Screen>
   );
+}
+
+function getRegisterValidationMessage({
+  fullName,
+  email,
+  password,
+  confirmPassword,
+  language,
+}: {
+  fullName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  language: "tr" | "en";
+}) {
+  const trimmedName = fullName.trim();
+  const trimmedEmail = email.trim();
+
+  if (!trimmedName || !trimmedEmail || !password || !confirmPassword) {
+    return translate("requiredFields", language);
+  }
+
+  if (trimmedName.length < 2) {
+    return translate("fullNameMinError", language);
+  }
+
+  if (!gmailRegex.test(trimmedEmail)) {
+    return trimmedEmail.includes("@")
+      ? translate("onlyGmailAccepted", language)
+      : translate("validGmailError", language);
+  }
+
+  if (password.length < 8) {
+    return translate("passwordMinError", language);
+  }
+
+  if (!passwordHasLetterAndNumber.test(password)) {
+    return translate("passwordLetterNumberError", language);
+  }
+
+  if (password !== confirmPassword) {
+    return translate("passwordsDoNotMatch", language);
+  }
+
+  return null;
 }
 
 const styles = StyleSheet.create({
@@ -404,6 +469,12 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: "700",
     textAlign: "center",
+  },
+  validationText: {
+    marginTop: -2,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "800",
   },
   bottomLink: {
     paddingTop: 24,

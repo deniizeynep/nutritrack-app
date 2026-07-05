@@ -8,9 +8,9 @@ const router = Router();
 router.use(authMiddleware);
 
 const goalSchema = z.object({
-  age: z.number().int().positive(),
-  heightCm: z.number().int().positive(),
-  weightKg: z.number().int().positive(),
+  age: z.number().int().min(13).max(100),
+  heightCm: z.number().int().min(100).max(230),
+  weightKg: z.number().int().min(30).max(250),
   gender: z.enum(["female", "male"]),
   activityLevel: z.enum([
     "sedentary",

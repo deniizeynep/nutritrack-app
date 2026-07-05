@@ -15,6 +15,10 @@ model User {
   googleId     String?  @unique
   avatarUrl    String?
   authProvider String   @default("email")
+  emailVerified Boolean  @default(false)
+  emailOtpHash String?
+  emailOtpExpiresAt DateTime?
+  emailOtpLastSentAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

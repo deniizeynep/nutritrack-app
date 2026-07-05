@@ -35,6 +35,9 @@ export default function ScanPhotoScreen() {
   const [estimate, setEstimate] = useState<PhotoEstimate | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [permissionError, setPermissionError] = useState(false);
+  const canAddEstimateAsMeal = Boolean(
+    estimate && estimate.isFood !== false && estimate.calories > 0,
+  );
 
   const pickImage = async () => {
     setPermissionError(false);
@@ -114,7 +117,12 @@ export default function ScanPhotoScreen() {
   };
 
   const addEstimateAsMeal = async () => {
-    if (!estimate) {
+    if (!estimate || estimate.isFood === false || estimate.calories <= 0) {
+      Alert.alert(
+        translate("scanWithPhoto", language),
+        translate("foodNotDetected", language),
+        [{ text: translate("ok", language) }],
+      );
       return;
     }
 
@@ -377,7 +385,7 @@ export default function ScanPhotoScreen() {
                   {translate("estimatedResult", language)}
                 </Text>
 
-                <Text style={[styles.foodName, { color: theme.colors.text }]}>
+                <Text style={[styles.foodName, { color: theme.colors.text }]}> 
                   {estimate.foodName[language]}
                 </Text>
 
@@ -445,9 +453,30 @@ export default function ScanPhotoScreen() {
               </Text>
             </View>
 
-            <Button onPress={addEstimateAsMeal} style={styles.addButton}>
-              {translate("addAsMeal", language)}
-            </Button>
+            {!canAddEstimateAsMeal ? (
+              <View
+                style={[
+                  styles.warningCard,
+                  {
+                    backgroundColor: theme.colors.cardSoft,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={22}
+                  color={theme.colors.warning}
+                />
+                <Text style={[styles.warningText, { color: theme.colors.mutedText }]}> 
+                  {estimate.message || translate("foodNotDetected", language)}
+                </Text>
+              </View>
+            ) : (
+              <Button onPress={addEstimateAsMeal} style={styles.addButton}>
+                {translate("addAsMeal", language)}
+              </Button>
+            )}
           </View>
         ) : null}
       </ScrollView>

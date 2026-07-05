@@ -9,6 +9,7 @@ Users can create nutrition goals, track meals, scan barcodes, analyze food photo
 ## Features
 
 - Email/password authentication
+- Gmail OTP email verification
 - Google Sign-In support
 - Daily calorie goal calculation
 - Goal-based macro targets
@@ -100,6 +101,18 @@ npm run db:generate
 npm run db:migrate
 npm run dev
 ```
+
+Email OTP requires SMTP configuration. Gmail App Password can be used for SMTP during testing. Store real SMTP values only in Render Environment variables:
+
+```bash
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
+```
+
+After deploying email verification changes, run the Neon/Render migration deploy and redeploy the backend.
 
 ---
 

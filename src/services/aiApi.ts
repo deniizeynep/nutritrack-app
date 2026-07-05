@@ -2,6 +2,8 @@ import * as FileSystem from "expo-file-system/legacy";
 import { API_CONFIG } from "../config/api";
 
 export type FoodPhotoEstimate = {
+  isFood?: boolean;
+  message?: string;
   foodName: {
     tr: string;
     en: string;
