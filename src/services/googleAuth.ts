@@ -1,7 +1,9 @@
 import Constants from "expo-constants";
 
 const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-const isExpoGo = Constants.appOwnership === "expo";
+const isExpoGo =
+  Constants.executionEnvironment === "storeClient" ||
+  Constants.appOwnership === "expo";
 
 let isConfigured = false;
 
@@ -33,7 +35,11 @@ export class GoogleSignInError extends Error {
 }
 
 export function isGoogleSignInAvailable() {
-  return !isExpoGo && Boolean(webClientId);
+  return !isExpoGo;
+}
+
+export function hasGoogleSignInConfig() {
+  return Boolean(webClientId);
 }
 
 export function isExpoGoBuild() {

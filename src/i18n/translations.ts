@@ -290,6 +290,11 @@ export const translations = {
     en: "Google sign-in failed.",
   },
 
+  googleSignInConfigMissing: {
+    tr: "Google ile giriş yapılandırması eksik.",
+    en: "Google sign-in configuration is missing.",
+  },
+
   googlePlayServicesUnavailable: {
     tr: "Bu cihazda Google Play Hizmetleri kullanılamıyor olabilir.",
     en: "Google Play Services may not be available on this device.",

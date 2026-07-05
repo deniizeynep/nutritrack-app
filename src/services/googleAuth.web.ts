@@ -12,6 +12,10 @@ export function isGoogleSignInAvailable() {
   return false;
 }
 
+export function hasGoogleSignInConfig() {
+  return Boolean(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
+}
+
 export function isExpoGoBuild() {
   return false;
 }

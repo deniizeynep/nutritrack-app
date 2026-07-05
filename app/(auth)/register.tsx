@@ -20,6 +20,7 @@ import { useAuthStore } from "../../src/stores/authStore";
 import {
   GoogleSignInError,
   isExpoGoBuild,
+  hasGoogleSignInConfig,
   isGoogleSignInAvailable,
 } from "../../src/services/googleAuth";
 import { getTheme } from "../../src/theme/theme";
@@ -38,8 +39,11 @@ export default function RegisterScreen() {
   const signInWithGoogle = useAuthStore((state) => state.signInWithGoogle);
   const isLoading = useAuthStore((state) => state.isLoading);
   const canUseGoogleSignIn = isGoogleSignInAvailable();
+  const hasGoogleConfig = hasGoogleSignInConfig();
   const googleSignInHint = isExpoGoBuild()
     ? translate("googleSignInRequiresBuild", language)
+    : !hasGoogleConfig
+      ? translate("googleSignInConfigMissing", language)
     : translate("googleSignInUnavailable", language);
 
   const handleRegister = async () => {
@@ -227,7 +231,7 @@ export default function RegisterScreen() {
               </View>
 
               <Pressable
-                disabled={isLoading || !canUseGoogleSignIn}
+                disabled={isLoading || !canUseGoogleSignIn || !hasGoogleConfig}
                 onPress={handleGoogleRegister}
                 style={[
                   styles.googleButton,
@@ -235,7 +239,10 @@ export default function RegisterScreen() {
                     backgroundColor:
                       themeMode === "dark" ? theme.colors.cardSoft : "#FFFFFF",
                     borderColor: theme.colors.border,
-                    opacity: isLoading || !canUseGoogleSignIn ? 0.6 : 1,
+                    opacity:
+                      isLoading || !canUseGoogleSignIn || !hasGoogleConfig
+                        ? 0.6
+                        : 1,
                   },
                 ]}
               >
@@ -252,7 +259,7 @@ export default function RegisterScreen() {
                 </Text>
               </Pressable>
 
-              {!canUseGoogleSignIn ? (
+              {!canUseGoogleSignIn || !hasGoogleConfig ? (
                 <Text
                   style={[
                     styles.googleNote,
