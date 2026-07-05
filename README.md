@@ -111,6 +111,10 @@ npx eas build -p android --profile preview
 
 Google Sign-In should be tested in an EAS preview or development build, not in Expo Go.
 
+Preview Android builds use the app name `NutriTrack Preview` and package name `com.zeynepdeniz.nutritrack.preview` so testers can install them separately from production builds. Production Android builds keep `com.zeynepdeniz.nutritrack`.
+
+If Google Sign-In is tested in the preview APK, create a separate Android OAuth Client in Google Cloud Console for package `com.zeynepdeniz.nutritrack.preview` using the EAS preview keystore SHA-1. The Web Client ID used by the backend can stay the same.
+
 ---
 
 ## Developer

@@ -1,0 +1,55 @@
+const isPreview = process.env.APP_VARIANT === "preview";
+
+module.exports = {
+  expo: {
+    name: isPreview ? "NutriTrack Preview" : "NutriTrack",
+    slug: "nutritrack",
+    version: "1.0.0",
+    orientation: "portrait",
+    icon: "./assets/icon.png",
+    scheme: "nutritrack",
+    userInterfaceStyle: "automatic",
+    ios: {
+      icon: "./assets/icon.png",
+    },
+    android: {
+      package: isPreview
+        ? "com.zeynepdeniz.nutritrack.preview"
+        : "com.zeynepdeniz.nutritrack",
+      versionCode: 1,
+      permissions: ["CAMERA"],
+      adaptiveIcon: {
+        backgroundColor: "#EAF8EF",
+        foregroundImage: "./assets/adaptive-icon.png",
+      },
+      predictiveBackGestureEnabled: false,
+    },
+    web: {
+      output: "static",
+      favicon: "./assets/favicon.png",
+    },
+    plugins: [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          backgroundColor: "#EAF8EF",
+          android: {
+            image: "./assets/splash-icon.png",
+            imageWidth: 84,
+          },
+        },
+      ],
+    ],
+    experiments: {
+      typedRoutes: true,
+      reactCompiler: true,
+    },
+    extra: {
+      router: {},
+      eas: {
+        projectId: "5e1094fc-d03b-4351-9cf8-10ec2560907c",
+      },
+    },
+  },
+};
