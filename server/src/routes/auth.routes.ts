@@ -5,7 +5,10 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { authMiddleware, type AuthRequest } from "../middleware/authMiddleware";
 import { authRateLimiter } from "../middleware/rateLimit";
-import { sendVerificationCode } from "../services/email.service";
+import {
+  sendPasswordResetCode,
+  sendVerificationCode,
+} from "../services/email.service";
 import { createToken } from "../utils/token";
 
 const router = Router();
@@ -41,6 +44,16 @@ const verifyEmailSchema = z.object({
 
 const resendVerificationSchema = z.object({
   email: gmailSchema,
+});
+
+const forgotPasswordSchema = z.object({
+  email: gmailSchema,
+});
+
+const resetPasswordSchema = z.object({
+  email: gmailSchema,
+  code: z.string().regex(/^\d{6}$/),
+  newPassword: passwordSchema,
 });
 
 const googleAuthSchema = z.object({
@@ -118,11 +131,40 @@ async function issueAndSendOtp(userId: string, email: string) {
   });
 }
 
+async function issueAndSendPasswordResetOtp(userId: string, email: string) {
+  const code = generateOtp();
+  const passwordResetOtpHash = await createOtpHash(code);
+  const now = new Date();
+
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      passwordResetOtpHash,
+      passwordResetOtpExpiresAt: getOtpExpiry(),
+      passwordResetOtpLastSentAt: now,
+    },
+  });
+
+  await sendPasswordResetCode({
+    to: email,
+    code,
+  });
+}
+
 function verificationRequiredResponse(email: string, message: string) {
   return {
     requiresEmailVerification: true,
     email,
     message,
+  };
+}
+
+function passwordResetRequestedResponse(email: string) {
+  return {
+    message: "If this Gmail address exists, a password reset code has been sent.",
+    email,
   };
 }
 
@@ -298,6 +340,127 @@ router.post("/resend-verification", authRateLimiter, async (req, res) => {
 
     res.status(500).json({
       message: "Kod yeniden gönderilemedi.",
+    });
+  }
+});
+
+router.post("/forgot-password", authRateLimiter, async (req, res) => {
+  try {
+    const parsed = forgotPasswordSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        message: "Lütfen geçerli bir Gmail adresi girin.",
+      });
+      return;
+    }
+
+    const { email } = parsed.data;
+    const user = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (!user || !user.passwordHash) {
+      res.json(passwordResetRequestedResponse(email));
+      return;
+    }
+
+    if (
+      user.passwordResetOtpLastSentAt &&
+      Date.now() - user.passwordResetOtpLastSentAt.getTime() < 60 * 1000
+    ) {
+      res.status(429).json({
+        message: "Yeni kod istemeden önce biraz bekleyin.",
+      });
+      return;
+    }
+
+    await issueAndSendPasswordResetOtp(user.id, email);
+
+    res.json(passwordResetRequestedResponse(email));
+  } catch (error) {
+    console.error("FORGOT PASSWORD ERROR:", error);
+
+    res.status(500).json({
+      message: "Şifre sıfırlama kodu gönderilemedi.",
+    });
+  }
+});
+
+router.post("/reset-password", authRateLimiter, async (req, res) => {
+  try {
+    const parsed = resetPasswordSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        message: "Kod veya yeni şifre geçersiz.",
+      });
+      return;
+    }
+
+    const { email, code, newPassword } = parsed.data;
+    const user = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (
+      !user ||
+      !user.passwordHash ||
+      !user.passwordResetOtpHash ||
+      !user.passwordResetOtpExpiresAt
+    ) {
+      res.status(400).json({
+        message: "Kod hatalı veya süresi dolmuş.",
+      });
+      return;
+    }
+
+    if (user.passwordResetOtpExpiresAt.getTime() < Date.now()) {
+      res.status(400).json({
+        message: "Kodun süresi doldu. Lütfen yeni kod isteyin.",
+      });
+      return;
+    }
+
+    const isCodeValid = await bcrypt.compare(code, user.passwordResetOtpHash);
+
+    if (!isCodeValid) {
+      res.status(400).json({
+        message: "Kod hatalı veya süresi dolmuş.",
+      });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: {
+        email,
+      },
+      data: {
+        passwordHash,
+        emailVerified: true,
+        emailOtpHash: null,
+        emailOtpExpiresAt: null,
+        emailOtpLastSentAt: null,
+        passwordResetOtpHash: null,
+        passwordResetOtpExpiresAt: null,
+        passwordResetOtpLastSentAt: null,
+      },
+    });
+
+    res.json({
+      message: "Password has been reset successfully.",
+    });
+  } catch (error) {
+    console.error("RESET PASSWORD ERROR:", error);
+
+    res.status(500).json({
+      message: "Şifre sıfırlanamadı.",
     });
   }
 });

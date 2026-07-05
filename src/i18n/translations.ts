@@ -255,6 +255,51 @@ export const translations = {
     en: "Forgot password",
   },
 
+  forgotPasswordTitle: {
+    tr: "Şifre sıfırla",
+    en: "Reset password",
+  },
+
+  forgotPasswordSubtitle: {
+    tr: "Gmail adresini gir, şifre sıfırlama kodunu gönderelim.",
+    en: "Enter your Gmail address and we will send a password reset code.",
+  },
+
+  sendResetCode: {
+    tr: "Sıfırlama Kodu Gönder",
+    en: "Send Reset Code",
+  },
+
+  resetCodeSent: {
+    tr: "Eğer bu Gmail adresi kayıtlıysa sıfırlama kodu gönderildi.",
+    en: "If this Gmail address exists, a password reset code has been sent.",
+  },
+
+  resetPassword: {
+    tr: "Şifreyi Sıfırla",
+    en: "Reset Password",
+  },
+
+  resetPasswordSubtitle: {
+    tr: "Gmail adresine gönderilen 6 haneli kodu ve yeni şifreni gir.",
+    en: "Enter the 6-digit code sent to your Gmail address and your new password.",
+  },
+
+  newPassword: {
+    tr: "Yeni Şifre",
+    en: "New Password",
+  },
+
+  newPasswordPlaceholder: {
+    tr: "Yeni şifreni gir",
+    en: "Enter your new password",
+  },
+
+  passwordResetSuccess: {
+    tr: "Şifren sıfırlandı. Yeni şifrenle giriş yapabilirsin.",
+    en: "Your password has been reset. You can log in with your new password.",
+  },
+
   loginSubtitle: {
     tr: "Kalori ve makro takibine kaldığın yerden devam et.",
     en: "Continue tracking your calories and macros.",

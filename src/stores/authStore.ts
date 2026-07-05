@@ -15,6 +15,7 @@ type AuthState = {
   hasHydrated: boolean;
   hasCheckedSession: boolean;
   pendingVerificationEmail: string | null;
+  pendingPasswordResetEmail: string | null;
   requiresEmailVerification: boolean;
   error: string | null;
   register: (
@@ -26,6 +27,13 @@ type AuthState = {
   signInWithGoogle: () => Promise<void>;
   verifyEmail: (email: string, code: string) => Promise<void>;
   resendVerification: (email: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (
+    email: string,
+    code: string,
+    newPassword: string,
+  ) => Promise<void>;
+  clearPendingPasswordReset: () => void;
   clearPendingVerification: () => void;
   loadMe: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -44,6 +52,7 @@ export const useAuthStore = create<AuthState>()(
       hasHydrated: false,
       hasCheckedSession: false,
       pendingVerificationEmail: null,
+      pendingPasswordResetEmail: null,
       requiresEmailVerification: false,
       error: null,
 
@@ -117,6 +126,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             hasCheckedSession: true,
             pendingVerificationEmail: null,
+            pendingPasswordResetEmail: null,
             requiresEmailVerification: false,
             error: null,
           });
@@ -198,6 +208,54 @@ export const useAuthStore = create<AuthState>()(
           error: null,
         }),
 
+      forgotPassword: async (email) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await authApi.forgotPassword(email);
+          set({
+            isLoading: false,
+            pendingPasswordResetEmail: response.email,
+            error: null,
+          });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Şifre sıfırlama kodu gönderilemedi.",
+          });
+
+          throw error;
+        }
+      },
+
+      resetPassword: async (email, code, newPassword) => {
+        try {
+          set({ isLoading: true, error: null });
+          await authApi.resetPassword({ email, code, newPassword });
+          set({
+            isLoading: false,
+            pendingPasswordResetEmail: null,
+            error: null,
+          });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error:
+              error instanceof Error ? error.message : "Şifre sıfırlanamadı.",
+          });
+
+          throw error;
+        }
+      },
+
+      clearPendingPasswordReset: () =>
+        set({
+          pendingPasswordResetEmail: null,
+          error: null,
+        }),
+
       loadMe: async () => {
         const token = get().token;
 
@@ -208,6 +266,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             hasCheckedSession: true,
             pendingVerificationEmail: null,
+            pendingPasswordResetEmail: null,
             requiresEmailVerification: false,
           });
           return;
@@ -227,6 +286,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             hasCheckedSession: true,
             pendingVerificationEmail: null,
+            pendingPasswordResetEmail: null,
             requiresEmailVerification: false,
             error: null,
           });
@@ -238,6 +298,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             hasCheckedSession: true,
             pendingVerificationEmail: null,
+            pendingPasswordResetEmail: null,
             requiresEmailVerification: false,
           });
         }
@@ -250,6 +311,7 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           hasCheckedSession: true,
           pendingVerificationEmail: null,
+          pendingPasswordResetEmail: null,
           requiresEmailVerification: false,
           error: null,
         }),
@@ -264,6 +326,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             hasCheckedSession: true,
             pendingVerificationEmail: null,
+            pendingPasswordResetEmail: null,
             requiresEmailVerification: false,
             error: null,
           });
@@ -285,6 +348,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             hasCheckedSession: true,
             pendingVerificationEmail: null,
+            pendingPasswordResetEmail: null,
             requiresEmailVerification: false,
             error: null,
           });
@@ -340,6 +404,7 @@ function applyAuthResult(
       isLoading: false,
       hasCheckedSession: true,
       pendingVerificationEmail: response.email,
+      pendingPasswordResetEmail: null,
       requiresEmailVerification: true,
       error: null,
     });
@@ -353,6 +418,7 @@ function applyAuthResult(
     isLoading: false,
     hasCheckedSession: true,
     pendingVerificationEmail: null,
+    pendingPasswordResetEmail: null,
     requiresEmailVerification: false,
     error: null,
   });

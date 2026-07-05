@@ -44,6 +44,16 @@ export type VerifyEmailPayload = {
   code: string;
 };
 
+export type ForgotPasswordPayload = {
+  email: string;
+};
+
+export type ResetPasswordPayload = {
+  email: string;
+  code: string;
+  newPassword: string;
+};
+
 export const authApi = {
   register: (payload: RegisterPayload) => {
     return apiRequest<AuthResult>("/auth/register", {
@@ -70,6 +80,20 @@ export const authApi = {
     return apiRequest<{ message: string }>("/auth/resend-verification", {
       method: "POST",
       body: { email },
+    });
+  },
+
+  forgotPassword: (email: string) => {
+    return apiRequest<{ message: string; email: string }>("/auth/forgot-password", {
+      method: "POST",
+      body: { email } satisfies ForgotPasswordPayload,
+    });
+  },
+
+  resetPassword: (payload: ResetPasswordPayload) => {
+    return apiRequest<{ message: string }>("/auth/reset-password", {
+      method: "POST",
+      body: payload,
     });
   },
 

@@ -191,7 +191,10 @@ export default function LoginScreen() {
                 isPassword
               />
 
-              <Pressable style={styles.forgotButton}>
+              <Pressable
+                onPress={() => router.push("/(auth)/forgot-password" as Href)}
+                style={styles.forgotButton}
+              >
                 <Text
                   style={[styles.forgotText, { color: theme.colors.primary }]}
                 >
