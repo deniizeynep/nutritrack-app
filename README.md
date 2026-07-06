@@ -102,17 +102,14 @@ npm run db:migrate
 npm run dev
 ```
 
-Email OTP requires SMTP configuration. Gmail App Password can be used for SMTP during testing. Store real SMTP values only in Render Environment variables:
+Render Free SMTP ports may be blocked, so NutriTrack uses Resend API over HTTPS for OTP emails. Store real email values only in Render Environment variables:
 
 ```bash
-SMTP_HOST=
-SMTP_PORT=
-SMTP_USER=
-SMTP_PASS=
-SMTP_FROM=
+RESEND_API_KEY=
+EMAIL_FROM=NutriTrack <onboarding@resend.dev>
 ```
 
-For Gmail SMTP, use `SMTP_HOST=smtp.gmail.com` with `SMTP_PORT=587` or `SMTP_PORT=465`. Port `587` uses `secure=false`; port `465` uses `secure=true`. If Render hangs on port `587`, try `465` with the same Gmail App Password.
+The old `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM` variables are deprecated and are not used for OTP email delivery.
 
 After deploying email verification changes, run the Neon/Render migration deploy and redeploy the backend.
 

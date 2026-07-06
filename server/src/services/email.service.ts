@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 type SendVerificationCodeParams = {
   to: string;
@@ -10,90 +10,80 @@ type SendPasswordResetCodeParams = {
   code: string;
 };
 
-function getSmtpConfig() {
-  const host = process.env.SMTP_HOST;
-  const rawPort = process.env.SMTP_PORT;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM;
-  const missingKeys = [
-    ["SMTP_HOST", host],
-    ["SMTP_PORT", rawPort],
-    ["SMTP_USER", user],
-    ["SMTP_PASS", pass],
-    ["SMTP_FROM", from],
-  ]
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
+const defaultEmailFrom = "NutriTrack <onboarding@resend.dev>";
 
-  if (missingKeys.length > 0) {
-    throw new Error(`SMTP configuration is missing: ${missingKeys.join(", ")}`);
-  }
+function getEmailConfig() {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM || defaultEmailFrom;
 
-  const port = Number(rawPort);
-
-  if (!Number.isInteger(port) || port <= 0) {
-    throw new Error("SMTP configuration is invalid: SMTP_PORT");
+  if (!apiKey) {
+    throw new Error("Email configuration is missing: RESEND_API_KEY");
   }
 
   return {
-    host,
-    port,
-    user,
-    pass,
+    apiKey,
     from,
-    secure: port === 465,
   };
 }
 
-function createSmtpTransporter() {
-  const config = getSmtpConfig();
+function createResendClient() {
+  const config = getEmailConfig();
 
   return {
     config,
-    transporter: nodemailer.createTransport({
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
-      auth: {
-        user: config.user,
-        pass: config.pass,
-      },
-      connectionTimeout: 10_000,
-      greetingTimeout: 10_000,
-      socketTimeout: 15_000,
-    }),
+    resend: new Resend(config.apiKey),
   };
+}
+
+async function sendEmail({
+  to,
+  subject,
+  text,
+  html,
+}: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}) {
+  const { config, resend } = createResendClient();
+  const result = await resend.emails.send({
+    from: config.from,
+    to,
+    subject,
+    text,
+    html,
+  });
+
+  if (result.error) {
+    throw new Error(result.error.message || "Email delivery failed");
+  }
 }
 
 export async function sendVerificationCode({
   to,
   code,
 }: SendVerificationCodeParams) {
-  const { config, transporter } = createSmtpTransporter();
-
-  console.log("Verification email sendMail started");
-  await transporter.sendMail({
-    from: config.from,
+  console.log("Verification email API send started");
+  await sendEmail({
     to,
     subject: "NutriTrack verification code",
     text: `Your NutriTrack verification code is: ${code}\nThis code expires in 10 minutes.`,
+    html: `<p>Your NutriTrack verification code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
   });
-  console.log("Verification email sendMail completed");
+  console.log("Verification email API send completed");
 }
 
 export async function sendPasswordResetCode({
   to,
   code,
 }: SendPasswordResetCodeParams) {
-  const { config, transporter } = createSmtpTransporter();
-
-  console.log("Password reset email sendMail started");
-  await transporter.sendMail({
-    from: config.from,
+  console.log("Password reset email API send started");
+  await sendEmail({
     to,
     subject: "NutriTrack password reset code",
     text: `Your NutriTrack password reset code is: ${code}\nThis code expires in 10 minutes.`,
+    html: `<p>Your NutriTrack password reset code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
   });
-  console.log("Password reset email sendMail completed");
+  console.log("Password reset email API send completed");
 }
