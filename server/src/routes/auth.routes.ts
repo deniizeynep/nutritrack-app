@@ -130,10 +130,7 @@ function logBackgroundEmailError(context: string, error: unknown) {
 function sendVerificationEmailInBackground(email: string, code: string) {
   console.log("Verification email queued");
 
-  void sendVerificationCode({
-    to: email,
-    code,
-  })
+  void sendVerificationCode(email, code)
     .then(() => {
       console.log("Verification email sent successfully");
     })
@@ -145,10 +142,7 @@ function sendVerificationEmailInBackground(email: string, code: string) {
 function sendPasswordResetEmailInBackground(email: string, code: string) {
   console.log("Password reset email queued");
 
-  void sendPasswordResetCode({
-    to: email,
-    code,
-  })
+  void sendPasswordResetCode(email, code)
     .then(() => {
       console.log("Password reset email sent successfully");
     })

@@ -102,14 +102,19 @@ npm run db:migrate
 npm run dev
 ```
 
-Render Free SMTP ports may be blocked, so NutriTrack uses Resend API over HTTPS for OTP emails. Store real email values only in Render Environment variables:
+Email OTP uses SMTP via Nodemailer. Store real SMTP values only in Render Environment variables:
 
 ```bash
-RESEND_API_KEY=
-EMAIL_FROM=NutriTrack <onboarding@resend.dev>
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=NutriTrack <your-email@gmail.com>
 ```
 
-The old `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM` variables are deprecated and are not used for OTP email delivery.
+For Gmail, use your Gmail address as `SMTP_USER` and a Google App Password as `SMTP_PASS`. `SMTP_PORT=587` uses `secure=false`; `SMTP_PORT=465` uses `secure=true`.
+
+Render Free Web Services may block outbound SMTP ports `25`, `465`, and `587`, so Gmail SMTP may not work on Render Free. Use a paid Render instance or hosting that allows outbound SMTP ports.
 
 After deploying email verification changes, run the Neon/Render migration deploy and redeploy the backend.
 
