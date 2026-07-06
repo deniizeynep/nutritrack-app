@@ -12,13 +12,28 @@ type SendPasswordResetCodeParams = {
 
 function getSmtpConfig() {
   const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 587);
+  const rawPort = process.env.SMTP_PORT;
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM || user;
+  const from = process.env.SMTP_FROM;
+  const missingKeys = [
+    ["SMTP_HOST", host],
+    ["SMTP_PORT", rawPort],
+    ["SMTP_USER", user],
+    ["SMTP_PASS", pass],
+    ["SMTP_FROM", from],
+  ]
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
 
-  if (!host || !user || !pass || !from) {
-    throw new Error("SMTP configuration is missing");
+  if (missingKeys.length > 0) {
+    throw new Error(`SMTP configuration is missing: ${missingKeys.join(", ")}`);
+  }
+
+  const port = Number(rawPort);
+
+  if (!Number.isInteger(port) || port <= 0) {
+    throw new Error("SMTP configuration is invalid: SMTP_PORT");
   }
 
   return {

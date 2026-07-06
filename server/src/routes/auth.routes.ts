@@ -128,6 +128,8 @@ function logBackgroundEmailError(context: string, error: unknown) {
 }
 
 function sendVerificationEmailInBackground(email: string, code: string) {
+  console.log("Verification email queued");
+
   void sendVerificationCode({
     to: email,
     code,
@@ -137,6 +139,8 @@ function sendVerificationEmailInBackground(email: string, code: string) {
 }
 
 function sendPasswordResetEmailInBackground(email: string, code: string) {
+  console.log("Password reset email queued");
+
   void sendPasswordResetCode({
     to: email,
     code,
@@ -145,7 +149,7 @@ function sendPasswordResetEmailInBackground(email: string, code: string) {
   });
 }
 
-async function issueAndSendOtp(userId: string, email: string) {
+async function issueVerificationOtp(userId: string) {
   const otp = await createOtpData();
 
   await prisma.user.update({
@@ -159,10 +163,10 @@ async function issueAndSendOtp(userId: string, email: string) {
     },
   });
 
-  sendVerificationEmailInBackground(email, otp.code);
+  return otp.code;
 }
 
-async function issueAndSendPasswordResetOtp(userId: string, email: string) {
+async function issuePasswordResetOtp(userId: string) {
   const otp = await createOtpData();
 
   await prisma.user.update({
@@ -176,7 +180,7 @@ async function issueAndSendPasswordResetOtp(userId: string, email: string) {
     },
   });
 
-  sendPasswordResetEmailInBackground(email, otp.code);
+  return otp.code;
 }
 
 function verificationRequiredResponse(email: string, message: string) {
@@ -221,7 +225,8 @@ router.post("/register", authRateLimiter, async (req, res) => {
     }
 
     if (existingUser) {
-      await issueAndSendOtp(existingUser.id, existingUser.email);
+      const code = await issueVerificationOtp(existingUser.id);
+      sendVerificationEmailInBackground(existingUser.email, code);
 
       res.status(200).json(
         verificationRequiredResponse(
@@ -372,7 +377,8 @@ router.post("/resend-verification", authRateLimiter, async (req, res) => {
       return;
     }
 
-    await issueAndSendOtp(user.id, email);
+    const code = await issueVerificationOtp(user.id);
+    sendVerificationEmailInBackground(email, code);
 
     res.json({
       message: "Verification code is being sent.",
@@ -419,7 +425,8 @@ router.post("/forgot-password", authRateLimiter, async (req, res) => {
       return;
     }
 
-    await issueAndSendPasswordResetOtp(user.id, email);
+    const code = await issuePasswordResetOtp(user.id);
+    sendPasswordResetEmailInBackground(email, code);
 
     res.json(passwordResetRequestedResponse(email));
   } catch (error) {
