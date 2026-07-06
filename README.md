@@ -112,6 +112,8 @@ SMTP_PASS=
 SMTP_FROM=
 ```
 
+For Gmail SMTP, use `SMTP_HOST=smtp.gmail.com` with `SMTP_PORT=587` or `SMTP_PORT=465`. Port `587` uses `secure=false`; port `465` uses `secure=true`. If Render hangs on port `587`, try `465` with the same Gmail App Password.
+
 After deploying email verification changes, run the Neon/Render migration deploy and redeploy the backend.
 
 If the backend runs on Render Free plan, the first request can still be slow because of cold start. Register and forgot password email delivery run in the background after OTP hashes are saved, but a sleeping service may still take time to wake up. Use a paid Render instance or always-on hosting for faster production responses.

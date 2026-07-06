@@ -133,9 +133,13 @@ function sendVerificationEmailInBackground(email: string, code: string) {
   void sendVerificationCode({
     to: email,
     code,
-  }).catch((error) => {
-    logBackgroundEmailError("Failed to send verification email:", error);
-  });
+  })
+    .then(() => {
+      console.log("Verification email sent successfully");
+    })
+    .catch((error) => {
+      logBackgroundEmailError("Verification email failed:", error);
+    });
 }
 
 function sendPasswordResetEmailInBackground(email: string, code: string) {
@@ -144,9 +148,13 @@ function sendPasswordResetEmailInBackground(email: string, code: string) {
   void sendPasswordResetCode({
     to: email,
     code,
-  }).catch((error) => {
-    logBackgroundEmailError("Failed to send password reset email:", error);
-  });
+  })
+    .then(() => {
+      console.log("Password reset email sent successfully");
+    })
+    .catch((error) => {
+      logBackgroundEmailError("Password reset email failed:", error);
+    });
 }
 
 async function issueVerificationOtp(userId: string) {
