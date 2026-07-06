@@ -109,48 +109,74 @@ async function createOtpHash(code: string) {
   return bcrypt.hash(code, 10);
 }
 
-async function issueAndSendOtp(userId: string, email: string) {
+async function createOtpData() {
   const code = generateOtp();
-  const emailOtpHash = await createOtpHash(code);
-  const now = new Date();
 
-  await prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      emailOtpHash,
-      emailOtpExpiresAt: getOtpExpiry(),
-      emailOtpLastSentAt: now,
-    },
-  });
+  return {
+    code,
+    hash: await createOtpHash(code),
+    expiresAt: getOtpExpiry(),
+    lastSentAt: new Date(),
+  };
+}
 
-  await sendVerificationCode({
+function logBackgroundEmailError(context: string, error: unknown) {
+  console.error(
+    context,
+    error instanceof Error ? error.message : "Unknown email delivery error",
+  );
+}
+
+function sendVerificationEmailInBackground(email: string, code: string) {
+  void sendVerificationCode({
     to: email,
     code,
+  }).catch((error) => {
+    logBackgroundEmailError("Failed to send verification email:", error);
   });
 }
 
-async function issueAndSendPasswordResetOtp(userId: string, email: string) {
-  const code = generateOtp();
-  const passwordResetOtpHash = await createOtpHash(code);
-  const now = new Date();
+function sendPasswordResetEmailInBackground(email: string, code: string) {
+  void sendPasswordResetCode({
+    to: email,
+    code,
+  }).catch((error) => {
+    logBackgroundEmailError("Failed to send password reset email:", error);
+  });
+}
+
+async function issueAndSendOtp(userId: string, email: string) {
+  const otp = await createOtpData();
 
   await prisma.user.update({
     where: {
       id: userId,
     },
     data: {
-      passwordResetOtpHash,
-      passwordResetOtpExpiresAt: getOtpExpiry(),
-      passwordResetOtpLastSentAt: now,
+      emailOtpHash: otp.hash,
+      emailOtpExpiresAt: otp.expiresAt,
+      emailOtpLastSentAt: otp.lastSentAt,
     },
   });
 
-  await sendPasswordResetCode({
-    to: email,
-    code,
+  sendVerificationEmailInBackground(email, otp.code);
+}
+
+async function issueAndSendPasswordResetOtp(userId: string, email: string) {
+  const otp = await createOtpData();
+
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      passwordResetOtpHash: otp.hash,
+      passwordResetOtpExpiresAt: otp.expiresAt,
+      passwordResetOtpLastSentAt: otp.lastSentAt,
+    },
   });
+
+  sendPasswordResetEmailInBackground(email, otp.code);
 }
 
 function verificationRequiredResponse(email: string, message: string) {
@@ -187,14 +213,27 @@ router.post("/register", authRateLimiter, async (req, res) => {
       },
     });
 
-    if (existingUser) {
+    if (existingUser?.emailVerified) {
       res.status(409).json({
-        message: "Bu e-posta zaten kayıtlı.",
+        message: "This email is already registered.",
       });
       return;
     }
 
+    if (existingUser) {
+      await issueAndSendOtp(existingUser.id, existingUser.email);
+
+      res.status(200).json(
+        verificationRequiredResponse(
+          existingUser.email,
+          "Verification code is being sent.",
+        ),
+      );
+      return;
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
+    const otp = await createOtpData();
 
     const user = await prisma.user.create({
       data: {
@@ -203,13 +242,16 @@ router.post("/register", authRateLimiter, async (req, res) => {
         passwordHash,
         authProvider: "email",
         emailVerified: false,
+        emailOtpHash: otp.hash,
+        emailOtpExpiresAt: otp.expiresAt,
+        emailOtpLastSentAt: otp.lastSentAt,
       },
     });
 
-    await issueAndSendOtp(user.id, email);
+    sendVerificationEmailInBackground(user.email, otp.code);
 
     res.status(201).json(
-      verificationRequiredResponse(email, "Verification code sent."),
+      verificationRequiredResponse(user.email, "Verification code is being sent."),
     );
   } catch (error) {
     console.error("REGISTER ERROR:", error);
@@ -333,7 +375,7 @@ router.post("/resend-verification", authRateLimiter, async (req, res) => {
     await issueAndSendOtp(user.id, email);
 
     res.json({
-      message: "Verification code sent.",
+      message: "Verification code is being sent.",
     });
   } catch (error) {
     console.error("RESEND VERIFICATION ERROR:", error);

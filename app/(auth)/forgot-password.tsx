@@ -50,11 +50,6 @@ export default function ForgotPasswordScreen() {
 
     try {
       await forgotPassword(trimmedEmail);
-      Alert.alert(
-        translate("forgotPasswordTitle", language),
-        translate("resetCodeSent", language),
-        [{ text: translate("ok", language) }],
-      );
       router.push("/(auth)/reset-password" as Href);
     } catch (error) {
       Alert.alert(

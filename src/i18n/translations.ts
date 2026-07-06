@@ -346,8 +346,8 @@ export const translations = {
   },
 
   googleSignInRequiresBuild: {
-    tr: "Google ile giriş APK sürümünde test edilebilir.",
-    en: "Google sign-in can be tested in the APK build.",
+    tr: "Google ile giriş Expo Go'da kullanılamaz. APK veya development build kullan.",
+    en: "Google sign-in is not available in Expo Go. Use an APK or development build.",
   },
 
   googleSignInUnavailable: {
@@ -361,8 +361,13 @@ export const translations = {
   },
 
   enterVerificationCode: {
-    tr: "Gmail adresine gönderilen 6 haneli kodu gir.",
-    en: "Enter the 6-digit code sent to your Gmail address.",
+    tr: "Kod Gmail adresine gönderiliyor. Birkaç saniye sürebilir.",
+    en: "Your code is being sent to your Gmail address. It may take a few seconds.",
+  },
+
+  codeDeliveryHelp: {
+    tr: "Kod birkaç saniye içinde gelmezse spam klasörünü kontrol et veya kodu tekrar gönder.",
+    en: "If the code does not arrive in a few seconds, check spam or resend the code.",
   },
 
   verificationCode: {
@@ -381,8 +386,8 @@ export const translations = {
   },
 
   codeSentAgain: {
-    tr: "Kod yeniden gönderildi.",
-    en: "Code sent again.",
+    tr: "Kod gönderiliyor. Birkaç saniye sürebilir.",
+    en: "Your code is being sent. It may take a few seconds.",
   },
 
   invalidOrExpiredCode: {

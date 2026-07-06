@@ -114,6 +114,8 @@ SMTP_FROM=
 
 After deploying email verification changes, run the Neon/Render migration deploy and redeploy the backend.
 
+If the backend runs on Render Free plan, the first request can still be slow because of cold start. Register and forgot password email delivery run in the background after OTP hashes are saved, but a sleeping service may still take time to wake up. Use a paid Render instance or always-on hosting for faster production responses.
+
 ---
 
 ## Build APK
@@ -122,11 +124,18 @@ After deploying email verification changes, run the Neon/Render migration deploy
 npx eas build -p android --profile preview
 ```
 
-Google Sign-In should be tested in an EAS preview or development build, not in Expo Go.
+Google Sign-In should be tested in a standalone APK, EAS preview, or development build, not in Expo Go.
 
 Preview Android builds use the app name `NutriTrack Preview` and package name `com.zeynepdeniz.nutritrack.preview` so testers can install them separately from production builds. Production Android builds keep `com.zeynepdeniz.nutritrack`.
 
-If Google Sign-In is tested in the preview APK, create a separate Android OAuth Client in Google Cloud Console for package `com.zeynepdeniz.nutritrack.preview` using the EAS preview keystore SHA-1. The Web Client ID used by the backend can stay the same.
+Google Sign-In for Android requires an Android OAuth Client in Google Cloud Console with the same Android package name and SHA-1 fingerprint as the APK. Local preview APKs use `com.zeynepdeniz.nutritrack.preview` when built with `APP_VARIANT=preview`; default local release APKs use `com.zeynepdeniz.nutritrack`. Get the local SHA-1 with:
+
+```bash
+cd android
+./gradlew signingReport
+```
+
+Set the Web Client ID in `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` for the mobile app and `GOOGLE_WEB_CLIENT_ID` for the backend. Do not use an Android Client ID as the web client ID.
 
 ---
 

@@ -117,6 +117,10 @@ export default function VerifyEmailScreen() {
               {translate("enterVerificationCode", language)}
             </Text>
 
+            <Text style={[styles.helpText, { color: theme.colors.mutedText }]}> 
+              {translate("codeDeliveryHelp", language)}
+            </Text>
+
             <Text style={[styles.emailText, { color: theme.colors.primary }]}> 
               {email || "-"}
             </Text>
@@ -205,6 +209,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 15,
     fontWeight: "900",
+  },
+  helpText: {
+    marginTop: 8,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
+    textAlign: "center",
   },
   formCard: {
     borderWidth: 1,

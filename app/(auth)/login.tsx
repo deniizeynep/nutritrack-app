@@ -93,6 +93,8 @@ export default function LoginScreen() {
             ? translate("googleSignInRequiresBuild", language)
             : error.code === "PLAY_SERVICES_NOT_AVAILABLE"
             ? translate("googlePlayServicesUnavailable", language)
+            : error.code === "MISSING_WEB_CLIENT_ID"
+            ? translate("googleSignInConfigMissing", language)
             : translate("googleSignInFailed", language)
           : error instanceof Error
             ? error.message

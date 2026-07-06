@@ -1,9 +1,8 @@
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 
-const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-const isExpoGo =
-  Constants.executionEnvironment === "storeClient" ||
-  Constants.appOwnership === "expo";
+const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim();
+const isExpoGo = Constants.appOwnership === "expo";
 
 let isConfigured = false;
 
@@ -46,9 +45,27 @@ export function isExpoGoBuild() {
   return isExpoGo;
 }
 
-function configureGoogleSignin(GoogleSignin: GoogleSigninModule["GoogleSignin"]) {
+export function getGoogleSignInDebugInfo() {
+  return {
+    appOwnership: Constants.appOwnership,
+    hasWebClientId: Boolean(webClientId),
+    isExpoGo,
+    platform: Platform.OS,
+  };
+}
+
+function configureGoogleSigninModule(
+  GoogleSignin: GoogleSigninModule["GoogleSignin"],
+) {
   if (isConfigured) {
     return;
+  }
+
+  if (!webClientId) {
+    throw new GoogleSignInError(
+      "MISSING_WEB_CLIENT_ID",
+      "Google sign-in is not configured.",
+    );
   }
 
   GoogleSignin.configure({
@@ -59,12 +76,31 @@ function configureGoogleSignin(GoogleSignin: GoogleSigninModule["GoogleSignin"])
   isConfigured = true;
 }
 
+export async function configureGoogleSignIn() {
+  if (isExpoGo) {
+    throw new GoogleSignInError(
+      "UNAVAILABLE",
+      "Google sign-in is unavailable in Expo Go.",
+    );
+  }
+
+  const { GoogleSignin } = (await import(
+    "@react-native-google-signin/google-signin"
+  )) as GoogleSigninModule;
+
+  configureGoogleSigninModule(GoogleSignin);
+}
+
 function normalizeSignInError(
   error: unknown,
   isErrorWithCode: GoogleSigninModule["isErrorWithCode"],
   statusCodes: GoogleSigninModule["statusCodes"],
 ) {
   if (isErrorWithCode(error)) {
+    if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+      return new GoogleSignInError("CANCELLED", "Google sign-in cancelled.");
+    }
+
     if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
       return new GoogleSignInError(
         "PLAY_SERVICES_NOT_AVAILABLE",
@@ -84,6 +120,10 @@ function normalizeSignInError(
 }
 
 export async function signInWithGoogleProvider() {
+  if (__DEV__) {
+    console.info("Google Sign-In availability", getGoogleSignInDebugInfo());
+  }
+
   if (isExpoGo) {
     throw new GoogleSignInError(
       "UNAVAILABLE",
@@ -102,7 +142,7 @@ export async function signInWithGoogleProvider() {
     "@react-native-google-signin/google-signin"
   )) as GoogleSigninModule;
 
-  configureGoogleSignin(GoogleSignin);
+  configureGoogleSigninModule(GoogleSignin);
 
   try {
     const hasPlayServices = await GoogleSignin.hasPlayServices({
@@ -142,4 +182,8 @@ export async function signInWithGoogleProvider() {
 
     throw normalizeSignInError(error, isErrorWithCode, statusCodes);
   }
+}
+
+export async function signInWithGoogle() {
+  return signInWithGoogleProvider();
 }
