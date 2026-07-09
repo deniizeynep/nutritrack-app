@@ -1,85 +1,96 @@
-import nodemailer from "nodemailer";
+type BrevoEmailPayload = {
+  to: Array<{
+    email: string;
+  }>;
+  subject: string;
+  textContent: string;
+  htmlContent: string;
+};
 
-function getSmtpConfig() {
-  const host = process.env.SMTP_HOST;
-  const rawPort = process.env.SMTP_PORT || "587";
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM;
-  const missingKeys = [
-    ["SMTP_HOST", host],
-    ["SMTP_PORT", rawPort],
-    ["SMTP_USER", user],
-    ["SMTP_PASS", pass],
-    ["SMTP_FROM", from],
-  ]
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
+const brevoEmailEndpoint = "https://api.brevo.com/v3/smtp/email";
 
-  if (missingKeys.length > 0) {
-    throw new Error(`SMTP configuration is missing: ${missingKeys.join(", ")}`);
+function getEmailConfig() {
+  const apiKey = process.env.BREVO_API_KEY;
+  const fromName = process.env.EMAIL_FROM_NAME || "NutriTrack";
+  const fromEmail = process.env.EMAIL_FROM_EMAIL;
+
+  if (!apiKey) {
+    throw new Error("BREVO_API_KEY is missing");
   }
 
-  const port = Number(rawPort);
-
-  if (!Number.isInteger(port) || port <= 0) {
-    throw new Error("SMTP configuration is invalid: SMTP_PORT");
+  if (!fromEmail) {
+    throw new Error("EMAIL_FROM_EMAIL is missing");
   }
 
   return {
-    host,
-    port,
-    user,
-    pass,
-    from,
-    secure: port === 465,
+    apiKey,
+    fromName,
+    fromEmail,
   };
 }
 
-function createSmtpTransporter() {
-  const config = getSmtpConfig();
+async function readBrevoError(response: Response) {
+  try {
+    const body = (await response.json()) as { message?: unknown; code?: unknown };
+    const message = typeof body.message === "string" ? body.message : null;
+    const code = typeof body.code === "string" ? body.code : null;
 
-  return {
-    config,
-    transporter: nodemailer.createTransport({
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
-      auth: {
-        user: config.user,
-        pass: config.pass,
+    return [code, message].filter(Boolean).join(" - ") || response.statusText;
+  } catch {
+    return response.statusText;
+  }
+}
+
+async function sendBrevoEmail(payload: BrevoEmailPayload) {
+  const config = getEmailConfig();
+  const response = await fetch(brevoEmailEndpoint, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "api-key": config.apiKey,
+    },
+    body: JSON.stringify({
+      ...payload,
+      sender: {
+        name: config.fromName,
+        email: config.fromEmail,
       },
-      connectionTimeout: 10_000,
-      greetingTimeout: 10_000,
-      socketTimeout: 15_000,
     }),
-  };
+  });
+
+  if (!response.ok) {
+    const message = await readBrevoError(response);
+    throw new Error(`Brevo email failed: ${response.status} ${message}`);
+  }
 }
 
 export async function sendVerificationCode(email: string, code: string) {
-  const { config, transporter } = createSmtpTransporter();
-
-  console.log("Verification email sendMail started");
-  await transporter.sendMail({
-    from: config.from,
-    to: email,
+  console.log("Verification email Brevo send started");
+  await sendBrevoEmail({
+    to: [
+      {
+        email,
+      },
+    ],
     subject: "NutriTrack verification code",
-    text: `Your NutriTrack verification code is: ${code}\nThis code expires in 10 minutes.`,
-    html: `<p>Your NutriTrack verification code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
+    textContent: `Your NutriTrack verification code is: ${code}\nThis code expires in 10 minutes.`,
+    htmlContent: `<p>Your NutriTrack verification code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
   });
-  console.log("Verification email sendMail completed");
+  console.log("Verification email Brevo send completed");
 }
 
 export async function sendPasswordResetCode(email: string, code: string) {
-  const { config, transporter } = createSmtpTransporter();
-
-  console.log("Password reset email sendMail started");
-  await transporter.sendMail({
-    from: config.from,
-    to: email,
+  console.log("Password reset email Brevo send started");
+  await sendBrevoEmail({
+    to: [
+      {
+        email,
+      },
+    ],
     subject: "NutriTrack password reset code",
-    text: `Your NutriTrack password reset code is: ${code}\nThis code expires in 10 minutes.`,
-    html: `<p>Your NutriTrack password reset code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
+    textContent: `Your NutriTrack password reset code is: ${code}\nThis code expires in 10 minutes.`,
+    htmlContent: `<p>Your NutriTrack password reset code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
   });
-  console.log("Password reset email sendMail completed");
+  console.log("Password reset email Brevo send completed");
 }

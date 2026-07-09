@@ -102,19 +102,16 @@ npm run db:migrate
 npm run dev
 ```
 
-Email OTP uses SMTP via Nodemailer. Store real SMTP values only in Render Environment variables:
+Production/dev email provider: NutriTrack uses Brevo Transactional Email API for OTP emails. Store real email values only in Render Environment variables:
 
 ```bash
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASS=
-SMTP_FROM=NutriTrack <your-email@gmail.com>
+ENABLE_EMAIL_OTP=true
+BREVO_API_KEY=
+EMAIL_FROM_NAME=NutriTrack
+EMAIL_FROM_EMAIL=verified sender email
 ```
 
-For Gmail, use your Gmail address as `SMTP_USER` and a Google App Password as `SMTP_PASS`. `SMTP_PORT=587` uses `secure=false`; `SMTP_PORT=465` uses `secure=true`.
-
-Render Free Web Services may block outbound SMTP ports `25`, `465`, and `587`, so Gmail SMTP may not work on Render Free. Use a paid Render instance or hosting that allows outbound SMTP ports.
+Brevo Free plan allows 300 emails per day. The sender email must be verified in Brevo. A domain is recommended for production deliverability, but a verified sender email can be used during early-stage development. Render Free blocks outbound SMTP ports, so SMTP is not recommended on Render Free.
 
 After deploying email verification changes, run the Neon/Render migration deploy and redeploy the backend.
 
