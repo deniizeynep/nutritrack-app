@@ -1376,6 +1376,21 @@ export const translations = {
     en: "Something went wrong. Please try again.",
   },
 
+  noMealsForDay: {
+    tr: "Bu gün için öğün kaydı yok.",
+    en: "No meals recorded for this day.",
+  },
+
+  noMealsForDaySubtitle: {
+    tr: "Öğün eklediğinde burada görünecek.",
+    en: "Meals will appear here once added.",
+  },
+
+  swipeHint: {
+    tr: "Günler arasında kaydır",
+    en: "Swipe between days",
+  },
+
   ok: {
     tr: "Tamam",
     en: "OK",
