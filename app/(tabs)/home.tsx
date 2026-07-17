@@ -21,7 +21,8 @@ import { useMealStore, type Meal, type MealCategory } from "../../src/stores/mea
 import { getTheme } from "../../src/theme/theme";
 import { calculateMacroTargets } from "../../src/utils/calorieCalculator";
 
-const DAY_OFFSETS = [0, 1, 2] as const;
+const DAY_OFFSETS = [2, 1, 0] as const;
+const TODAY_INDEX = 2;
 
 function getDateKey(offset: number): string {
   const date = new Date();
@@ -68,12 +69,16 @@ export default function HomeScreen() {
   const fetchMeals = useMealStore((state) => state.fetchMeals);
   const deleteMeal = useMealStore((state) => state.deleteMeal);
 
-  const [activeDay, setActiveDay] = useState(0);
+  const [activeDay, setActiveDay] = useState(TODAY_INDEX);
 
   useEffect(() => {
     fetchMeals(token);
     fetchGoal(token);
   }, [fetchGoal, fetchMeals, token]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ x: TODAY_INDEX * screenWidth, animated: false });
+  }, [screenWidth]);
 
   const dayKeys = useMemo(() => DAY_OFFSETS.map(getDateKey), []);
 
@@ -144,7 +149,7 @@ export default function HomeScreen() {
           <View style={styles.headerSpacer} />
 
           <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-            {getDayLabel(activeDay, language)}
+            {getDayLabel(DAY_OFFSETS[activeDay], language)}
           </Text>
 
           <View style={styles.headerActions}>
@@ -185,16 +190,16 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.dotsRow}>
-          {DAY_OFFSETS.map((offset) => (
+          {DAY_OFFSETS.map((offset, index) => (
             <Pressable
               key={offset}
-              onPress={() => scrollToDay(offset)}
+              onPress={() => scrollToDay(index)}
               style={styles.dotPressable}
             >
               <View
                 style={[
                   styles.dot,
-                  activeDay === offset
+                  activeDay === index
                     ? { backgroundColor: theme.colors.primary, width: 20 }
                     : { backgroundColor: theme.colors.mutedText },
                 ]}
