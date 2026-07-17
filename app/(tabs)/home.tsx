@@ -1,39 +1,31 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Alert,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { MacroProgress } from "../../src/components/MacroProgress";
 import { MealCard } from "../../src/components/MealCard";
 import { Screen } from "../../src/components/Screen";
-import { translate, type Language } from "../../src/i18n/translations";
+import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
 import { useAuthStore } from "../../src/stores/authStore";
 import { useGoalStore } from "../../src/stores/goalStore";
-import { useMealStore, type Meal, type MealCategory } from "../../src/stores/mealStore";
+import {
+  useMealStore,
+  type Meal,
+  type MealCategory,
+} from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
 import { calculateMacroTargets } from "../../src/utils/calorieCalculator";
 
-const DAY_OFFSETS = [2, 1, 0] as const;
-const TODAY_INDEX = 2;
-
-function getDateKey(offset: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() - offset);
-  return date.toISOString().slice(0, 10);
-}
-
-function getDayLabel(offset: number, language: Language): string {
-  if (offset === 0) return translate("todayLabel", language);
-  if (offset === 1) return translate("yesterday", language);
-  return translate("twoDaysAgo", language);
+function getTodayKey(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 type DayStats = {
@@ -53,84 +45,52 @@ function computeDayStats(dayMeals: Meal[]): DayStats {
 }
 
 export default function HomeScreen() {
-  const { width: screenWidth } = useWindowDimensions();
-  const scrollRef = useRef<ScrollView>(null);
-
-  const themeMode = useAppStore((state) => state.themeMode);
-  const language = useAppStore((state) => state.language);
-  const toggleTheme = useAppStore((state) => state.toggleTheme);
-  const setLanguage = useAppStore((state) => state.setLanguage);
+  const themeMode = useAppStore((s) => s.themeMode);
+  const language = useAppStore((s) => s.language);
 
   const theme = getTheme(themeMode);
-  const token = useAuthStore((state) => state.token);
-  const goal = useGoalStore((state) => state.goal);
-  const fetchGoal = useGoalStore((state) => state.fetchGoal);
-  const meals = useMealStore((state) => state.meals);
-  const fetchMeals = useMealStore((state) => state.fetchMeals);
-  const deleteMeal = useMealStore((state) => state.deleteMeal);
-
-  const [activeDay, setActiveDay] = useState(TODAY_INDEX);
+  const token = useAuthStore((s) => s.token);
+  const goal = useGoalStore((s) => s.goal);
+  const fetchGoal = useGoalStore((s) => s.fetchGoal);
+  const meals = useMealStore((s) => s.meals);
+  const fetchMeals = useMealStore((s) => s.fetchMeals);
+  const deleteMeal = useMealStore((s) => s.deleteMeal);
 
   useEffect(() => {
     fetchMeals(token);
     fetchGoal(token);
   }, [fetchGoal, fetchMeals, token]);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ x: TODAY_INDEX * screenWidth, animated: false });
-  }, [screenWidth]);
+  const todayKey = useMemo(() => getTodayKey(), []);
 
-  const dayKeys = useMemo(() => DAY_OFFSETS.map(getDateKey), []);
-
-  const mealsByDay = useMemo(() => {
-    return dayKeys.map((dateKey) =>
+  const todayMeals = useMemo(
+    () =>
       meals.filter((meal) => {
-        const mealDate = meal.loggedAt ?? meal.createdAt;
-        return mealDate.slice(0, 10) === dateKey;
+        const d = meal.loggedAt ?? meal.createdAt;
+        return d.slice(0, 10) === todayKey;
       }),
-    );
-  }, [meals, dayKeys]);
-
-  const statsByDay = useMemo(
-    () => mealsByDay.map(computeDayStats),
-    [mealsByDay],
+    [meals, todayKey],
   );
 
+  const stats = useMemo(() => computeDayStats(todayMeals), [todayMeals]);
+
   const targetCalories = goal?.targetCalories ?? 2000;
-  const fallbackMacroTargets = calculateMacroTargets(
+  const fallbackMacros = calculateMacroTargets(
     goal?.targetCalories ?? 2000,
     goal?.goalType ?? "maintain",
   );
-  const targetProtein = goal?.targetProtein || fallbackMacroTargets.protein;
-  const targetCarbs = goal?.targetCarbs || fallbackMacroTargets.carbs;
-  const targetFat = goal?.targetFat || fallbackMacroTargets.fat;
+  const targetProtein = goal?.targetProtein || fallbackMacros.protein;
+  const targetCarbs = goal?.targetCarbs || fallbackMacros.carbs;
+  const targetFat = goal?.targetFat || fallbackMacros.fat;
 
-  const handleScrollEnd = useCallback(
-    (e: { nativeEvent: { contentOffset: { x: number } } }) => {
-      const pageIndex = Math.round(
-        e.nativeEvent.contentOffset.x / screenWidth,
-      );
-      setActiveDay(pageIndex);
-    },
-    [screenWidth],
-  );
-
-  const scrollToDay = useCallback(
-    (index: number) => {
-      scrollRef.current?.scrollTo({ x: index * screenWidth, animated: true });
-    },
-    [screenWidth],
-  );
+  const remaining = targetCalories - stats.calories;
 
   const confirmDeleteMeal = (mealId: string) => {
     Alert.alert(
       translate("confirmDeleteMeal", language),
       translate("confirmDeleteMealMessage", language),
       [
-        {
-          text: translate("cancel", language),
-          style: "cancel",
-        },
+        { text: translate("cancel", language), style: "cancel" },
         {
           text: translate("deleteMeal", language),
           style: "destructive",
@@ -145,419 +105,260 @@ export default function HomeScreen() {
       <View
         style={[styles.outer, { backgroundColor: theme.colors.background }]}
       >
+        {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerSpacer} />
+          <Pressable style={styles.headerIcon}>
+            <Ionicons
+              name="settings-outline"
+              size={24}
+              color={theme.colors.primary}
+            />
+          </Pressable>
 
           <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-            {getDayLabel(DAY_OFFSETS[activeDay], language)}
+            {translate("today", language)}
           </Text>
 
-          <View style={styles.headerActions}>
-            <Pressable
-              onPress={() => setLanguage(language === "tr" ? "en" : "tr")}
-              style={[
-                styles.smallButton,
-                {
-                  backgroundColor: theme.colors.card,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              <Text
-                style={[styles.smallButtonText, { color: theme.colors.text }]}
-              >
-                {language === "tr" ? "EN" : "TR"}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={toggleTheme}
-              style={[
-                styles.smallButton,
-                {
-                  backgroundColor: theme.colors.card,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              <Text
-                style={[styles.smallButtonText, { color: theme.colors.text }]}
-              >
-                {themeMode === "dark" ? "☀️" : "🌙"}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={styles.dotsRow}>
-          {DAY_OFFSETS.map((offset, index) => (
-            <Pressable
-              key={offset}
-              onPress={() => scrollToDay(index)}
-              style={styles.dotPressable}
-            >
-              <View
-                style={[
-                  styles.dot,
-                  activeDay === index
-                    ? { backgroundColor: theme.colors.primary, width: 20 }
-                    : { backgroundColor: theme.colors.mutedText },
-                ]}
-              />
-            </Pressable>
-          ))}
+          <Pressable style={styles.headerIcon}>
+            <Ionicons
+              name="calendar-outline"
+              size={24}
+              color={theme.colors.primary}
+            />
+          </Pressable>
         </View>
 
         <ScrollView
-          ref={scrollRef}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={handleScrollEnd}
-          style={styles.swipeContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          {DAY_OFFSETS.map((offset) => (
-            <View key={offset} style={{ width: screenWidth }}>
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.dayContent}
+          {/* Hero: Calorie Ring */}
+          <View style={styles.heroSection}>
+            <View
+              style={[
+                styles.ringOuter,
+                { borderColor: theme.colors.cardSoft },
+              ]}
+            >
+              <View
+                style={[
+                  styles.ringInner,
+                  {
+                    borderColor: theme.colors.primary,
+                    opacity:
+                      stats.calories > 0
+                        ? Math.min(stats.calories / targetCalories, 1)
+                        : 0,
+                  },
+                ]}
               >
-                <DaySummaryCard
-                  dayOffset={offset}
-                  stats={statsByDay[offset]}
-                  targetCalories={targetCalories}
-                  targetProtein={targetProtein}
-                  targetCarbs={targetCarbs}
-                  targetFat={targetFat}
-                  theme={theme}
-                  language={language}
-                  goal={goal}
-                />
-
-                {offset === 0 ? (
-                  <QuickActions theme={theme} language={language} />
-                ) : null}
-
-                <View style={styles.sectionHeader}>
+                <View style={styles.ringCenter}>
                   <Text
-                    style={[styles.sectionTitle, { color: theme.colors.text }]}
+                    style={[
+                      styles.calorieNumber,
+                      { color: theme.colors.text },
+                    ]}
                   >
-                    {translate("meals", language)}
+                    {stats.calories.toLocaleString("tr-TR")}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.calorieTarget,
+                      { color: theme.colors.mutedText },
+                    ]}
+                  >
+                    / {targetCalories.toLocaleString("tr-TR")} kcal
+                  </Text>
+                  <Text
+                    style={[
+                      styles.remaining,
+                      { color: theme.colors.primary },
+                    ]}
+                  >
+                    {translate("remaining", language)} {remaining} kcal
                   </Text>
                 </View>
-
-                <DayMealList
-                  dayMeals={mealsByDay[offset]}
-                  isToday={offset === 0}
-                  theme={theme}
-                  language={language}
-                  onDeleteMeal={confirmDeleteMeal}
-                />
-              </ScrollView>
+              </View>
             </View>
-          ))}
+          </View>
+
+          {/* Nutrient Progress Bars */}
+          <View style={styles.nutrientSection}>
+            <MacroProgress
+              label={translate("protein", language)}
+              current={stats.protein}
+              target={targetProtein}
+              color={theme.colors.protein}
+            />
+            <MacroProgress
+              label={translate("carbs", language)}
+              current={stats.carbs}
+              target={targetCarbs}
+              color={theme.colors.carbs}
+            />
+            <MacroProgress
+              label={translate("fat", language)}
+              current={stats.fat}
+              target={targetFat}
+              color={theme.colors.fat}
+            />
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.quickActions}>
+            <Pressable
+              onPress={() => router.push("/add-meal" as Href)}
+              style={[
+                styles.actionButton,
+                styles.actionPrimary,
+                { backgroundColor: theme.colors.primarySoft },
+              ]}
+            >
+              <Ionicons
+                name="add"
+                size={24}
+                color={theme.colors.primary}
+              />
+              <Text
+                style={[
+                  styles.actionLabel,
+                  { color: theme.colors.primary },
+                ]}
+              >
+                {translate("addMeal", language)}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push("/scan-barcode" as Href)}
+              style={[
+                styles.actionButton,
+                styles.actionSecondary,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name="barcode-outline"
+                size={24}
+                color={theme.colors.text}
+              />
+              <Text
+                style={[styles.actionLabel, { color: theme.colors.text }]}
+              >
+                {translate("scanBarcode", language)}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push("/scan-photo" as Href)}
+              style={[
+                styles.actionButton,
+                styles.actionSecondary,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name="camera-outline"
+                size={24}
+                color={theme.colors.text}
+              />
+              <Text
+                style={[styles.actionLabel, { color: theme.colors.text }]}
+              >
+                {translate("scanWithPhoto", language)}
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Meals Section */}
+          <View style={styles.mealsSection}>
+            <View style={styles.mealsHeader}>
+              <Text
+                style={[styles.mealsTitle, { color: theme.colors.text }]}
+              >
+                {translate("meals", language)}
+              </Text>
+              <Pressable onPress={() => router.push("/add-meal" as Href)}>
+                <Text
+                  style={[
+                    styles.addButtonText,
+                    { color: theme.colors.primary },
+                  ]}
+                >
+                  + {translate("addMeal", language)}
+                </Text>
+              </Pressable>
+            </View>
+
+            {todayMeals.length === 0 ? (
+              <View
+                style={[
+                  styles.emptyCard,
+                  {
+                    backgroundColor: theme.colors.card,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.emptyIconBox,
+                    { backgroundColor: theme.colors.primarySoft },
+                  ]}
+                >
+                  <Ionicons
+                    name="restaurant-outline"
+                    size={26}
+                    color={theme.colors.primary}
+                  />
+                </View>
+                <Text
+                  style={[styles.emptyTitle, { color: theme.colors.text }]}
+                >
+                  {translate("noMealsYet", language)}
+                </Text>
+                <Text
+                  style={[
+                    styles.emptySubtitle,
+                    { color: theme.colors.mutedText },
+                  ]}
+                >
+                  {translate("noMealsSubtitle", language)}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.mealList}>
+                {todayMeals.map((meal) => (
+                  <MealCard
+                    key={meal.id}
+                    icon={getMealIcon(meal.category)}
+                    title={meal.title}
+                    items={
+                      meal.description ||
+                      getMealCategoryLabel(meal.category, language)
+                    }
+                    calories={meal.calories}
+                    protein={meal.protein}
+                    carbs={meal.carbs}
+                    fat={meal.fat}
+                    onPress={() =>
+                      router.push(`/meal-detail?mealId=${meal.id}` as Href)
+                    }
+                    onDelete={() => confirmDeleteMeal(meal.id)}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
         </ScrollView>
       </View>
     </Screen>
-  );
-}
-
-type DaySummaryCardProps = {
-  dayOffset: number;
-  stats: DayStats;
-  targetCalories: number;
-  targetProtein: number;
-  targetCarbs: number;
-  targetFat: number;
-  theme: ReturnType<typeof getTheme>;
-  language: Language;
-  goal: ReturnType<typeof useGoalStore.getState>["goal"];
-};
-
-function DaySummaryCard({
-  dayOffset,
-  stats,
-  targetCalories,
-  targetProtein,
-  targetCarbs,
-  targetFat,
-  theme,
-  language,
-  goal,
-}: DaySummaryCardProps) {
-  const remainingCalories = targetCalories - stats.calories;
-  const progressPercent = Math.min(
-    (stats.calories / targetCalories) * 100,
-    100,
-  );
-
-  return (
-    <View
-      style={[
-        styles.summaryCard,
-        {
-          backgroundColor: theme.colors.card,
-          borderColor: theme.colors.border,
-        },
-      ]}
-    >
-      <View style={styles.summaryHeader}>
-        <Text
-          style={[styles.sectionLabel, { color: theme.colors.mutedText }]}
-        >
-          {translate("dailySummary", language)}
-        </Text>
-
-        {goal && dayOffset === 0 ? (
-          <View
-            style={[
-              styles.savedGoalBadge,
-              { backgroundColor: theme.colors.primarySoft },
-            ]}
-          >
-            <Text
-              style={[styles.savedGoalText, { color: theme.colors.primary }]}
-            >
-              {translate("savedGoal", language)}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-
-      <View style={styles.calorieCenter}>
-        <View
-          style={[styles.calorieRing, { borderColor: theme.colors.primarySoft }]}
-        >
-          <View
-            style={[
-              styles.calorieRingInner,
-              { borderColor: theme.colors.primary },
-            ]}
-          >
-            <Text
-              style={[styles.calorieNumber, { color: theme.colors.text }]}
-            >
-              {stats.calories.toLocaleString("tr-TR")}
-            </Text>
-
-            <Text
-              style={[styles.calorieTarget, { color: theme.colors.mutedText }]}
-            >
-              / {targetCalories.toLocaleString("tr-TR")} kcal
-            </Text>
-
-            <Text style={[styles.remaining, { color: theme.colors.primary }]}>
-              {translate("remaining", language)} {remainingCalories} kcal
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <View
-        style={[styles.mainProgressTrack, { backgroundColor: theme.colors.cardSoft }]}
-      >
-        <View
-          style={[
-            styles.mainProgressFill,
-            {
-              width: `${progressPercent}%`,
-              backgroundColor: theme.colors.primary,
-            },
-          ]}
-        />
-      </View>
-
-      <View style={styles.macroRow}>
-        <MacroProgress
-          label={translate("protein", language)}
-          current={stats.protein}
-          target={targetProtein}
-          color={theme.colors.protein}
-        />
-        <MacroProgress
-          label={translate("carbs", language)}
-          current={stats.carbs}
-          target={targetCarbs}
-          color={theme.colors.carbs}
-        />
-        <MacroProgress
-          label={translate("fat", language)}
-          current={stats.fat}
-          target={targetFat}
-          color={theme.colors.fat}
-        />
-      </View>
-
-      {dayOffset === 0 ? (
-        <Pressable
-          onPress={() => router.push("/goal" as Href)}
-          style={[styles.goalButton, { backgroundColor: theme.colors.primarySoft }]}
-        >
-          <Ionicons
-            name="flag-outline"
-            size={18}
-            color={theme.colors.primary}
-          />
-          <Text
-            style={[styles.goalButtonText, { color: theme.colors.primary }]}
-          >
-            {translate("goalSetup", language)}
-          </Text>
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
-
-type QuickActionsProps = {
-  theme: ReturnType<typeof getTheme>;
-  language: Language;
-};
-
-function QuickActions({ theme, language }: QuickActionsProps) {
-  return (
-    <View style={styles.quickActions}>
-      <Pressable
-        onPress={() => router.push("/add-meal" as Href)}
-        style={[
-          styles.actionCard,
-          {
-            backgroundColor: theme.colors.card,
-            borderColor: theme.colors.border,
-          },
-        ]}
-      >
-        <Ionicons
-          name="add-circle-outline"
-          size={28}
-          color={theme.colors.primary}
-        />
-        <Text style={[styles.actionText, { color: theme.colors.text }]}>
-          {translate("addMeal", language)}
-        </Text>
-      </Pressable>
-
-      <Pressable
-        onPress={() => router.push("/scan-barcode" as Href)}
-        style={[
-          styles.actionCard,
-          {
-            backgroundColor: theme.colors.card,
-            borderColor: theme.colors.border,
-          },
-        ]}
-      >
-        <Ionicons
-          name="barcode-outline"
-          size={28}
-          color={theme.colors.primary}
-        />
-        <Text style={[styles.actionText, { color: theme.colors.text }]}>
-          {translate("scanBarcode", language)}
-        </Text>
-      </Pressable>
-
-      <Pressable
-        onPress={() => router.push("/scan-photo" as Href)}
-        style={[
-          styles.actionCard,
-          {
-            backgroundColor: theme.colors.card,
-            borderColor: theme.colors.border,
-          },
-        ]}
-      >
-        <Ionicons
-          name="camera-outline"
-          size={28}
-          color={theme.colors.primary}
-        />
-        <Text style={[styles.actionText, { color: theme.colors.text }]}>
-          {translate("scanWithPhoto", language)}
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
-
-type DayMealListProps = {
-  dayMeals: Meal[];
-  isToday: boolean;
-  theme: ReturnType<typeof getTheme>;
-  language: Language;
-  onDeleteMeal: (mealId: string) => void;
-};
-
-function DayMealList({
-  dayMeals,
-  isToday,
-  theme,
-  language,
-  onDeleteMeal,
-}: DayMealListProps) {
-  if (dayMeals.length === 0) {
-    const emptyTitle = isToday
-      ? translate("noMealsYet", language)
-      : translate("noMealsForDay", language);
-    const emptySubtitle = isToday
-      ? translate("noMealsSubtitle", language)
-      : translate("noMealsForDaySubtitle", language);
-
-    return (
-      <View
-        style={[
-          styles.emptyCard,
-          {
-            backgroundColor: theme.colors.card,
-            borderColor: theme.colors.border,
-          },
-        ]}
-      >
-        <View
-          style={[styles.emptyIconBox, { backgroundColor: theme.colors.primarySoft }]}
-        >
-          <Ionicons
-            name="restaurant-outline"
-            size={26}
-            color={theme.colors.primary}
-          />
-        </View>
-
-        <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
-          {emptyTitle}
-        </Text>
-
-        <Text
-          style={[styles.emptySubtitle, { color: theme.colors.mutedText }]}
-        >
-          {emptySubtitle}
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.mealList}>
-      {dayMeals.map((meal) => (
-        <MealCard
-          key={meal.id}
-          icon={getMealIcon(meal.category)}
-          title={meal.title}
-          items={
-            meal.description ||
-            getMealCategoryLabel(meal.category, language)
-          }
-          calories={meal.calories}
-          protein={meal.protein}
-          carbs={meal.carbs}
-          fat={meal.fat}
-          onPress={() =>
-            router.push(`/meal-detail?mealId=${meal.id}` as Href)
-          }
-          onDelete={isToday ? () => onDeleteMeal(meal.id) : undefined}
-        />
-      ))}
-    </View>
   );
 }
 
@@ -576,26 +377,16 @@ function getMealIcon(category: MealCategory) {
   }
 }
 
-function getMealCategoryLabel(category: MealCategory, language: "tr" | "en") {
-  const labels = {
-    breakfast: {
-      tr: "Kahvaltı",
-      en: "Breakfast",
-    },
-    lunch: {
-      tr: "Öğle Yemeği",
-      en: "Lunch",
-    },
-    dinner: {
-      tr: "Akşam Yemeği",
-      en: "Dinner",
-    },
-    snack: {
-      tr: "Ara Öğün",
-      en: "Snack",
-    },
+function getMealCategoryLabel(
+  category: MealCategory,
+  language: "tr" | "en",
+) {
+  const labels: Record<MealCategory, { tr: string; en: string }> = {
+    breakfast: { tr: "Kahvaltı", en: "Breakfast" },
+    lunch: { tr: "Öğle Yemeği", en: "Lunch" },
+    dinner: { tr: "Akşam Yemeği", en: "Dinner" },
+    snack: { tr: "Ara Öğün", en: "Snack" },
   };
-
   return labels[category][language];
 }
 
@@ -605,176 +396,107 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 8,
+    paddingVertical: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  headerSpacer: {
-    width: 84,
+  headerIcon: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "900",
+    fontSize: 20,
+    fontWeight: "700",
   },
-  headerActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  smallButton: {
-    width: 38,
-    height: 36,
-    borderRadius: 13,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  smallButtonText: {
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  dotsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 6,
-  },
-  dotPressable: {
-    padding: 4,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 999,
-  },
-  swipeContainer: {
-    flex: 1,
-  },
-  dayContent: {
+  scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 8,
     paddingBottom: 120,
   },
-  summaryCard: {
-    borderWidth: 1,
-    borderRadius: 28,
-    padding: 20,
-  },
-  summaryHeader: {
-    flexDirection: "row",
+  heroSection: {
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 18,
+    marginTop: 12,
+    marginBottom: 28,
   },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  savedGoalBadge: {
-    paddingHorizontal: 10,
-    height: 28,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  savedGoalText: {
-    fontSize: 11,
-    fontWeight: "900",
-  },
-  calorieCenter: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  calorieRing: {
-    width: 190,
-    height: 190,
-    borderRadius: 95,
+  ringOuter: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
     borderWidth: 14,
     alignItems: "center",
     justifyContent: "center",
   },
-  calorieRingInner: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    borderWidth: 8,
+  ringInner: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ringCenter: {
     alignItems: "center",
     justifyContent: "center",
   },
   calorieNumber: {
-    fontSize: 34,
-    fontWeight: "900",
+    fontSize: 40,
+    fontWeight: "800",
+    letterSpacing: -1.6,
   },
   calorieTarget: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "400",
     marginTop: 2,
   },
   remaining: {
     fontSize: 12,
-    fontWeight: "800",
-    marginTop: 8,
+    fontWeight: "600",
+    marginTop: 6,
   },
-  mainProgressTrack: {
-    height: 10,
-    borderRadius: 999,
-    marginTop: 22,
-    overflow: "hidden",
-  },
-  mainProgressFill: {
-    height: "100%",
-    borderRadius: 999,
-  },
-  macroRow: {
-    marginTop: 22,
-    flexDirection: "row",
-    gap: 12,
-  },
-  goalButton: {
-    marginTop: 18,
-    height: 46,
-    borderRadius: 17,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  goalButtonText: {
-    fontSize: 14,
-    fontWeight: "900",
+  nutrientSection: {
+    gap: 14,
+    marginBottom: 28,
   },
   quickActions: {
-    marginTop: 18,
     flexDirection: "row",
     gap: 12,
+    marginBottom: 32,
   },
-  actionCard: {
+  actionButton: {
     flex: 1,
-    minHeight: 92,
-    borderWidth: 1,
-    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 16,
     gap: 8,
-    padding: 10,
+    borderRadius: 16,
   },
-  actionText: {
-    fontSize: 12,
+  actionPrimary: {},
+  actionSecondary: {
+    borderWidth: 1,
+  },
+  actionLabel: {
+    fontSize: 10,
     fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
     textAlign: "center",
   },
-  sectionHeader: {
-    marginTop: 28,
-    marginBottom: 14,
+  mealsSection: {},
+  mealsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 14,
   },
-  sectionTitle: {
+  mealsTitle: {
     fontSize: 20,
-    fontWeight: "900",
+    fontWeight: "700",
+  },
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
   mealList: {
     gap: 12,
@@ -795,14 +517,14 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: "700",
     textAlign: "center",
   },
   emptySubtitle: {
     marginTop: 6,
     fontSize: 13,
     lineHeight: 19,
-    fontWeight: "600",
+    fontWeight: "500",
     textAlign: "center",
   },
 });
