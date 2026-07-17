@@ -1,169 +1,190 @@
+# Task Workflow
+
+You are executing the `/task` command for the NutriTrack project.
+
+**Task description:** $ARGUMENTS
+
+Follow every step below precisely. Do not skip steps. Do not deviate from this workflow.
+
 ---
-description: Create a task branch, implement the requested change, validate it and commit only after successful checks
-agent: build
+
+## Step 1: Read the Task
+
+Parse the task description from `$ARGUMENTS`. Understand what the user is asking you to do. If the description is empty or unclear, ask the user to clarify before proceeding.
+
 ---
 
-You are working on the NutriTrack repository.
+## Step 2: Inspect the Repository
 
-The user's task is:
+Gather context before making any changes. Read and summarize the following:
 
-$ARGUMENTS
+- `AGENTS.md` — project conventions and rules
+- `package.json` — dependencies, scripts, and project metadata
+- `git status` — current working tree state
+- `git branch` — current branch
+- Any files directly relevant to the task
 
-Follow this workflow exactly.
+Summarize your understanding of the project state before proceeding.
 
-## Phase 1 — Inspect
+---
 
-1. Run:
+## Step 3: Create a Safe Branch
 
-git status --short
+Before writing any code:
 
-2. Run:
+1. Run `git status` and inspect for **unrelated uncommitted changes**.
+2. If unrelated changes exist, **stop immediately**. Do not stash, discard, overwrite, or commit them. Warn the user clearly and ask them to resolve the working tree first.
+3. Check the current branch with `git branch --show-current`.
+4. **Never perform development directly on `main`.**
+5. If the current branch is `main`, create and switch to a dedicated task branch:
+   - Choose a concise branch name based on the task:
+     - `fix/...` for bug fixes
+     - `feature/...` for new features
+     - `test/...` for test work
+     - `refactor/...` for refactors
+     - `docs/...` for documentation
+     - `chore/...` for tooling or maintenance
+   - Use `git checkout -b <branch-name>` to create and switch to the new branch.
 
-git branch --show-current
+---
 
-3. Read package.json.
+## Step 4: Report the Plan
 
-4. Inspect only the files likely related to the task.
+Before editing any files, briefly report to the user:
 
-5. Do not modify code yet.
+- **Planned branch name**
+- **Likely files** that will be modified
+- **Implementation plan** — a short summary of what you will do
 
-6. If the working tree contains unrelated uncommitted changes, stop and ask the user what to do.
+Wait for no approval. Proceed immediately after reporting.
 
-7. Briefly identify:
-   - the likely root cause or implementation location;
-   - the files likely to change;
-   - the tests that should be run.
+---
 
-## Phase 2 — Create or select branch
+## Step 5: Implement the Task
 
-Determine the task type:
+Implement only the requested task. Follow these rules:
 
-- Bug fix: fix/
-- New feature: feature/
-- Tests only: test/
-- Refactor: refactor/
-- Documentation: docs/
-- Maintenance: chore/
+- Avoid unrelated refactors or "improvements" outside the task scope.
+- Preserve existing behavior unless the task explicitly requires changing it.
+- Do not expose secrets, API keys, passwords, or tokens.
+- Do not commit or generate: APK files, `.env` files, credentials, caches, screenshots, or local tooling artifacts.
+- Follow the conventions found in `AGENTS.md` and the existing codebase.
 
-Generate a short English branch name.
+---
 
-Branch naming rules:
+## Step 6: Validate
 
-- lowercase only;
-- use hyphens between words;
-- no spaces;
-- no Turkish characters;
-- clearly describe the task.
+Inspect `package.json` to discover available validation scripts. Run all that are relevant and applicable:
 
-Examples:
+- **Linting** (e.g. `npm run lint`)
+- **TypeScript typecheck** (e.g. `npm run typecheck` or `npx tsc --noEmit`)
+- **Unit tests** (e.g. `npm test`)
+- **Task-specific tests** if the task involves testable logic
+- **Build check** (e.g. `npm run build`)
 
-- fix/register-button-disabled-ui
-- fix/registration-loading
-- feature/water-tracker
-- test/profile-screen
-- refactor/auth-service
+Run each command and capture the output.
 
-If the current branch is main, create and switch to the new branch using:
+---
 
-git switch -c <branch-name>
+## Step 7: Handle Validation Failures
 
-If already on a suitable dedicated branch, continue on that branch.
+If any validation command fails:
 
-Do not create a branch from another unfinished task branch.
+1. Attempt to fix the failures **only if they were caused by your changes**.
+2. Re-run the failed command after fixing.
+3. If failures remain after your fix attempts:
+   - **Do not create a commit.**
+   - **Do not push.**
+   - **Do not create a Pull Request.**
+   - Report the failed command and the relevant error output to the user.
+   - Stop here.
 
-## Phase 3 — Implement
+---
 
-1. Find the real root cause.
-2. Make the smallest safe change.
-3. Only modify files related to the task.
-4. Do not refactor unrelated code.
-5. Do not change unrelated screen designs.
-6. Do not update unrelated dependencies.
-7. Preserve existing behavior.
-8. Add or update unit or integration tests when practical.
-9. Do not commit yet.
+## Step 8: Create a Local Commit
 
-## Phase 4 — Validate
+If all validation passes:
 
-Inspect package.json and determine the available validation scripts.
+1. Run `git status` and `git diff` to review all changes.
+2. Ensure **only task-related files** are staged. Do not include unrelated files.
+3. Stage the relevant files with `git add`.
+4. Create a single commit using **Conventional Commits** format:
+   - Use an appropriate type: `feat`, `fix`, `test`, `refactor`, `docs`, `chore`, etc.
+   - Include a scope derived from the task or affected module.
+   - Write a clear, concise commit message.
+   - Example: `feat(nutrition): add daily calorie summary widget`
+5. **Do not push.**
 
-Run the relevant available commands, including when present:
+---
 
-npm run lint
+## Step 9: Show Completion Report
 
-npx tsc --noEmit
+After the commit is created, display a completion report containing:
 
-npm test -- --runInBand
+- **Branch name**
+- **Root cause or task summary**
+- **Modified files** (list them)
+- **Validation commands and results** (each command and pass/fail)
+- **Commit message**
+- **Commit hash**
+- **Suggested Pull Request title**
+- **Suggested Pull Request description**
 
-Also run focused tests related to the changed area when available.
+---
 
-If any validation fails:
+## Step 10: Ask for Approval
 
-1. Diagnose the failure.
-2. Fix failures caused by the current task.
-3. Run the checks again.
-4. Do not create a commit while task-related checks are failing.
+After showing the report, ask the user **exactly**:
 
-If a failure already existed before this task and is unrelated, stop before committing and report it clearly.
+```
+The task is committed locally and all validations passed. Would you like me to push the branch and create a Pull Request now?
+```
 
-## Phase 5 — Review
+Wait for the user's response. Do not proceed without explicit approval.
 
-Before committing, run:
+---
 
-git diff --check
+## Step 11: Push and Create Pull Request (Only After Explicit Approval)
 
-git diff --stat
+When the user explicitly approves:
 
-git diff
+1. Confirm the current branch is **not** `main`.
+2. Confirm the working tree is **clean** with `git status`.
+3. Confirm `gh` is installed and authenticated by running `gh auth status`.
+4. Push the current branch:
+   ```
+   git push -u origin <current-branch>
+   ```
+5. Create a Pull Request against `main` using GitHub CLI:
+   ```
+   gh pr create --base main --head <current-branch> --title "<PR title>" --body "<PR description>"
+   ```
+6. **Do not merge** the Pull Request.
+7. **Do not delete** local or remote branches.
+8. Report the created Pull Request URL to the user.
 
-Confirm that:
+---
 
-- there are no unrelated changes;
-- no secrets or credentials were added;
-- no .env file was added;
-- no unnecessary generated files were added;
-- no build outputs were added;
-- only task-related files changed.
+## Step 12: Handle `gh` Unavailability
 
-## Phase 6 — Commit
+If `gh` is unavailable or not authenticated:
 
-Only if all relevant validations pass:
+- If the push succeeded, keep the branch pushed.
+- Do **not** pretend the PR was created.
+- Provide the user with the exact command they need to authenticate or create the PR manually, for example:
+  ```
+  gh auth login
+  gh pr create --base main --head <branch> --title "..." --body "..."
+  ```
 
-1. Stage only the files related to the task.
-2. Create one focused Conventional Commit.
-3. Use an English commit message.
-4. Do not push.
-5. Do not merge.
-6. Do not open a Pull Request.
+---
 
-Allowed commit formats:
+## Rules — Never Do the Following
 
-- fix(scope): description
-- feat(scope): description
-- test(scope): description
-- refactor(scope): description
-- docs(scope): description
-- chore(scope): description
-
-## Phase 7 — Report
-
-At the end, report:
-
-- Branch name
-- Root cause
-- Files changed
-- Tests added or updated
-- Validation commands executed
-- Validation results
-- Commit message
-- Commit hash
-- Push status: not pushed
-- Recommended manual verification
-- Suggested Pull Request title
-- Suggested Pull Request description
-
-Never push to GitHub unless the user explicitly asks for it.
-
-Never merge into main.
-
-Never force-push.
+- Never push directly to `main`.
+- Never force-push.
+- Never merge a Pull Request.
+- Never delete local or remote branches.
+- Never bypass failed tests.
+- Never commit unrelated files.
+- Never expose secrets, keys, or credentials.
