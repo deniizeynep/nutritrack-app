@@ -3,6 +3,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  View,
   type ViewStyle,
 } from "react-native";
 import { useAppStore } from "../stores/appStore";
@@ -34,7 +35,7 @@ export function Button({
         style={({ pressed }) => [
           styles.pressable,
           {
-            opacity: disabled ? 0.55 : pressed ? 0.86 : 1,
+            opacity: pressed ? 0.86 : 1,
           },
           style,
         ]}
@@ -49,7 +50,7 @@ export function Button({
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.button}
+          style={[styles.button, { opacity: disabled ? 0.55 : 1 }]}
         >
           <Text style={styles.primaryText}>{children}</Text>
         </LinearGradient>
@@ -58,23 +59,32 @@ export function Button({
   }
 
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.secondaryButton,
+    <View
+      style={[
         {
-          backgroundColor: theme.colors.card,
+          borderRadius: 20,
+          borderWidth: 1,
           borderColor: theme.colors.border,
-          opacity: disabled ? 0.55 : pressed ? 0.8 : 1,
         },
         style,
       ]}
-      onPress={onPress}
-      disabled={disabled}
     >
-      <Text style={[styles.secondaryText, { color: theme.colors.text }]}>
-        {children}
-      </Text>
-    </Pressable>
+      <Pressable
+        style={({ pressed }) => [
+          styles.secondaryButton,
+          {
+            backgroundColor: theme.colors.card,
+            opacity: disabled ? 0.55 : pressed ? 0.8 : 1,
+          },
+        ]}
+        onPress={onPress}
+        disabled={disabled}
+      >
+        <Text style={[styles.secondaryText, { color: theme.colors.text }]}>
+          {children}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -106,7 +116,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
   },
   secondaryText: {
     fontSize: 16,
