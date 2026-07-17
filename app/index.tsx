@@ -1,7 +1,8 @@
 import { router, type Href } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   StyleSheet,
@@ -28,6 +29,7 @@ export default function WelcomeScreen() {
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const hasCheckedSession = useAuthStore((state) => state.hasCheckedSession);
   const loadMe = useAuthStore((state) => state.loadMe);
+  const registerTest = useAuthStore((state) => state.registerTest);
 
   useEffect(() => {
     if (hasHydrated && !hasCheckedSession && !isLoading) {
@@ -40,6 +42,23 @@ export default function WelcomeScreen() {
       router.replace("/(tabs)/home" as Href);
     }
   }, [hasCheckedSession, isAuthenticated]);
+
+  const [isCreatingTestUser, setIsCreatingTestUser] = useState(false);
+
+  const handleTestUser = async () => {
+    try {
+      setIsCreatingTestUser(true);
+      await registerTest();
+      router.replace("/(tabs)/home" as Href);
+    } catch (error) {
+      Alert.alert(
+        "Test Kullanıcı",
+        error instanceof Error ? error.message : "Test kullanıcısı oluşturulamadı.",
+      );
+    } finally {
+      setIsCreatingTestUser(false);
+    }
+  };
 
   if (!hasCheckedSession) {
     return (
@@ -159,6 +178,18 @@ export default function WelcomeScreen() {
               {translate("login", language)}
             </Text>
           </Pressable>
+
+          <Pressable
+            onPress={handleTestUser}
+            disabled={isCreatingTestUser}
+            style={styles.testUserButton}
+          >
+            <Text
+              style={[styles.testUserText, { color: theme.colors.mutedText }]}
+            >
+              {isCreatingTestUser ? "..." : "Test Kullanıcı ile Gir"}
+            </Text>
+          </Pressable>
         </View>
       </View>
     </Screen>
@@ -269,5 +300,14 @@ const styles = StyleSheet.create({
   loginLink: {
     fontSize: 14,
     fontWeight: "800",
+  },
+  testUserButton: {
+    marginTop: 14,
+    alignItems: "center",
+  },
+  testUserText: {
+    fontSize: 13,
+    fontWeight: "700",
+    textDecorationLine: "underline",
   },
 });

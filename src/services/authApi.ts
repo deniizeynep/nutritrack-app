@@ -118,4 +118,10 @@ export const authApi = {
       token,
     });
   },
+
+  registerTest: () => {
+    return apiRequest<AuthResponse>("/auth/register-test", {
+      method: "POST",
+    });
+  },
 };

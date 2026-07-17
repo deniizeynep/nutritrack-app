@@ -724,6 +724,47 @@ router.post("/google", authRateLimiter, async (req, res) => {
   }
 });
 
+router.post("/register-test", authRateLimiter, async (req, res) => {
+  try {
+    const testEmail = `testuser${Date.now()}@gmail.com`;
+    const testPassword = "Test1234";
+    const passwordHash = await bcrypt.hash(testPassword, 10);
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: testEmail },
+    });
+
+    if (existingUser) {
+      const token = createToken(existingUser.id);
+      res.json({ token, user: formatUser(existingUser) });
+      return;
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        fullName: "Test Kullanıcı",
+        email: testEmail,
+        passwordHash,
+        authProvider: "email",
+        emailVerified: true,
+      },
+    });
+
+    const token = createToken(user.id);
+
+    res.status(201).json({
+      token,
+      user: formatUser(user),
+    });
+  } catch (error) {
+    console.error("REGISTER TEST ERROR:", error);
+
+    res.status(500).json({
+      message: "Test kullanıcısı oluşturulamadı.",
+    });
+  }
+});
+
 router.get("/me", authMiddleware, async (req, res) => {
   try {
     const userId = (req as AuthRequest).userId;

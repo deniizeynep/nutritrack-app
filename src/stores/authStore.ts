@@ -37,6 +37,7 @@ type AuthState = {
   clearPendingVerification: () => void;
   loadMe: () => Promise<void>;
   deleteAccount: () => Promise<void>;
+  registerTest: () => Promise<void>;
   logout: () => void;
   clearError: () => void;
   setHasHydrated: (hasHydrated: boolean) => void;
@@ -357,6 +358,36 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error:
               error instanceof Error ? error.message : "Hesap silinemedi.",
+          });
+
+          throw error;
+        }
+      },
+
+      registerTest: async () => {
+        try {
+          set({ isLoading: true, error: null });
+
+          const response = await authApi.registerTest();
+
+          set({
+            user: response.user,
+            token: response.token,
+            isAuthenticated: true,
+            isLoading: false,
+            hasCheckedSession: true,
+            pendingVerificationEmail: null,
+            pendingPasswordResetEmail: null,
+            requiresEmailVerification: false,
+            error: null,
+          });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Test kullanıcısı oluşturulamadı.",
           });
 
           throw error;
