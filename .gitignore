@@ -47,3 +47,16 @@ example
 
 node_modules
 dist
+
+# pnpm
+.pnpm-store/
+
+# APK builds
+*.apk
+
+# Debug / temporary files
+emulator-screen.png
+ui-dump.txt
+
+# Firebase config (contains API keys)
+google-services.json
