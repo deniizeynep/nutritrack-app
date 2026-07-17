@@ -72,7 +72,7 @@ export default function ProfileScreen() {
             clearMeals();
             clearGoal();
             logout();
-            router.replace("/" as Href);
+            router.dismissAll();
           },
         },
       ],
@@ -93,7 +93,7 @@ export default function ProfileScreen() {
               await deleteAccount();
               clearMeals();
               clearGoal();
-              router.replace("/" as Href);
+              router.dismissAll();
             } catch (error) {
               Alert.alert(
                 translate("error", language),
@@ -123,9 +123,24 @@ export default function ProfileScreen() {
           <Text style={[styles.title, { color: theme.colors.text }]}> 
             {user?.fullName || translate("guestUser", language)}
           </Text>
-          <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}> 
-            {translate("profileSubtitle", language)}
-          </Text>
+
+          <View style={styles.statRow}>
+            <StatCard
+              icon="resize-outline"
+              label={translate("height", language)}
+              value={goal?.heightCm ? `${goal.heightCm} cm` : "-"}
+            />
+            <StatCard
+              icon="scale-outline"
+              label={translate("weight", language)}
+              value={goal?.weightKg ? `${goal.weightKg} kg` : "-"}
+            />
+            <StatCard
+              icon="calendar-outline"
+              label={translate("age", language)}
+              value={goal?.age ? `${goal.age}` : "-"}
+            />
+          </View>
         </View>
 
         <Section title={translate("account", language)}>
@@ -217,12 +232,20 @@ export default function ProfileScreen() {
         </Section>
 
         <Section title={translate("appInfo", language)}>
-          <InfoRow label="NutriTrack" value="" />
-          <InfoRow label={translate("version", language)} value="1.0.0" />
-          <InfoRow
-            label={translate("description", language)}
-            value={translate("smartNutritionTracking", language)}
-          />
+          <View style={styles.appInfoContent}>
+            <View style={[styles.appInfoIcon, { backgroundColor: theme.colors.primarySoft }]}>
+              <Text style={styles.appInfoEmoji}>🌿</Text>
+            </View>
+            <Text style={[styles.appInfoName, { color: theme.colors.text }]}>
+              NutriTrack
+            </Text>
+            <Text style={[styles.appInfoVersion, { color: theme.colors.mutedText }]}>
+              {translate("version", language)} 1.0.0
+            </Text>
+            <Text style={[styles.appInfoDesc, { color: theme.colors.mutedText }]}>
+              {translate("smartNutritionTracking", language)}
+            </Text>
+          </View>
         </Section>
 
         <Section title={translate("accountActions", language)}>
@@ -353,6 +376,32 @@ function DangerButton({
   );
 }
 
+function StatCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+}) {
+  const themeMode = useAppStore((state) => state.themeMode);
+  const theme = getTheme(themeMode);
+
+  return (
+    <View
+      style={[
+        styles.statCard,
+        { backgroundColor: theme.colors.cardSoft, borderColor: theme.colors.border },
+      ]}
+    >
+      <Ionicons name={icon} size={18} color={theme.colors.primary} />
+      <Text style={[styles.statValue, { color: theme.colors.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: theme.colors.mutedText }]}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -388,6 +437,29 @@ const styles = StyleSheet.create({
     textAlign: "center",
     maxWidth: 315,
   },
+  statRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+    width: "100%",
+  },
+  statCard: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 4,
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
   section: {
     borderWidth: 1,
     borderRadius: 24,
@@ -400,22 +472,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   infoRow: {
-    minHeight: 34,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+    paddingVertical: 6,
+    gap: 2,
   },
   infoLabel: {
-    flex: 1,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
   },
   infoValue: {
-    flex: 1,
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "900",
-    textAlign: "right",
   },
   emptyText: {
     fontSize: 13,
@@ -473,5 +539,34 @@ const styles = StyleSheet.create({
   },
   actionGap: {
     height: 10,
+  },
+  appInfoContent: {
+    alignItems: "center",
+    paddingVertical: 8,
+    gap: 6,
+  },
+  appInfoIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  appInfoEmoji: {
+    fontSize: 28,
+  },
+  appInfoName: {
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  appInfoVersion: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  appInfoDesc: {
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
