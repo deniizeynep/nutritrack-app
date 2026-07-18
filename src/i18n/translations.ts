@@ -1229,6 +1229,16 @@ export const translations = {
     en: "Edit Meal",
   },
 
+  showMealDetails: {
+    tr: "Öğün içeriğini göster",
+    en: "Show meal details",
+  },
+
+  hideMealDetails: {
+    tr: "Öğün içeriğini gizle",
+    en: "Hide meal details",
+  },
+
   editMealSubtitle: {
     tr: "Yemek adı, kalori ve makro değerlerini güncelle.",
     en: "Update meal name, calories and macro values.",

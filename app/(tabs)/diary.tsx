@@ -86,6 +86,15 @@ export default function DiaryScreen() {
   }, [meals]);
 
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const [expandedMealIds, setExpandedMealIds] = useState<string[]>([]);
+
+  const toggleMealDetails = (mealId: string) => {
+    setExpandedMealIds((currentIds) =>
+      currentIds.includes(mealId)
+        ? currentIds.filter((id) => id !== mealId)
+        : [...currentIds, mealId],
+    );
+  };
 
   const selectedDay =
     daySummaries.find((day) => day.dateKey === selectedDateKey) ??
@@ -364,76 +373,162 @@ export default function DiaryScreen() {
                         </View>
 
                         {sectionMeals.length > 0 ? (
-                          sectionMeals.map((meal) => (
-                            <View key={meal.id} style={styles.mealRow}>
-                              <Pressable
-                                onPress={() =>
-                                  router.push(
-                                    `/meal-detail?mealId=${meal.id}` as Href,
-                                  )
-                                }
-                                style={({ pressed }) => [
-                                  styles.mealRowContent,
-                                  { opacity: pressed ? 0.72 : 1 },
-                                ]}
-                              >
-                                <View
-                                  style={[
-                                    styles.mealIcon,
-                                    {
-                                      backgroundColor: theme.colors.cardSoft,
-                                    },
-                                  ]}
-                                >
-                                  <Text style={styles.mealEmoji}>
-                                    {getMealIcon(meal.category)}
-                                  </Text>
+                          sectionMeals.map((meal) => {
+                            const detailsExpanded = expandedMealIds.includes(
+                              meal.id,
+                            );
+
+                            return (
+                              <View key={meal.id} style={styles.mealEntry}>
+                                <View style={styles.mealRow}>
+                                  <View style={styles.mealRowContent}>
+                                    <View
+                                      style={[
+                                        styles.mealIcon,
+                                        {
+                                          backgroundColor:
+                                            theme.colors.cardSoft,
+                                        },
+                                      ]}
+                                    >
+                                      <Text style={styles.mealEmoji}>
+                                        {getMealIcon(meal.category)}
+                                      </Text>
+                                    </View>
+
+                                    <View style={styles.mealInfo}>
+                                      <Text
+                                        numberOfLines={1}
+                                        style={[
+                                          styles.mealTitle,
+                                          { color: theme.colors.text },
+                                        ]}
+                                      >
+                                        {meal.title}
+                                      </Text>
+
+                                      <Text
+                                        style={[
+                                          styles.mealCalories,
+                                          { color: theme.colors.mutedText },
+                                        ]}
+                                      >
+                                        {meal.calories} kcal
+                                      </Text>
+                                    </View>
+                                  </View>
+
+                                  <View style={styles.mealActions}>
+                                    <Pressable
+                                      accessibilityLabel={translate(
+                                        "editMeal",
+                                        language,
+                                      )}
+                                      hitSlop={7}
+                                      onPress={() =>
+                                        router.push(
+                                          `/meal-detail?mealId=${meal.id}` as Href,
+                                        )
+                                      }
+                                    >
+                                      <Ionicons
+                                        name="create-outline"
+                                        size={18}
+                                        color={theme.colors.mutedText}
+                                      />
+                                    </Pressable>
+
+                                    <Pressable
+                                      accessibilityLabel={translate(
+                                        detailsExpanded
+                                          ? "hideMealDetails"
+                                          : "showMealDetails",
+                                        language,
+                                      )}
+                                      accessibilityState={{
+                                        expanded: detailsExpanded,
+                                      }}
+                                      hitSlop={7}
+                                      onPress={() => toggleMealDetails(meal.id)}
+                                    >
+                                      <Ionicons
+                                        name={
+                                          detailsExpanded
+                                            ? "chevron-up"
+                                            : "chevron-down"
+                                        }
+                                        size={19}
+                                        color={theme.colors.primary}
+                                      />
+                                    </Pressable>
+
+                                    <Pressable
+                                      accessibilityLabel={translate(
+                                        "deleteMeal",
+                                        language,
+                                      )}
+                                      hitSlop={7}
+                                      onPress={() => confirmDeleteMeal(meal.id)}
+                                    >
+                                      <Ionicons
+                                        name="trash-outline"
+                                        size={17}
+                                        color={theme.colors.mutedText}
+                                      />
+                                    </Pressable>
+                                  </View>
                                 </View>
 
-                                <View style={styles.mealInfo}>
-                                  <Text
-                                    numberOfLines={1}
+                                {detailsExpanded ? (
+                                  <View
                                     style={[
-                                      styles.mealTitle,
-                                      { color: theme.colors.text },
+                                      styles.mealDetails,
+                                      {
+                                        backgroundColor: theme.colors.cardSoft,
+                                      },
                                     ]}
                                   >
-                                    {meal.title}
-                                  </Text>
+                                    {meal.description ? (
+                                      <View style={styles.mealDescriptionRow}>
+                                        <Ionicons
+                                          name="information-circle-outline"
+                                          size={16}
+                                          color={theme.colors.primary}
+                                        />
+                                        <Text
+                                          style={[
+                                            styles.mealDescription,
+                                            { color: theme.colors.mutedText },
+                                          ]}
+                                        >
+                                          {meal.description}
+                                        </Text>
+                                      </View>
+                                    ) : null}
 
-                                  <Text
-                                    style={[
-                                      styles.mealCalories,
-                                      { color: theme.colors.mutedText },
-                                    ]}
-                                  >
-                                    {meal.calories} kcal
-                                  </Text>
-                                </View>
-
-                                <Ionicons
-                                  name="chevron-forward"
-                                  size={18}
-                                  color={theme.colors.mutedText}
-                                />
-                              </Pressable>
-
-                              <Pressable
-                                accessibilityLabel={translate(
-                                  "deleteMeal",
-                                  language,
-                                )}
-                                hitSlop={8}
-                                onPress={() => confirmDeleteMeal(meal.id)}
-                              >
-                                <Ionicons
-                                  name="trash-outline"
-                                  size={17}
-                                  color={theme.colors.mutedText}
-                                />
-                              </Pressable>
-                            </View>
-                          ))
+                                    <View style={styles.mealDetailValues}>
+                                      <MealDetailValue
+                                        label={translate("calories", language)}
+                                        value={`${meal.calories} kcal`}
+                                      />
+                                      <MealDetailValue
+                                        label={translate("protein", language)}
+                                        value={`${meal.protein}g`}
+                                      />
+                                      <MealDetailValue
+                                        label={translate("carbs", language)}
+                                        value={`${meal.carbs}g`}
+                                      />
+                                      <MealDetailValue
+                                        label={translate("fat", language)}
+                                        value={`${meal.fat}g`}
+                                      />
+                                    </View>
+                                  </View>
+                                ) : null}
+                              </View>
+                            );
+                          })
                         ) : (
                           <View
                             style={[
@@ -567,6 +662,27 @@ function formatWeekday(dateKey: string, language: "tr" | "en") {
   return date.toLocaleDateString(language === "tr" ? "tr-TR" : "en-US", {
     weekday: "short",
   });
+}
+
+type MealDetailValueProps = {
+  label: string;
+  value: string;
+};
+
+function MealDetailValue({ label, value }: MealDetailValueProps) {
+  const themeMode = useAppStore((state) => state.themeMode);
+  const theme = getTheme(themeMode);
+
+  return (
+    <View style={styles.mealDetailValue}>
+      <Text style={[styles.mealDetailLabel, { color: theme.colors.mutedText }]}>
+        {label}
+      </Text>
+      <Text style={[styles.mealDetailNumber, { color: theme.colors.text }]}>
+        {value}
+      </Text>
+    </View>
+  );
 }
 
 function getMealSectionIcon(category: MealCategory) {
@@ -788,6 +904,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
+  mealEntry: {
+    gap: 10,
+  },
   mealIcon: {
     width: 42,
     height: 42,
@@ -809,6 +928,44 @@ const styles = StyleSheet.create({
     marginTop: 3,
     fontSize: 11,
     fontWeight: "600",
+  },
+  mealActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  mealDetails: {
+    borderRadius: 14,
+    padding: 12,
+    gap: 12,
+  },
+  mealDescriptionRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 7,
+  },
+  mealDescription: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "600",
+  },
+  mealDetailValues: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  mealDetailValue: {
+    width: "47%",
+  },
+  mealDetailLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  mealDetailNumber: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: "900",
   },
   emptyMealSection: {
     minHeight: 46,
