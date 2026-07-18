@@ -105,17 +105,17 @@ export default function HomeScreen() {
       <View
         style={[styles.outer, { backgroundColor: theme.colors.background }]}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-            {translate("today", language)}
-          </Text>
-        </View>
-
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
+          {/* Header - scrolls with content */}
+          <View style={styles.header}>
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+              {translate("today", language)}
+            </Text>
+          </View>
+
           {/* Summary Card */}
           <View
             style={[
