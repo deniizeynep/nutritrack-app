@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Switch, Text, View } from "react-native";
 import { ProfilePage } from "../src/components/ProfilePage";
 import { translate } from "../src/i18n/translations";
 import { useAppStore } from "../src/stores/appStore";
@@ -8,7 +8,9 @@ import { getTheme } from "../src/theme/theme";
 export default function SettingsScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
+  const setThemeMode = useAppStore((state) => state.setThemeMode);
   const theme = getTheme(themeMode);
+  const isDarkMode = themeMode === "dark";
 
   return (
     <ProfilePage
@@ -37,6 +39,33 @@ export default function SettingsScreen() {
           value={translate("metricUnits", language)}
         />
       </View>
+
+      <View style={[styles.sectionHeader, styles.sectionSpacing]}>
+        <Ionicons name="moon-outline" size={15} color={theme.colors.primary} />
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+          {translate("appearance", language)}
+        </Text>
+      </View>
+
+      <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+        <View style={styles.row}>
+          <View style={styles.rowText}>
+            <Text style={[styles.rowLabel, { color: theme.colors.text }]}>
+              {translate("darkMode", language)}
+            </Text>
+            <Text style={[styles.rowValue, { color: theme.colors.mutedText }]}>
+              {translate("darkModeSubtitle", language)}
+            </Text>
+          </View>
+          <Switch
+            value={isDarkMode}
+            onValueChange={(value) => setThemeMode(value ? "dark" : "light")}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#FFFFFF"
+            ios_backgroundColor={theme.colors.border}
+          />
+        </View>
+      </View>
     </ProfilePage>
   );
 }
@@ -64,6 +93,9 @@ const styles = StyleSheet.create({
     marginBottom: 9,
     paddingHorizontal: 4,
   },
+  sectionSpacing: {
+    marginTop: 22,
+  },
   sectionTitle: {
     fontSize: 11,
     fontWeight: "800",
@@ -80,7 +112,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 1,
   },
-  rowText: { flex: 1 },
+  rowText: { flex: 1, paddingRight: 12 },
   rowLabel: { fontSize: 13, fontWeight: "600" },
   rowValue: { marginTop: 3, fontSize: 11, fontWeight: "500" },
   divider: { height: StyleSheet.hairlineWidth },

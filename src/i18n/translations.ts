@@ -241,6 +241,16 @@ export const translations = {
     en: "Metric (kg, kcal)",
   },
 
+  darkMode: {
+    tr: "Karanlık Mod",
+    en: "Dark Mode",
+  },
+
+  darkModeSubtitle: {
+    tr: "Göz yorgunluğunu azaltır",
+    en: "Reduces eye strain",
+  },
+
   everyDay: {
     tr: "HER GÜN",
     en: "EVERY DAY",
