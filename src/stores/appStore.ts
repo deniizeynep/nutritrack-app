@@ -7,9 +7,11 @@ import type { ThemeMode } from "../theme/theme";
 type AppState = {
   themeMode: ThemeMode;
   language: Language;
+  dataSharingEnabled: boolean;
   setThemeMode: (themeMode: ThemeMode) => void;
   toggleTheme: () => void;
   setLanguage: (language: Language) => void;
+  setDataSharingEnabled: (enabled: boolean) => void;
 };
 
 export const useAppStore = create<AppState>()(
@@ -17,6 +19,7 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       themeMode: "light",
       language: "tr",
+      dataSharingEnabled: false,
 
       setThemeMode: (themeMode) => set({ themeMode }),
 
@@ -26,6 +29,8 @@ export const useAppStore = create<AppState>()(
       },
 
       setLanguage: (language) => set({ language }),
+
+      setDataSharingEnabled: (dataSharingEnabled) => set({ dataSharingEnabled }),
     }),
     {
       name: "nutritrack-app-storage",

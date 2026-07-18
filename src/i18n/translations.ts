@@ -251,6 +251,46 @@ export const translations = {
     en: "Reduces eye strain",
   },
 
+  privacyAndSecurity: {
+    tr: "Gizlilik ve Güvenlik",
+    en: "Privacy and Security",
+  },
+
+  dataSharing: {
+    tr: "Veri Paylaşımı",
+    en: "Data Sharing",
+  },
+
+  dataSharingSubtitle: {
+    tr: "Apple Health / Google Fit",
+    en: "Apple Health / Google Fit",
+  },
+
+  deleteDataPermanently: {
+    tr: "Verilerimi Kalıcı Sil",
+    en: "Delete My Data Permanently",
+  },
+
+  deleteDataPermanentlySubtitle: {
+    tr: "Tüm geçmişinizi kalıcı olarak kaldırın",
+    en: "Permanently remove all of your history",
+  },
+
+  deleteAccountMessage: {
+    tr: "Hesabın, öğünlerin ve hedef verilerin kalıcı olarak silinecek.",
+    en: "Your account, meals, and goal data will be permanently deleted.",
+  },
+
+  deleteAccountFinalTitle: {
+    tr: "Son kez emin misin?",
+    en: "Are you absolutely sure?",
+  },
+
+  deleteAccountFinalMessage: {
+    tr: "Bu işlem geri alınamaz. Tüm bilgilerin kalıcı olarak silinecek.",
+    en: "This action cannot be undone. All your information will be permanently deleted.",
+  },
+
   everyDay: {
     tr: "HER GÜN",
     en: "EVERY DAY",
