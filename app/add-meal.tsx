@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, type Href } from "expo-router";
+import { router, type Href, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   Alert,
@@ -21,6 +21,7 @@ import { useMealStore, type MealCategory } from "../src/stores/mealStore";
 import { getTheme } from "../src/theme/theme";
 
 export default function AddMealScreen() {
+  const params = useLocalSearchParams<{ category?: string }>();
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
@@ -31,7 +32,9 @@ export default function AddMealScreen() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<MealCategory>("breakfast");
+  const [category, setCategory] = useState<MealCategory>(() =>
+    isMealCategory(params.category) ? params.category : "breakfast",
+  );
   const [calories, setCalories] = useState("");
   const [protein, setProtein] = useState("");
   const [carbs, setCarbs] = useState("");
@@ -276,6 +279,15 @@ export default function AddMealScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
+  );
+}
+
+function isMealCategory(category?: string): category is MealCategory {
+  return (
+    category === "breakfast" ||
+    category === "lunch" ||
+    category === "dinner" ||
+    category === "snack"
   );
 }
 

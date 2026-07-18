@@ -642,6 +642,11 @@ export const translations = {
     en: "No meals added yet.",
   },
 
+  noMealInSection: {
+    tr: "Henüz bir şey eklenmedi",
+    en: "Nothing added yet",
+  },
+
   noMealsSubtitle: {
     tr: "Bugünkü kalori takibin için bir öğün ekle.",
     en: "Add a meal to start tracking today.",
