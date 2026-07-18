@@ -221,6 +221,16 @@ export const translations = {
     en: "Reminder Time",
   },
 
+  hour: {
+    tr: "Saat",
+    en: "Hour",
+  },
+
+  minute: {
+    tr: "Dakika",
+    en: "Minute",
+  },
+
   waterIntake: {
     tr: "Su Tüketimi",
     en: "Water Intake",

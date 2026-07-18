@@ -1,10 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import NativeDateTimePicker from "@expo/ui/community/datetime-picker";
 import type { ComponentProps, ReactNode } from "react";
 import { useState } from "react";
 import {
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Switch,
@@ -188,14 +186,19 @@ function TimePickerField({ initialTime, theme }: { initialTime: string; theme: A
     setIsPickerOpen(true);
   };
 
-  const selectAndroidTime = (date: Date) => {
-    setSelectedTime(date);
+  const saveTime = () => {
+    setSelectedTime(draftTime);
     setIsPickerOpen(false);
   };
 
-  const saveIosTime = () => {
-    setSelectedTime(draftTime);
-    setIsPickerOpen(false);
+  const adjustTime = (unit: "hour" | "minute", amount: number) => {
+    const nextTime = new Date(draftTime);
+    if (unit === "hour") {
+      nextTime.setHours(nextTime.getHours() + amount);
+    } else {
+      nextTime.setMinutes(nextTime.getMinutes() + amount);
+    }
+    setDraftTime(nextTime);
   };
 
   return (
@@ -217,38 +220,34 @@ function TimePickerField({ initialTime, theme }: { initialTime: string; theme: A
         </Text>
       </Pressable>
 
-      {isPickerOpen && Platform.OS === "android" ? (
-        <NativeDateTimePicker
-          value={selectedTime}
-          onValueChange={(_event, date) => selectAndroidTime(date)}
-          onDismiss={() => setIsPickerOpen(false)}
-          mode="time"
-          presentation="dialog"
-          display="clock"
-          is24Hour
-          accentColor={theme.colors.primary}
-          themeVariant={theme.mode}
-        />
-      ) : null}
-
       <Modal
-        visible={isPickerOpen && Platform.OS === "ios"}
+        visible={isPickerOpen}
         transparent
         animationType="fade"
         onRequestClose={() => setIsPickerOpen(false)}
       >
         <View style={styles.modalBackdrop}>
           <View style={[styles.pickerSheet, { backgroundColor: theme.colors.card }]}>
-            <NativeDateTimePicker
-              value={draftTime}
-              onValueChange={(_event, date) => setDraftTime(date)}
-              mode="time"
-              display="spinner"
-              accentColor={theme.colors.primary}
-              themeVariant={theme.mode}
-              locale={language === "tr" ? "tr_TR" : "en_US"}
-              style={styles.picker}
-            />
+            <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>
+              {translate("reminderTime", language)}
+            </Text>
+            <View style={styles.timeControls}>
+              <TimeControl
+                label={translate("hour", language)}
+                value={String(draftTime.getHours()).padStart(2, "0")}
+                onIncrease={() => adjustTime("hour", 1)}
+                onDecrease={() => adjustTime("hour", -1)}
+                theme={theme}
+              />
+              <Text style={[styles.controlSeparator, { color: theme.colors.text }]}>:</Text>
+              <TimeControl
+                label={translate("minute", language)}
+                value={String(draftTime.getMinutes()).padStart(2, "0")}
+                onIncrease={() => adjustTime("minute", 5)}
+                onDecrease={() => adjustTime("minute", -5)}
+                theme={theme}
+              />
+            </View>
             <View style={styles.pickerActions}>
               <Pressable
                 onPress={() => setIsPickerOpen(false)}
@@ -259,7 +258,7 @@ function TimePickerField({ initialTime, theme }: { initialTime: string; theme: A
                 </Text>
               </Pressable>
               <Pressable
-                onPress={saveIosTime}
+                onPress={saveTime}
                 style={[styles.pickerAction, { backgroundColor: theme.colors.primary }]}
               >
                 <Text style={[styles.pickerActionText, { color: "#FFFFFF" }]}>
@@ -271,6 +270,50 @@ function TimePickerField({ initialTime, theme }: { initialTime: string; theme: A
         </View>
       </Modal>
     </>
+  );
+}
+
+function TimeControl({
+  label,
+  value,
+  onIncrease,
+  onDecrease,
+  theme,
+}: {
+  label: string;
+  value: string;
+  onIncrease: () => void;
+  onDecrease: () => void;
+  theme: AppTheme;
+}) {
+  return (
+    <View style={styles.timeControl}>
+      <Text style={[styles.controlLabel, { color: theme.colors.mutedText }]}>{label}</Text>
+      <Pressable
+        onPress={onIncrease}
+        accessibilityRole="button"
+        accessibilityLabel={`${label} +`}
+        style={[styles.stepButton, { backgroundColor: theme.colors.cardSoft }]}
+      >
+        <Ionicons name="chevron-up" size={22} color={theme.colors.primary} />
+      </Pressable>
+      <View
+        style={[
+          styles.controlValue,
+          { backgroundColor: theme.colors.cardSoft, borderColor: theme.colors.border },
+        ]}
+      >
+        <Text style={[styles.controlValueText, { color: theme.colors.text }]}>{value}</Text>
+      </View>
+      <Pressable
+        onPress={onDecrease}
+        accessibilityRole="button"
+        accessibilityLabel={`${label} -`}
+        style={[styles.stepButton, { backgroundColor: theme.colors.cardSoft }]}
+      >
+        <Ionicons name="chevron-down" size={22} color={theme.colors.primary} />
+      </Pressable>
+    </View>
   );
 }
 
@@ -341,9 +384,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  pickerSheet: { width: "100%", maxWidth: 360, borderRadius: 20, padding: 16 },
-  picker: { height: 180 },
-  pickerActions: { marginTop: 12, flexDirection: "row", gap: 10 },
+  pickerSheet: { width: "100%", maxWidth: 320, borderRadius: 20, padding: 18 },
+  pickerTitle: { fontSize: 17, fontWeight: "900", textAlign: "center" },
+  timeControls: {
+    marginTop: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+  },
+  timeControl: { alignItems: "center", gap: 7 },
+  controlLabel: { fontSize: 11, fontWeight: "700" },
+  stepButton: {
+    width: 54,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  controlValue: {
+    width: 72,
+    height: 58,
+    borderWidth: 1,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  controlValueText: { fontSize: 26, fontWeight: "900" },
+  controlSeparator: { marginTop: 25, fontSize: 28, fontWeight: "900" },
+  pickerActions: { marginTop: 20, flexDirection: "row", gap: 10 },
   pickerAction: {
     flex: 1,
     height: 44,
