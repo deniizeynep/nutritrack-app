@@ -26,10 +26,12 @@ import {
   type Gender,
   type GoalType,
 } from "../src/utils/calorieCalculator";
+import { displayToKg, formatWeight, unitLabel } from "../src/utils/units";
 
 export default function GoalScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
+  const unitSystem = useAppStore((state) => state.unitSystem);
   const theme = getTheme(themeMode);
   const token = useAuthStore((state) => state.token);
   const savedGoal = useGoalStore((state) => state.goal);
@@ -53,15 +55,20 @@ export default function GoalScreen() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAge(String(savedGoal.age));
     setHeightCm(String(savedGoal.heightCm));
-    setWeightKg(String(savedGoal.weightKg));
+    setWeightKg(String(formatWeight(savedGoal.weightKg, unitSystem).split(" ")[0]));
     setGender(savedGoal.gender);
     setActivityLevel(savedGoal.activityLevel);
     setGoalType(savedGoal.goalType);
-  }, [savedGoal]);
+  }, [savedGoal, unitSystem]);
 
   const validationMessage = useMemo(() => {
-    return getGoalValidationMessage(age, heightCm, weightKg, language);
-  }, [age, heightCm, weightKg, language]);
+    return getGoalValidationMessage(
+      age,
+      heightCm,
+      String(displayToKg(Number(weightKg), unitSystem)),
+      language,
+    );
+  }, [age, heightCm, weightKg, language, unitSystem]);
 
   const result = useMemo(() => {
     if (validationMessage) {
@@ -70,7 +77,7 @@ export default function GoalScreen() {
 
     const parsedAge = Number(age);
     const parsedHeight = Number(heightCm);
-    const parsedWeight = Number(weightKg);
+    const parsedWeight = displayToKg(Number(weightKg), unitSystem);
 
     if (!parsedAge || !parsedHeight || !parsedWeight) {
       return null;
@@ -92,7 +99,7 @@ export default function GoalScreen() {
         goalType,
       ),
     };
-  }, [age, heightCm, weightKg, gender, activityLevel, goalType, validationMessage]);
+  }, [age, heightCm, weightKg, gender, activityLevel, goalType, validationMessage, unitSystem]);
 
   const handleSaveGoal = async () => {
     if (validationMessage) {
@@ -111,7 +118,7 @@ export default function GoalScreen() {
         {
           age: Number(age),
           heightCm: Number(heightCm),
-          weightKg: Number(weightKg),
+          weightKg: displayToKg(Number(weightKg), unitSystem),
           gender,
           activityLevel,
           goalType,
@@ -234,7 +241,7 @@ export default function GoalScreen() {
             </View>
 
             <Input
-              label={`${translate("weight", language)} (kg)`}
+               label={`${translate("weight", language)} (${unitLabel(unitSystem)})`}
               icon="scale-outline"
               placeholder={translate("weightPlaceholder", language)}
               keyboardType="number-pad"
