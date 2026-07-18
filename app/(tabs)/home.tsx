@@ -107,25 +107,9 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable style={styles.headerIcon}>
-            <Ionicons
-              name="settings-outline"
-              size={24}
-              color={theme.colors.primary}
-            />
-          </Pressable>
-
           <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
             {translate("today", language)}
           </Text>
-
-          <Pressable style={styles.headerIcon}>
-            <Ionicons
-              name="calendar-outline"
-              size={24}
-              color={theme.colors.primary}
-            />
-          </Pressable>
         </View>
 
         <ScrollView
@@ -134,15 +118,18 @@ export default function HomeScreen() {
         >
           {/* Hero: Calorie Ring */}
           <View style={styles.heroSection}>
-            <View
-              style={[
-                styles.ringOuter,
-                { borderColor: theme.colors.cardSoft },
-              ]}
-            >
+            <View style={styles.ringContainer}>
+              {/* Background Track */}
               <View
                 style={[
-                  styles.ringInner,
+                  styles.ringTrack,
+                  { backgroundColor: theme.colors.cardSoft },
+                ]}
+              />
+              {/* Progress Ring */}
+              <View
+                style={[
+                  styles.ringProgress,
                   {
                     borderColor: theme.colors.primary,
                     opacity:
@@ -151,33 +138,33 @@ export default function HomeScreen() {
                         : 0,
                   },
                 ]}
-              >
-                <View style={styles.ringCenter}>
-                  <Text
-                    style={[
-                      styles.calorieNumber,
-                      { color: theme.colors.text },
-                    ]}
-                  >
-                    {stats.calories.toLocaleString("tr-TR")}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.calorieTarget,
-                      { color: theme.colors.mutedText },
-                    ]}
-                  >
-                    / {targetCalories.toLocaleString("tr-TR")} kcal
-                  </Text>
-                  <Text
-                    style={[
-                      styles.remaining,
-                      { color: theme.colors.primary },
-                    ]}
-                  >
-                    {translate("remaining", language)} {remaining} kcal
-                  </Text>
-                </View>
+              />
+              {/* Center Content */}
+              <View style={styles.ringCenter}>
+                <Text
+                  style={[
+                    styles.calorieNumber,
+                    { color: theme.colors.text },
+                  ]}
+                >
+                  {stats.calories.toLocaleString("tr-TR")}
+                </Text>
+                <Text
+                  style={[
+                    styles.calorieTarget,
+                    { color: theme.colors.mutedText },
+                  ]}
+                >
+                  / {targetCalories.toLocaleString("tr-TR")} kcal
+                </Text>
+                <Text
+                  style={[
+                    styles.remaining,
+                    { color: theme.colors.primary },
+                  ]}
+                >
+                  {translate("remaining", language)} {remaining} kcal
+                </Text>
               </View>
             </View>
           </View>
@@ -284,16 +271,6 @@ export default function HomeScreen() {
               >
                 {translate("meals", language)}
               </Text>
-              <Pressable onPress={() => router.push("/add-meal" as Href)}>
-                <Text
-                  style={[
-                    styles.addButtonText,
-                    { color: theme.colors.primary },
-                  ]}
-                >
-                  + {translate("addMeal", language)}
-                </Text>
-              </Pressable>
             </View>
 
             {todayMeals.length === 0 ? (
@@ -397,15 +374,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingVertical: 8,
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-  },
-  headerIcon: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
   },
   headerTitle: {
     fontSize: 20,
@@ -420,21 +389,24 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 28,
   },
-  ringOuter: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    borderWidth: 14,
+  ringContainer: {
+    width: 256,
+    height: 256,
     alignItems: "center",
     justifyContent: "center",
   },
-  ringInner: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 10,
-    alignItems: "center",
-    justifyContent: "center",
+  ringTrack: {
+    position: "absolute",
+    width: 256,
+    height: 256,
+    borderRadius: 128,
+  },
+  ringProgress: {
+    position: "absolute",
+    width: 256,
+    height: 256,
+    borderRadius: 128,
+    borderWidth: 8,
   },
   ringCenter: {
     alignItems: "center",
@@ -485,17 +457,10 @@ const styles = StyleSheet.create({
   },
   mealsSection: {},
   mealsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     marginBottom: 14,
   },
   mealsTitle: {
     fontSize: 20,
-    fontWeight: "700",
-  },
-  addButtonText: {
-    fontSize: 14,
     fontWeight: "700",
   },
   mealList: {
