@@ -16,6 +16,10 @@ export default function SettingsScreen() {
   const setThemeMode = useAppStore((state) => state.setThemeMode);
   const dataSharingEnabled = useAppStore((state) => state.dataSharingEnabled);
   const setDataSharingEnabled = useAppStore((state) => state.setDataSharingEnabled);
+  const mealRemindersEnabled = useAppStore((state) => state.mealRemindersEnabled);
+  const waterTrackingEnabled = useAppStore((state) => state.waterTrackingEnabled);
+  const setMealRemindersEnabled = useAppStore((state) => state.setMealRemindersEnabled);
+  const setWaterTrackingEnabled = useAppStore((state) => state.setWaterTrackingEnabled);
   const deleteAccount = useAuthStore((state) => state.deleteAccount);
   const clearGoal = useGoalStore((state) => state.clearGoal);
   const clearMeals = useMealStore((state) => state.clearMeals);
@@ -197,17 +201,17 @@ export default function SettingsScreen() {
         <NotificationRow
           icon="restaurant-outline"
           label={translate("mealReminders", language)}
-          value={translate("enabled", language)}
           subtitle={translate("mealRemindersSubtitle", language)}
-          onPress={() => router.push("/profile-reminders")}
+          enabled={mealRemindersEnabled}
+          onEnabledChange={setMealRemindersEnabled}
         />
         <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
         <NotificationRow
           icon="water-outline"
           label={translate("waterTracking", language)}
-          value={translate("hourlyReminder", language)}
           subtitle={translate("waterTrackingSubtitle", language)}
-          onPress={() => router.push("/profile-reminders")}
+          enabled={waterTrackingEnabled}
+          onEnabledChange={setWaterTrackingEnabled}
         />
       </View>
     </ProfilePage>
@@ -240,21 +244,21 @@ function SettingsRow({
 function NotificationRow({
   icon,
   label,
-  value,
   subtitle,
-  onPress,
+  enabled,
+  onEnabledChange,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
-  value: string;
   subtitle: string;
-  onPress: () => void;
+  enabled: boolean;
+  onEnabledChange: (enabled: boolean) => void;
 }) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
 
   return (
-    <Pressable onPress={onPress} style={styles.row}>
+    <View style={styles.row}>
       <View style={[styles.notificationIcon, { backgroundColor: theme.colors.primarySoft }]}>
         <Ionicons name={icon} size={19} color={theme.colors.primary} />
       </View>
@@ -262,11 +266,14 @@ function NotificationRow({
         <Text style={[styles.rowLabel, { color: theme.colors.text }]}>{label}</Text>
         <Text style={[styles.rowValue, { color: theme.colors.mutedText }]}>{subtitle}</Text>
       </View>
-      <View style={styles.notificationAction}>
-        <Text style={[styles.enabledText, { color: theme.colors.primary }]}>{value}</Text>
-        <Ionicons name="chevron-forward" size={20} color={theme.colors.mutedText} />
-      </View>
-    </Pressable>
+      <Switch
+        value={enabled}
+        onValueChange={onEnabledChange}
+        trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+        thumbColor="#FFFFFF"
+        ios_backgroundColor={theme.colors.border}
+      />
+    </View>
   );
 }
 
@@ -306,8 +313,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 10,
   },
-  notificationAction: { alignItems: "flex-end", gap: 3 },
-  enabledText: { fontSize: 10, fontWeight: "800" },
   rowLabel: { fontSize: 13, fontWeight: "600" },
   rowValue: { marginTop: 3, fontSize: 11, fontWeight: "500" },
   divider: { height: StyleSheet.hairlineWidth },
