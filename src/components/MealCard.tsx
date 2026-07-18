@@ -30,20 +30,24 @@ export function MealCard({
   const theme = getTheme(themeMode);
 
   return (
-    <Pressable
-      disabled={!onPress}
-      onPress={onPress}
-      style={({ pressed }) => [
+    <View
+      style={[
         styles.card,
         {
           backgroundColor: theme.colors.card,
           borderColor: theme.colors.border,
-          opacity: pressed ? 0.86 : 1,
         },
       ]}
     >
       <View style={styles.top}>
-        <View style={styles.left}>
+        <Pressable
+          disabled={!onPress}
+          onPress={onPress}
+          style={({ pressed }) => [
+            styles.left,
+            { opacity: pressed ? 0.86 : 1 },
+          ]}
+        >
           <View
             style={[
               styles.iconBox,
@@ -67,21 +71,23 @@ export function MealCard({
               {items}
             </Text>
           </View>
-        </View>
+        </Pressable>
 
         <View style={styles.right}>
-          <Text style={[styles.calories, { color: theme.colors.text }]}>
-            {calories} kcal
-          </Text>
+          <Pressable
+            disabled={!onPress}
+            onPress={onPress}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.86 : 1,
+            })}
+          >
+            <Text style={[styles.calories, { color: theme.colors.text }]}>
+              {calories} kcal
+            </Text>
+          </Pressable>
 
           {onDelete ? (
-            <Pressable
-              onPress={(event) => {
-                event.stopPropagation();
-                onDelete?.();
-              }}
-              hitSlop={10}
-            >
+            <Pressable onPress={onDelete} hitSlop={10}>
               <Ionicons
                 name="trash-outline"
                 size={18}
@@ -101,7 +107,7 @@ export function MealCard({
         <MacroPill label="C" value={carbs} color={theme.colors.carbs} />
         <MacroPill label="F" value={fat} color={theme.colors.fat} />
       </View>
-    </Pressable>
+    </View>
   );
 }
 
