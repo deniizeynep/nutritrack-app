@@ -116,6 +116,16 @@ export const translations = {
     en: "Member",
   },
 
+  profileWeight: {
+    tr: "AĞIRLIK",
+    en: "WEIGHT",
+  },
+
+  profileTargetCalories: {
+    tr: "HEDEF KALORİ",
+    en: "CALORIE TARGET",
+  },
+
   targetCalories: {
     tr: "Kalori Hedefi",
     en: "Calorie Target",

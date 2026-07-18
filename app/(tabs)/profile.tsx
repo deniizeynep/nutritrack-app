@@ -143,39 +143,16 @@ export default function ProfileScreen() {
                 {translate("member", language)} · {user?.email || "-"}
               </Text>
             </View>
-
-            <View
-              style={[
-                styles.settingsButton,
-                {
-                  backgroundColor: theme.colors.card,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              <Ionicons
-                name="settings-outline"
-                size={23}
-                color={theme.colors.primary}
-              />
-            </View>
           </View>
 
-          <View style={styles.statRow}>
-            <StatCard
-              icon="resize-outline"
-              label={translate("height", language)}
-              value={goal?.heightCm ? `${goal.heightCm} cm` : "-"}
-            />
-            <StatCard
-              icon="scale-outline"
-              label={translate("weight", language)}
+          <View style={styles.profileMetricsRow}>
+            <ProfileMetricCard
+              label={translate("profileWeight", language)}
               value={goal?.weightKg ? `${goal.weightKg} kg` : "-"}
             />
-            <StatCard
-              icon="calendar-outline"
-              label={translate("age", language)}
-              value={goal?.age ? `${goal.age}` : "-"}
+            <ProfileMetricCard
+              label={translate("profileTargetCalories", language)}
+              value={goal?.targetCalories ? `${goal.targetCalories} kcal` : "-"}
             />
           </View>
         </View>
@@ -422,12 +399,10 @@ function DangerButton({
   );
 }
 
-function StatCard({
-  icon,
+function ProfileMetricCard({
   label,
   value,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
 }) {
@@ -437,13 +412,18 @@ function StatCard({
   return (
     <View
       style={[
-        styles.statCard,
-        { backgroundColor: theme.colors.cardSoft, borderColor: theme.colors.border },
+        styles.profileMetricCard,
+        { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
       ]}
     >
-      <Ionicons name={icon} size={18} color={theme.colors.primary} />
-      <Text style={[styles.statValue, { color: theme.colors.text }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: theme.colors.mutedText }]}>{label}</Text>
+      <Text
+        style={[styles.profileMetricLabel, { color: theme.colors.mutedText }]}
+      >
+        {label}
+      </Text>
+      <Text style={[styles.profileMetricValue, { color: theme.colors.text }]}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -492,36 +472,30 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: "600",
   },
-  settingsButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 999,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statRow: {
+  profileMetricsRow: {
     flexDirection: "row",
     gap: 10,
     marginTop: 18,
     width: "100%",
   },
-  statCard: {
+  profileMetricCard: {
     flex: 1,
-    alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
+    minHeight: 82,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderRadius: 16,
     borderWidth: 1,
-    gap: 4,
   },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  statLabel: {
+  profileMetricLabel: {
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  profileMetricValue: {
+    marginTop: 7,
+    fontSize: 18,
+    fontWeight: "900",
   },
   section: {
     borderWidth: 1,
