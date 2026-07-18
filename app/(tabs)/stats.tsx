@@ -257,15 +257,47 @@ export default function StatsScreen() {
             </View>
 
             <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
-              <View style={styles.imageCard}>
-                <View style={[styles.imagePlaceholder, { backgroundColor: theme.colors.primarySoft }]}>
-                  <Ionicons name="leaf-outline" size={60} color={theme.colors.primary} />
+              <Text style={[styles.cardTitle, { color: theme.colors.primary }]}>
+                {translate("goalProgress", language)}
+              </Text>
+
+              <View style={styles.goalProgressContainer}>
+                <View
+                  style={[
+                    styles.goalRingOuter,
+                    { borderColor: theme.colors.primarySoft },
+                  ]}
+                >
+                  <Text style={[styles.goalRingPercent, { color: theme.colors.primary }]}>
+                    {goalProgress}%
+                  </Text>
                 </View>
-                <View style={styles.imageOverlay}>
-                  <Text style={styles.imageText}>
+
+                <View
+                  style={[
+                    styles.goalBarTrack,
+                    { backgroundColor: theme.colors.cardSoft },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.goalBarFill,
+                      {
+                        width: `${Math.min(goalProgress, 100)}%`,
+                        backgroundColor: theme.colors.primary,
+                      },
+                    ]}
+                  />
+                </View>
+
+                <View style={styles.goalInfo}>
+                  <Text style={[styles.goalInfoTitle, { color: theme.colors.text }]}>
+                    {dailyAverage.toLocaleString()} / {targetCalories.toLocaleString()} kcal
+                  </Text>
+                  <Text style={[styles.goalInfoSub, { color: theme.colors.mutedText }]}>
                     {goalProgress >= 85
                       ? translate("goalProximity", language)
-                      : `${translate("goalProgress", language)}: ${goalProgress}%`}
+                      : translate("ofDailyTargetAverage", language)}
                   </Text>
                 </View>
               </View>
@@ -525,12 +557,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     marginBottom: 16,
+    alignItems: "stretch",
   },
   bentoCard: {
     flex: 1,
     borderRadius: 16,
     padding: 16,
     borderLeftWidth: 4,
+    justifyContent: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -585,29 +619,45 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 999,
   },
-  imageCard: {
-    borderRadius: 16,
-    overflow: "hidden",
-    height: 180,
+  goalProgressContainer: {
+    alignItems: "center",
+    gap: 16,
   },
-  imagePlaceholder: {
-    width: "100%",
-    height: "100%",
+  goalRingOuter: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 10,
     alignItems: "center",
     justifyContent: "center",
   },
-  imageOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
-    backgroundColor: "rgba(0,0,0,0.4)",
+  goalRingPercent: {
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.5,
   },
-  imageText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+  goalBarTrack: {
+    width: "100%",
+    height: 10,
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+  goalBarFill: {
+    height: "100%",
+    borderRadius: 999,
+  },
+  goalInfo: {
+    alignItems: "center",
+    gap: 4,
+  },
+  goalInfoTitle: {
+    fontSize: 14,
     fontWeight: "700",
+  },
+  goalInfoSub: {
+    fontSize: 12,
+    fontWeight: "500",
+    lineHeight: 18,
   },
   emptyCard: {
     borderWidth: 1,
