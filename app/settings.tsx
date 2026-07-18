@@ -12,12 +12,15 @@ import { getTheme } from "../src/theme/theme";
 export default function SettingsScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
+  const unitSystem = useAppStore((state) => state.unitSystem);
   const setThemeMode = useAppStore((state) => state.setThemeMode);
   const dataSharingEnabled = useAppStore((state) => state.dataSharingEnabled);
   const setDataSharingEnabled = useAppStore((state) => state.setDataSharingEnabled);
   const deleteAccount = useAuthStore((state) => state.deleteAccount);
   const clearGoal = useGoalStore((state) => state.clearGoal);
   const clearMeals = useMealStore((state) => state.clearMeals);
+  const setLanguage = useAppStore((state) => state.setLanguage);
+  const setUnitSystem = useAppStore((state) => state.setUnitSystem);
   const theme = getTheme(themeMode);
   const isDarkMode = themeMode === "dark";
 
@@ -83,12 +86,65 @@ export default function SettingsScreen() {
             language === "tr" ? "turkishLocale" : "englishLocale",
             language,
           )}
+          onPress={() =>
+            Alert.alert(translate("appLanguage", language), "", [
+              {
+                text: translate("turkishLocale", language),
+                onPress: () => setLanguage("tr"),
+              },
+              {
+                text: translate("englishLocale", language),
+                onPress: () => setLanguage("en"),
+              },
+              { text: translate("cancel", language), style: "cancel" },
+            ])
+          }
         />
         <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
         <SettingsRow
           label={translate("unitSystem", language)}
-          value={translate("metricUnits", language)}
+          value={translate(unitSystem === "metric" ? "metricUnits" : "imperialUnits", language)}
+          onPress={() =>
+            Alert.alert(translate("unitSystem", language), "", [
+              {
+                text: translate("metricUnits", language),
+                onPress: () => setUnitSystem("metric"),
+              },
+              {
+                text: translate("imperialUnits", language),
+                onPress: () => setUnitSystem("imperial"),
+              },
+              { text: translate("cancel", language), style: "cancel" },
+            ])
+          }
         />
+      </View>
+
+      <View style={[styles.sectionHeader, styles.sectionSpacing]}>
+        <Ionicons name="moon-outline" size={15} color={theme.colors.primary} />
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+          {translate("appearance", language)}
+        </Text>
+      </View>
+
+      <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+        <View style={styles.row}>
+          <View style={styles.rowText}>
+            <Text style={[styles.rowLabel, { color: theme.colors.text }]}>
+              {translate("darkMode", language)}
+            </Text>
+            <Text style={[styles.rowValue, { color: theme.colors.mutedText }]}>
+              {translate("darkModeSubtitle", language)}
+            </Text>
+          </View>
+          <Switch
+            value={isDarkMode}
+            onValueChange={(value) => setThemeMode(value ? "dark" : "light")}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#FFFFFF"
+            ios_backgroundColor={theme.colors.border}
+          />
+        </View>
       </View>
 
       <View style={[styles.sectionHeader, styles.sectionSpacing]}>
@@ -131,47 +187,86 @@ export default function SettingsScreen() {
       </View>
 
       <View style={[styles.sectionHeader, styles.sectionSpacing]}>
-        <Ionicons name="moon-outline" size={15} color={theme.colors.primary} />
+        <Ionicons name="notifications-outline" size={15} color={theme.colors.primary} />
         <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-          {translate("appearance", language)}
+          {translate("notifications", language)}
         </Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
-        <View style={styles.row}>
-          <View style={styles.rowText}>
-            <Text style={[styles.rowLabel, { color: theme.colors.text }]}>
-              {translate("darkMode", language)}
-            </Text>
-            <Text style={[styles.rowValue, { color: theme.colors.mutedText }]}>
-              {translate("darkModeSubtitle", language)}
-            </Text>
-          </View>
-          <Switch
-            value={isDarkMode}
-            onValueChange={(value) => setThemeMode(value ? "dark" : "light")}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-            thumbColor="#FFFFFF"
-            ios_backgroundColor={theme.colors.border}
-          />
-        </View>
+        <NotificationRow
+          icon="restaurant-outline"
+          label={translate("mealReminders", language)}
+          value={translate("enabled", language)}
+          subtitle={translate("mealRemindersSubtitle", language)}
+          onPress={() => router.push("/profile-reminders")}
+        />
+        <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+        <NotificationRow
+          icon="water-outline"
+          label={translate("waterTracking", language)}
+          value={translate("hourlyReminder", language)}
+          subtitle={translate("waterTrackingSubtitle", language)}
+          onPress={() => router.push("/profile-reminders")}
+        />
       </View>
     </ProfilePage>
   );
 }
 
-function SettingsRow({ label, value }: { label: string; value: string }) {
+function SettingsRow({
+  label,
+  value,
+  onPress,
+}: {
+  label: string;
+  value: string;
+  onPress?: () => void;
+}) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
 
   return (
-    <View style={styles.row}>
+    <Pressable onPress={onPress} disabled={!onPress} style={styles.row}>
       <View style={styles.rowText}>
         <Text style={[styles.rowLabel, { color: theme.colors.text }]}>{label}</Text>
         <Text style={[styles.rowValue, { color: theme.colors.mutedText }]}>{value}</Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color={theme.colors.mutedText} />
-    </View>
+    </Pressable>
+  );
+}
+
+function NotificationRow({
+  icon,
+  label,
+  value,
+  subtitle,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+  subtitle: string;
+  onPress: () => void;
+}) {
+  const themeMode = useAppStore((state) => state.themeMode);
+  const theme = getTheme(themeMode);
+
+  return (
+    <Pressable onPress={onPress} style={styles.row}>
+      <View style={[styles.notificationIcon, { backgroundColor: theme.colors.primarySoft }]}>
+        <Ionicons name={icon} size={19} color={theme.colors.primary} />
+      </View>
+      <View style={styles.rowText}>
+        <Text style={[styles.rowLabel, { color: theme.colors.text }]}>{label}</Text>
+        <Text style={[styles.rowValue, { color: theme.colors.mutedText }]}>{subtitle}</Text>
+      </View>
+      <View style={styles.notificationAction}>
+        <Text style={[styles.enabledText, { color: theme.colors.primary }]}>{value}</Text>
+        <Ionicons name="chevron-forward" size={20} color={theme.colors.mutedText} />
+      </View>
+    </Pressable>
   );
 }
 
@@ -203,6 +298,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 1,
   },
   rowText: { flex: 1, paddingRight: 12 },
+  notificationIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  notificationAction: { alignItems: "flex-end", gap: 3 },
+  enabledText: { fontSize: 10, fontWeight: "800" },
   rowLabel: { fontSize: 13, fontWeight: "600" },
   rowValue: { marginTop: 3, fontSize: 11, fontWeight: "500" },
   divider: { height: StyleSheet.hairlineWidth },

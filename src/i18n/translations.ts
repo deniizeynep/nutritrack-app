@@ -241,6 +241,11 @@ export const translations = {
     en: "Metric (kg, kcal)",
   },
 
+  imperialUnits: {
+    tr: "İngiliz (lb, kcal)",
+    en: "Imperial (lb, kcal)",
+  },
+
   darkMode: {
     tr: "Karanlık Mod",
     en: "Dark Mode",
@@ -289,6 +294,41 @@ export const translations = {
   deleteAccountFinalMessage: {
     tr: "Bu işlem geri alınamaz. Tüm bilgilerin kalıcı olarak silinecek.",
     en: "This action cannot be undone. All your information will be permanently deleted.",
+  },
+
+  notifications: {
+    tr: "Bildirimler",
+    en: "Notifications",
+  },
+
+  mealReminders: {
+    tr: "Öğün Hatırlatıcıları",
+    en: "Meal Reminders",
+  },
+
+  mealRemindersSubtitle: {
+    tr: "Sabah, öğle, akşam",
+    en: "Morning, noon, evening",
+  },
+
+  waterTracking: {
+    tr: "Su Takibi",
+    en: "Water Tracking",
+  },
+
+  waterTrackingSubtitle: {
+    tr: "Saatlik hatırlatma",
+    en: "Hourly reminder",
+  },
+
+  enabled: {
+    tr: "Açık",
+    en: "On",
+  },
+
+  hourlyReminder: {
+    tr: "Saatlik",
+    en: "Hourly",
   },
 
   everyDay: {
