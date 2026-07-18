@@ -111,6 +111,11 @@ export const translations = {
     en: "Settings",
   },
 
+  member: {
+    tr: "Üye",
+    en: "Member",
+  },
+
   targetCalories: {
     tr: "Kalori Hedefi",
     en: "Calorie Target",

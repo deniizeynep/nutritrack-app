@@ -30,6 +30,8 @@ export default function ProfileScreen() {
   const targetProtein = goal?.targetProtein || fallbackMacroTargets.protein;
   const targetCarbs = goal?.targetCarbs || fallbackMacroTargets.carbs;
   const targetFat = goal?.targetFat || fallbackMacroTargets.fat;
+  const displayName = user?.fullName || translate("guestUser", language);
+  const userInitials = getInitials(displayName);
 
   const confirmClearMeals = () => {
     Alert.alert(
@@ -116,13 +118,48 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerArea}>
-          <View style={[styles.avatarBox, { backgroundColor: theme.colors.primarySoft }]}>
-            <Ionicons name="person-outline" size={34} color={theme.colors.primary} />
-          </View>
+          <View style={styles.identityRow}>
+            <View
+              style={[
+                styles.avatarBox,
+                { backgroundColor: theme.colors.primary },
+              ]}
+            >
+              <Text style={styles.avatarText}>{userInitials}</Text>
+            </View>
 
-          <Text style={[styles.title, { color: theme.colors.text }]}>
-            {user?.fullName || translate("guestUser", language)}
-          </Text>
+            <View style={styles.identityInfo}>
+              <Text
+                numberOfLines={1}
+                style={[styles.title, { color: theme.colors.text }]}
+              >
+                {displayName}
+              </Text>
+
+              <Text
+                numberOfLines={1}
+                style={[styles.subtitle, { color: theme.colors.mutedText }]}
+              >
+                {translate("member", language)} · {user?.email || "-"}
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.settingsButton,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name="settings-outline"
+                size={23}
+                color={theme.colors.primary}
+              />
+            </View>
+          </View>
 
           <View style={styles.statRow}>
             <StatCard
@@ -264,6 +301,15 @@ export default function ProfileScreen() {
       </ScrollView>
     </Screen>
   );
+}
+
+function getInitials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toLocaleUpperCase())
+    .join("");
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -414,33 +460,50 @@ const styles = StyleSheet.create({
   headerArea: {
     marginTop: 8,
     marginBottom: 24,
+  },
+  identityRow: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 14,
   },
   avatarBox: {
-    width: 70,
-    height: 70,
-    borderRadius: 26,
+    width: 68,
+    height: 68,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 18,
+  },
+  avatarText: {
+    color: "#FFFFFF",
+    fontSize: 23,
+    fontWeight: "900",
+  },
+  identityInfo: {
+    flex: 1,
+    minWidth: 0,
   },
   title: {
-    fontSize: 32,
+    fontSize: 22,
     fontWeight: "900",
-    textAlign: "center",
   },
   subtitle: {
-    marginTop: 10,
+    marginTop: 4,
     fontSize: 13,
-    lineHeight: 20,
+    lineHeight: 18,
     fontWeight: "600",
-    textAlign: "center",
-    maxWidth: 315,
+  },
+  settingsButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   statRow: {
     flexDirection: "row",
     gap: 10,
-    marginTop: 14,
+    marginTop: 18,
     width: "100%",
   },
   statCard: {
