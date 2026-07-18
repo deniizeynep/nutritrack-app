@@ -8,10 +8,12 @@ import { useAuthStore } from "../../src/stores/authStore";
 import { useGoalStore } from "../../src/stores/goalStore";
 import { useMealStore } from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
+import { formatWeight } from "../../src/utils/units";
 
 export default function ProfileScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
+  const unitSystem = useAppStore((state) => state.unitSystem);
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const goal = useGoalStore((state) => state.goal);
@@ -77,7 +79,7 @@ export default function ProfileScreen() {
           <View style={styles.profileMetricsRow}>
             <ProfileMetricCard
               label={translate("profileWeight", language)}
-              value={goal?.weightKg ? `${goal.weightKg} kg` : "-"}
+              value={goal?.weightKg ? formatWeight(goal.weightKg, unitSystem) : "-"}
             />
             <ProfileMetricCard
               label={translate("profileTargetCalories", language)}

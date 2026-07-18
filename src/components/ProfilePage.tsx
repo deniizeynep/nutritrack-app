@@ -1,7 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import type { ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import Animated, {
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { darkColors, lightColors } from "../constants/colors";
 import { useAppStore } from "../stores/appStore";
 import { getTheme } from "../theme/theme";
 import { Screen } from "./Screen";
@@ -19,11 +27,26 @@ export function ProfilePage({
 }) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
+  const themeProgress = useSharedValue(themeMode === "dark" ? 1 : 0);
+
+  useEffect(() => {
+    themeProgress.value = withTiming(themeMode === "dark" ? 1 : 0, {
+      duration: 320,
+    });
+  }, [themeMode, themeProgress]);
+
+  const animatedScrollStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      themeProgress.value,
+      [0, 1],
+      [lightColors.background, darkColors.background],
+    ),
+  }));
 
   return (
     <Screen>
-      <ScrollView
-        style={{ backgroundColor: theme.colors.background }}
+      <Animated.ScrollView
+        style={animatedScrollStyle}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
@@ -55,7 +78,7 @@ export function ProfilePage({
           </>
         ) : null}
         <View style={styles.body}>{children}</View>
-      </ScrollView>
+      </Animated.ScrollView>
     </Screen>
   );
 }

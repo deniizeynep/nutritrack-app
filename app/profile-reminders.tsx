@@ -20,10 +20,10 @@ export default function RemindersScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
-  const [breakfastEnabled, setBreakfastEnabled] = useState(true);
-  const [lunchEnabled, setLunchEnabled] = useState(true);
-  const [dinnerEnabled, setDinnerEnabled] = useState(true);
-  const [waterEnabled, setWaterEnabled] = useState(true);
+  const mealRemindersEnabled = useAppStore((state) => state.mealRemindersEnabled);
+  const waterTrackingEnabled = useAppStore((state) => state.waterTrackingEnabled);
+  const setMealRemindersEnabled = useAppStore((state) => state.setMealRemindersEnabled);
+  const setWaterTrackingEnabled = useAppStore((state) => state.setWaterTrackingEnabled);
 
   return (
     <ProfilePage
@@ -36,8 +36,8 @@ export default function RemindersScreen() {
           icon="cafe-outline"
           title={translate("breakfast", language)}
           frequency={translate("everyDay", language)}
-          enabled={breakfastEnabled}
-          onEnabledChange={setBreakfastEnabled}
+          enabled={mealRemindersEnabled}
+          onEnabledChange={setMealRemindersEnabled}
           theme={theme}
         >
           <TimeRow
@@ -51,8 +51,8 @@ export default function RemindersScreen() {
           icon="fast-food-outline"
           title={translate("lunch", language)}
           frequency={translate("everyDay", language)}
-          enabled={lunchEnabled}
-          onEnabledChange={setLunchEnabled}
+          enabled={mealRemindersEnabled}
+          onEnabledChange={setMealRemindersEnabled}
           theme={theme}
         >
           <TimeRow
@@ -66,8 +66,8 @@ export default function RemindersScreen() {
           icon="restaurant-outline"
           title={translate("dinner", language)}
           frequency={translate("everyDay", language)}
-          enabled={dinnerEnabled}
-          onEnabledChange={setDinnerEnabled}
+          enabled={mealRemindersEnabled}
+          onEnabledChange={setMealRemindersEnabled}
           theme={theme}
         >
           <TimeRow
@@ -81,8 +81,8 @@ export default function RemindersScreen() {
           icon="water-outline"
           title={translate("waterIntake", language)}
           frequency={translate("everyTwoHours", language)}
-          enabled={waterEnabled}
-          onEnabledChange={setWaterEnabled}
+          enabled={waterTrackingEnabled}
+          onEnabledChange={setWaterTrackingEnabled}
           theme={theme}
           accent
         >

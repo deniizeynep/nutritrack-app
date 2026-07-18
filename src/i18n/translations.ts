@@ -266,6 +266,141 @@ export const translations = {
     en: "Language, theme and privacy",
   },
 
+  languageAndRegion: {
+    tr: "Dil ve Bölge",
+    en: "Language and Region",
+  },
+
+  appLanguage: {
+    tr: "Uygulama Dili",
+    en: "App Language",
+  },
+
+  turkishLocale: {
+    tr: "Türkçe (TR)",
+    en: "Turkish (TR)",
+  },
+
+  englishLocale: {
+    tr: "İngilizce (EN)",
+    en: "English (EN)",
+  },
+
+  unitSystem: {
+    tr: "Birim Sistemi",
+    en: "Unit System",
+  },
+
+  metricUnits: {
+    tr: "Metrik (kg, kcal)",
+    en: "Metric (kg, kcal)",
+  },
+
+  imperialUnits: {
+    tr: "İngiliz (lb, kcal)",
+    en: "Imperial (lb, kcal)",
+  },
+
+  chooseOption: {
+    tr: "Bir seçenek belirle",
+    en: "Choose an option",
+  },
+
+  appVersion: {
+    tr: "NutriTrack v4.2.0 (Build 824)",
+    en: "NutriTrack v4.2.0 (Build 824)",
+  },
+
+  appTagline: {
+    tr: "Sağlığınız için özenle tasarlandı",
+    en: "Made with care for your health",
+  },
+
+  darkMode: {
+    tr: "Karanlık Mod",
+    en: "Dark Mode",
+  },
+
+  darkModeSubtitle: {
+    tr: "Göz yorgunluğunu azaltır",
+    en: "Reduces eye strain",
+  },
+
+  privacyAndSecurity: {
+    tr: "Gizlilik ve Güvenlik",
+    en: "Privacy and Security",
+  },
+
+  dataSharing: {
+    tr: "Veri Paylaşımı",
+    en: "Data Sharing",
+  },
+
+  dataSharingSubtitle: {
+    tr: "Apple Health / Google Fit",
+    en: "Apple Health / Google Fit",
+  },
+
+  deleteDataPermanently: {
+    tr: "Verilerimi Kalıcı Sil",
+    en: "Delete My Data Permanently",
+  },
+
+  deleteDataPermanentlySubtitle: {
+    tr: "Tüm geçmişinizi kalıcı olarak kaldırın",
+    en: "Permanently remove all of your history",
+  },
+
+  deleteAccountMessage: {
+    tr: "Hesabın, öğünlerin ve hedef verilerin kalıcı olarak silinecek.",
+    en: "Your account, meals, and goal data will be permanently deleted.",
+  },
+
+  deleteAccountFinalTitle: {
+    tr: "Son kez emin misin?",
+    en: "Are you absolutely sure?",
+  },
+
+  deleteAccountFinalMessage: {
+    tr: "Bu işlem geri alınamaz. Tüm bilgilerin kalıcı olarak silinecek.",
+    en: "This action cannot be undone. All your information will be permanently deleted.",
+  },
+
+  notifications: {
+    tr: "Bildirimler",
+    en: "Notifications",
+  },
+
+  mealReminders: {
+    tr: "Öğün Hatırlatıcıları",
+    en: "Meal Reminders",
+  },
+
+  mealRemindersSubtitle: {
+    tr: "Sabah, öğle, akşam",
+    en: "Morning, noon, evening",
+  },
+
+  waterTracking: {
+    tr: "Su Takibi",
+    en: "Water Tracking",
+  },
+
+  waterTrackingSubtitle: {
+    tr: "Saatlik hatırlatma",
+    en: "Hourly reminder",
+  },
+
+  enabled: {
+    tr: "Açık",
+    en: "On",
+  },
+
+  hourlyReminder: {
+    tr: "Saatlik",
+    en: "Hourly",
+  },
+
   everyDay: {
     tr: "HER GÜN",
     en: "EVERY DAY",

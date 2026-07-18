@@ -15,10 +15,12 @@ import {
   calculateMacroTargets,
   type Gender,
 } from "../src/utils/calorieCalculator";
+import { displayToKg, formatWeight, unitLabel } from "../src/utils/units";
 
 export default function PersonalInformationScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
+  const unitSystem = useAppStore((state) => state.unitSystem);
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const authIsLoading = useAuthStore((state) => state.isLoading);
@@ -31,7 +33,9 @@ export default function PersonalInformationScreen() {
   const setGoal = useGoalStore((state) => state.setGoal);
   const theme = getTheme(themeMode);
   const [heightCm, setHeightCm] = useState(goal ? String(goal.heightCm) : "");
-  const [weightKg, setWeightKg] = useState(goal ? String(goal.weightKg) : "");
+  const [weightKg, setWeightKg] = useState(
+    goal ? String(formatWeight(goal.weightKg, unitSystem).split(" ")[0]) : "",
+  );
   const [gender, setGender] = useState<Gender>(goal?.gender ?? "female");
   const [birthDate, setBirthDate] = useState(formatBirthDate(goal?.birthDate));
   const initialName = splitFullName(user?.fullName ?? "");
@@ -53,10 +57,10 @@ export default function PersonalInformationScreen() {
     // Controlled fields must follow a goal restored from persisted storage.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setHeightCm(String(goal.heightCm));
-    setWeightKg(String(goal.weightKg));
+    setWeightKg(String(formatWeight(goal.weightKg, unitSystem).split(" ")[0]));
     setGender(goal.gender);
     setBirthDate(formatBirthDate(goal.birthDate));
-  }, [goal]);
+  }, [goal, unitSystem]);
 
   useEffect(() => {
     const name = splitFullName(user?.fullName ?? "");
@@ -133,7 +137,7 @@ export default function PersonalInformationScreen() {
 
   const handleSave = () => {
     const parsedHeight = Number(heightCm);
-    const parsedWeight = Number(weightKg);
+    const parsedWeight = Math.round(displayToKg(Number(weightKg), unitSystem) * 10) / 10;
     const parsedBirthDate = parseBirthDate(birthDate);
     const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
     const normalizedEmail = email.trim().toLowerCase();
@@ -146,7 +150,6 @@ export default function PersonalInformationScreen() {
       !Number.isInteger(parsedHeight) ||
       parsedHeight < 100 ||
       parsedHeight > 230 ||
-      !Number.isInteger(parsedWeight) ||
       parsedWeight < 30 ||
       parsedWeight > 250
     ) {
@@ -298,7 +301,7 @@ export default function PersonalInformationScreen() {
           </View>
           <View style={styles.halfInput}>
             <Input
-              label={`${translate("weight", language)} (kg)`}
+              label={`${translate("weight", language)} (${unitLabel(unitSystem)})`}
               icon="scale-outline"
               value={weightKg}
               onChangeText={setWeightKg}
