@@ -1,7 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
+import NativeDateTimePicker from "@expo/ui/community/datetime-picker";
 import type { ComponentProps, ReactNode } from "react";
 import { useState } from "react";
-import { StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { ProfilePage } from "../src/components/ProfilePage";
 import { translate } from "../src/i18n/translations";
 import { useAppStore } from "../src/stores/appStore";
@@ -84,9 +93,9 @@ export default function RemindersScreen() {
               {translate("startAndEnd", language)}
             </Text>
             <View style={styles.timeRange}>
-              <TimeInput initialTime="08:00" theme={theme} />
+              <TimePickerField initialTime="08:00" theme={theme} />
               <Text style={[styles.timeSeparator, { color: theme.colors.mutedText }]}>-</Text>
-              <TimeInput initialTime="22:00" theme={theme} />
+              <TimePickerField initialTime="22:00" theme={theme} />
             </View>
           </View>
         </ReminderCard>
@@ -161,50 +170,121 @@ function TimeRow({
     <View style={[styles.timeRow, { backgroundColor: theme.colors.cardSoft }]}>
       <Text style={[styles.timeLabel, { color: theme.colors.mutedText }]}>{label}</Text>
       <View style={styles.editTime}>
-        <TimeInput initialTime={initialTime} theme={theme} />
+        <TimePickerField initialTime={initialTime} theme={theme} />
         <Ionicons name="pencil" size={14} color={theme.colors.primary} />
       </View>
     </View>
   );
 }
 
-function TimeInput({ initialTime, theme }: { initialTime: string; theme: AppTheme }) {
-  const [time, setTime] = useState(initialTime);
-  const [lastValidTime, setLastValidTime] = useState(initialTime);
+function TimePickerField({ initialTime, theme }: { initialTime: string; theme: AppTheme }) {
+  const language = useAppStore((state) => state.language);
+  const [selectedTime, setSelectedTime] = useState(() => createTimeDate(initialTime));
+  const [draftTime, setDraftTime] = useState(selectedTime);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
-  const handleChange = (value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 4);
-    setTime(digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits);
+  const openPicker = () => {
+    setDraftTime(selectedTime);
+    setIsPickerOpen(true);
   };
 
-  const handleBlur = () => {
-    if (/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) {
-      setLastValidTime(time);
-      return;
-    }
+  const selectAndroidTime = (date: Date) => {
+    setSelectedTime(date);
+    setIsPickerOpen(false);
+  };
 
-    setTime(lastValidTime);
+  const saveIosTime = () => {
+    setSelectedTime(draftTime);
+    setIsPickerOpen(false);
   };
 
   return (
-    <TextInput
-      style={[
-        styles.timeInput,
-        {
-          backgroundColor: theme.colors.card,
-          borderColor: theme.colors.border,
-          color: theme.colors.primary,
-        },
-      ]}
-      value={time}
-      onChangeText={handleChange}
-      onBlur={handleBlur}
-      keyboardType="number-pad"
-      maxLength={5}
-      selectTextOnFocus
-      textAlign="center"
-    />
+    <>
+      <Pressable
+        onPress={openPicker}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          styles.timeButton,
+          {
+            backgroundColor: theme.colors.card,
+            borderColor: theme.colors.border,
+            opacity: pressed ? 0.7 : 1,
+          },
+        ]}
+      >
+        <Text style={[styles.timeText, { color: theme.colors.primary }]}>
+          {formatTime(selectedTime)}
+        </Text>
+      </Pressable>
+
+      {isPickerOpen && Platform.OS === "android" ? (
+        <NativeDateTimePicker
+          value={selectedTime}
+          onValueChange={(_event, date) => selectAndroidTime(date)}
+          onDismiss={() => setIsPickerOpen(false)}
+          mode="time"
+          presentation="dialog"
+          display="clock"
+          is24Hour
+          accentColor={theme.colors.primary}
+          themeVariant={theme.mode}
+        />
+      ) : null}
+
+      <Modal
+        visible={isPickerOpen && Platform.OS === "ios"}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsPickerOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.pickerSheet, { backgroundColor: theme.colors.card }]}>
+            <NativeDateTimePicker
+              value={draftTime}
+              onValueChange={(_event, date) => setDraftTime(date)}
+              mode="time"
+              display="spinner"
+              accentColor={theme.colors.primary}
+              themeVariant={theme.mode}
+              locale={language === "tr" ? "tr_TR" : "en_US"}
+              style={styles.picker}
+            />
+            <View style={styles.pickerActions}>
+              <Pressable
+                onPress={() => setIsPickerOpen(false)}
+                style={[styles.pickerAction, { borderColor: theme.colors.border }]}
+              >
+                <Text style={[styles.pickerActionText, { color: theme.colors.mutedText }]}>
+                  {translate("cancel", language)}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={saveIosTime}
+                style={[styles.pickerAction, { backgroundColor: theme.colors.primary }]}
+              >
+                <Text style={[styles.pickerActionText, { color: "#FFFFFF" }]}>
+                  {translate("save", language)}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
+}
+
+function createTimeDate(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+}
+
+function formatTime(date: Date) {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 const styles = StyleSheet.create({
@@ -240,15 +320,37 @@ const styles = StyleSheet.create({
   editTime: { flexDirection: "row", alignItems: "center", gap: 8 },
   timeRange: { flexDirection: "row", alignItems: "center", gap: 5 },
   timeSeparator: { fontSize: 12, fontWeight: "700" },
-  timeInput: {
+  timeButton: {
     minWidth: 58,
     height: 30,
     paddingHorizontal: 8,
-    paddingVertical: 0,
     borderWidth: 1,
     borderRadius: 7,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  timeText: {
     fontSize: 12,
     fontWeight: "800",
     letterSpacing: 0.3,
   },
+  modalBackdrop: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pickerSheet: { width: "100%", maxWidth: 360, borderRadius: 20, padding: 16 },
+  picker: { height: 180 },
+  pickerActions: { marginTop: 12, flexDirection: "row", gap: 10 },
+  pickerAction: {
+    flex: 1,
+    height: 44,
+    borderWidth: 1,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pickerActionText: { fontSize: 14, fontWeight: "800" },
 });
