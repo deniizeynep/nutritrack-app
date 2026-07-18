@@ -738,6 +738,16 @@ export const translations = {
     en: "Save Goal",
   },
 
+  confirmGoalSave: {
+    tr: "Emin misiniz?",
+    en: "Are you sure?",
+  },
+
+  confirmGoalSaveMessage: {
+    tr: "Beslenme hedefiniz kaydedilecek. Devam etmek istiyor musunuz?",
+    en: "Your nutrition goal will be saved. Do you want to continue?",
+  },
+
   savedGoal: {
     tr: "Kayıtlı Hedef",
     en: "Saved Goal",

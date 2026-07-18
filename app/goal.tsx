@@ -94,18 +94,7 @@ export default function GoalScreen() {
     };
   }, [age, heightCm, weightKg, gender, activityLevel, goalType, validationMessage]);
 
-  const handleSaveGoal = async () => {
-    if (validationMessage) {
-      Alert.alert(translate("error", language), validationMessage, [
-        { text: translate("ok", language) },
-      ]);
-      return;
-    }
-
-    if (!result) {
-      return;
-    }
-
+  const saveGoal = async (calculation: NonNullable<typeof result>) => {
     try {
       await setGoal(
         {
@@ -116,12 +105,12 @@ export default function GoalScreen() {
           gender,
           activityLevel,
           goalType,
-          bmr: result.bmr,
-          maintenanceCalories: result.maintenanceCalories,
-          targetCalories: result.targetCalories,
-          targetProtein: result.macroTargets.protein,
-          targetCarbs: result.macroTargets.carbs,
-          targetFat: result.macroTargets.fat,
+          bmr: calculation.bmr,
+          maintenanceCalories: calculation.maintenanceCalories,
+          targetCalories: calculation.targetCalories,
+          targetProtein: calculation.macroTargets.protein,
+          targetCarbs: calculation.macroTargets.carbs,
+          targetFat: calculation.macroTargets.fat,
         },
         token,
       );
@@ -133,6 +122,31 @@ export default function GoalScreen() {
         error instanceof Error ? error.message : translate("genericError", language),
       );
     }
+  };
+
+  const handleSaveGoal = () => {
+    if (validationMessage) {
+      Alert.alert(translate("error", language), validationMessage, [
+        { text: translate("ok", language) },
+      ]);
+      return;
+    }
+
+    if (!result) {
+      return;
+    }
+
+    Alert.alert(
+      translate("confirmGoalSave", language),
+      translate("confirmGoalSaveMessage", language),
+      [
+        { text: translate("cancel", language), style: "cancel" },
+        {
+          text: translate("save", language),
+          onPress: () => void saveGoal(result),
+        },
+      ],
+    );
   };
 
   return (
