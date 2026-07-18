@@ -1405,7 +1405,6 @@ export const translations = {
     tr: "Tamam",
     en: "OK",
   },
-
   averageIntake: {
     tr: "Ortalama Alım",
     en: "Average Intake",
@@ -1414,6 +1413,11 @@ export const translations = {
   vsLastWeek: {
     tr: "vs geçen hafta",
     en: "vs last week",
+  },
+
+  vsLastMonth: {
+    tr: "vs geçen ay",
+    en: "vs last month",
   },
 
   targetLabel: {
@@ -1429,6 +1433,60 @@ export const translations = {
   goalProximity: {
     tr: "Hedeflerinize %15 daha yakınsınız.",
     en: "You are 15% closer to your goals.",
+  },
+  weeklyHighlight: {
+    tr: "Bu haftanın öne çıkanı",
+    en: "This week's highlight",
+  },
+
+  monthlyHighlight: {
+    tr: "Bu ayın öne çıkanı",
+    en: "This month's highlight",
+  },
+
+  thisWeekVsLast: {
+    tr: "Haftalık Karşılaştırma",
+    en: "Weekly Comparison",
+  },
+
+  thisWeekLabel: {
+    tr: "Bu hafta",
+    en: "This week",
+  },
+
+  lastWeekLabel: {
+    tr: "Geçen hafta",
+    en: "Last week",
+  },
+
+  thisMonthVsLast: {
+    tr: "Aylık Karşılaştırma",
+    en: "Monthly Comparison",
+  },
+
+  thisMonthLabel: {
+    tr: "Bu ay",
+    en: "This month",
+  },
+
+  lastMonthLabel: {
+    tr: "Geçen ay",
+    en: "Last month",
+  },
+
+  kcalPerDayAvg: {
+    tr: "kcal / gün ort.",
+    en: "kcal / day avg.",
+  },
+
+  downloadWeeklyPdf: {
+    tr: "Haftalık raporu PDF olarak indir",
+    en: "Download weekly report as PDF",
+  },
+
+  downloadMonthlyPdf: {
+    tr: "Aylık raporu PDF olarak indir",
+    en: "Download monthly report as PDF",
   },
 } as const;
 
