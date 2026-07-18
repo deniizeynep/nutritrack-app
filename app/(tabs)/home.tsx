@@ -118,55 +118,90 @@ export default function HomeScreen() {
         >
           {/* Hero: Calorie Ring */}
           <View style={styles.heroSection}>
-            <View style={styles.ringContainer}>
-              {/* Background Track */}
-              <View
-                style={[
-                  styles.ringTrack,
-                  { backgroundColor: theme.colors.cardSoft },
-                ]}
-              />
-              {/* Progress Ring */}
-              <View
-                style={[
-                  styles.ringProgress,
-                  {
-                    borderColor: theme.colors.primary,
-                    opacity:
-                      stats.calories > 0
-                        ? Math.min(stats.calories / targetCalories, 1)
-                        : 0,
-                  },
-                ]}
-              />
-              {/* Center Content */}
-              <View style={styles.ringCenter}>
-                <Text
-                  style={[
-                    styles.calorieNumber,
-                    { color: theme.colors.text },
-                  ]}
+            {(() => {
+              const RING_SIZE = 256;
+              const progress = Math.min(
+                Math.max(stats.calories / targetCalories, 0),
+                1,
+              );
+              const angle = progress * 360;
+              const rightRot = angle <= 180 ? angle - 180 : 0;
+              const leftRot = angle > 180 ? 360 - angle : 180;
+              const showLeft = angle > 180;
+
+              return (
+                <View
+                  style={{ width: RING_SIZE, height: RING_SIZE }}
                 >
-                  {stats.calories.toLocaleString("tr-TR")}
-                </Text>
-                <Text
-                  style={[
-                    styles.calorieTarget,
-                    { color: theme.colors.mutedText },
-                  ]}
-                >
-                  / {targetCalories.toLocaleString("tr-TR")} kcal
-                </Text>
-                <Text
-                  style={[
-                    styles.remaining,
-                    { color: theme.colors.primary },
-                  ]}
-                >
-                  {translate("remaining", language)} {remaining} kcal
-                </Text>
-              </View>
-            </View>
+                  <View
+                    style={[
+                      styles.ringTrackBg,
+                      { backgroundColor: theme.colors.cardSoft },
+                    ]}
+                  />
+
+                  <View style={styles.ringClipRight}>
+                    <View
+                      style={[
+                        styles.ringHalfRight,
+                        {
+                          backgroundColor: theme.colors.primary,
+                          transform: [{ rotate: `${rightRot}deg` }],
+                        },
+                      ]}
+                    />
+                  </View>
+
+                  {showLeft ? (
+                    <View style={styles.ringClipLeft}>
+                      <View
+                        style={[
+                          styles.ringHalfLeft,
+                          {
+                            backgroundColor: theme.colors.primary,
+                            transform: [{ rotate: `${leftRot}deg` }],
+                          },
+                        ]}
+                      />
+                    </View>
+                  ) : null}
+
+                  <View
+                    style={[
+                      styles.ringInner,
+                      { backgroundColor: theme.colors.background },
+                    ]}
+                  />
+
+                  <View style={styles.ringCenter}>
+                    <Text
+                      style={[
+                        styles.calorieNumber,
+                        { color: theme.colors.text },
+                      ]}
+                    >
+                      {stats.calories.toLocaleString("tr-TR")}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.calorieTarget,
+                        { color: theme.colors.mutedText },
+                      ]}
+                    >
+                      / {targetCalories.toLocaleString("tr-TR")} kcal
+                    </Text>
+                    <Text
+                      style={[
+                        styles.remaining,
+                        { color: theme.colors.primary },
+                      ]}
+                    >
+                      {translate("remaining", language)} {remaining} kcal
+                    </Text>
+                  </View>
+                </View>
+              );
+            })()}
           </View>
 
           {/* Nutrient Progress Bars */}
@@ -389,26 +424,56 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 28,
   },
-  ringContainer: {
-    width: 256,
-    height: 256,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ringTrack: {
+  ringTrackBg: {
     position: "absolute",
     width: 256,
     height: 256,
     borderRadius: 128,
   },
-  ringProgress: {
+  ringClipRight: {
     position: "absolute",
-    width: 256,
+    left: 128,
+    top: 0,
+    width: 128,
     height: 256,
-    borderRadius: 128,
-    borderWidth: 8,
+    overflow: "hidden",
+  },
+  ringHalfRight: {
+    width: 128,
+    height: 256,
+    borderTopRightRadius: 128,
+    borderBottomRightRadius: 128,
+    transformOrigin: [0, 128, 0],
+  },
+  ringClipLeft: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: 128,
+    height: 256,
+    overflow: "hidden",
+  },
+  ringHalfLeft: {
+    width: 128,
+    height: 256,
+    borderTopLeftRadius: 128,
+    borderBottomLeftRadius: 128,
+    transformOrigin: [128, 128, 0],
+  },
+  ringInner: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
   },
   ringCenter: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    width: 240,
+    height: 240,
     alignItems: "center",
     justifyContent: "center",
   },
