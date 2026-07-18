@@ -19,6 +19,11 @@ model User {
   emailOtpHash               String?
   emailOtpExpiresAt          DateTime?
   emailOtpLastSentAt         DateTime?
+  pendingEmail               String?
+  emailChangeOtpHash         String?
+  emailChangeOtpExpiresAt    DateTime?
+  emailChangeOtpLastSentAt   DateTime?
+  emailChangeOtpAttempts     Int       @default(0)
   passwordResetOtpHash       String?
   passwordResetOtpExpiresAt  DateTime?
   passwordResetOtpLastSentAt DateTime?
@@ -48,8 +53,9 @@ model Meal {
 }
 
 model Goal {
-  id                  String   @id @default(uuid())
+  id                  String    @id @default(uuid())
   age                 Int
+  birthDate           DateTime? @db.Date
   heightCm            Int
   weightKg            Int
   gender              String
@@ -58,11 +64,11 @@ model Goal {
   bmr                 Int
   maintenanceCalories Int
   targetCalories      Int
-  targetProtein       Int      @default(0)
-  targetCarbs         Int      @default(0)
-  targetFat           Int      @default(0)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  targetProtein       Int       @default(0)
+  targetCarbs         Int       @default(0)
+  targetFat           Int       @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

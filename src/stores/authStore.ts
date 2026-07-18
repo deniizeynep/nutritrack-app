@@ -1,7 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { authApi, type AuthResult, type AuthUser } from "../services/authApi";
+import {
+  authApi,
+  type AuthResult,
+  type AuthUser,
+  type EmailChangeStatus,
+} from "../services/authApi";
 import {
   GoogleSignInError,
   signInWithGoogleProvider,
@@ -16,6 +21,7 @@ type AuthState = {
   hasCheckedSession: boolean;
   pendingVerificationEmail: string | null;
   pendingPasswordResetEmail: string | null;
+  pendingEmailChange: EmailChangeStatus | null;
   requiresEmailVerification: boolean;
   error: string | null;
   register: (
@@ -35,6 +41,10 @@ type AuthState = {
   ) => Promise<void>;
   clearPendingPasswordReset: () => void;
   clearPendingVerification: () => void;
+  updateProfile: (fullName: string) => Promise<void>;
+  requestEmailChange: (email: string) => Promise<void>;
+  verifyEmailChange: (code: string) => Promise<void>;
+  resendEmailChange: () => Promise<void>;
   loadMe: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   logout: () => void;
@@ -53,6 +63,7 @@ export const useAuthStore = create<AuthState>()(
       hasCheckedSession: false,
       pendingVerificationEmail: null,
       pendingPasswordResetEmail: null,
+      pendingEmailChange: null,
       requiresEmailVerification: false,
       error: null,
 
@@ -127,6 +138,7 @@ export const useAuthStore = create<AuthState>()(
             hasCheckedSession: true,
             pendingVerificationEmail: null,
             pendingPasswordResetEmail: null,
+            pendingEmailChange: null,
             requiresEmailVerification: false,
             error: null,
           });
@@ -164,6 +176,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             hasCheckedSession: true,
             pendingVerificationEmail: null,
+            pendingEmailChange: null,
             requiresEmailVerification: false,
             error: null,
           });
@@ -256,6 +269,115 @@ export const useAuthStore = create<AuthState>()(
           error: null,
         }),
 
+      updateProfile: async (fullName) => {
+        const token = get().token;
+
+        if (!token) {
+          if (get().user?.id === "local-test-user") {
+            set((state) => ({
+              user: state.user ? { ...state.user, fullName } : null,
+              error: null,
+            }));
+            return;
+          }
+
+          throw new Error("Hesap bilgilerini güncellemek için giriş yapmalısın.");
+        }
+
+        try {
+          set({ isLoading: true, error: null });
+          const response = await authApi.updateProfile(fullName, token);
+          set({ user: response.user, isLoading: false, error: null });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Hesap bilgileri güncellenemedi.",
+          });
+          throw error;
+        }
+      },
+
+      requestEmailChange: async (email) => {
+        const token = get().token;
+
+        if (!token) {
+          throw new Error("E-posta değiştirmek için giriş yapmalısın.");
+        }
+
+        try {
+          set({ isLoading: true, error: null });
+          const response = await authApi.requestEmailChange(email, token);
+          set({
+            pendingEmailChange: response.emailChange,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error:
+              error instanceof Error ? error.message : "Kod gönderilemedi.",
+          });
+          throw error;
+        }
+      },
+
+      verifyEmailChange: async (code) => {
+        const token = get().token;
+
+        if (!token) {
+          throw new Error("E-posta değiştirmek için giriş yapmalısın.");
+        }
+
+        try {
+          set({ isLoading: true, error: null });
+          const response = await authApi.verifyEmailChange(code, token);
+          set({
+            user: response.user,
+            pendingEmailChange: null,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "E-posta doğrulanamadı.",
+          });
+          throw error;
+        }
+      },
+
+      resendEmailChange: async () => {
+        const token = get().token;
+
+        if (!token) {
+          throw new Error("E-posta değiştirmek için giriş yapmalısın.");
+        }
+
+        try {
+          set({ isLoading: true, error: null });
+          const response = await authApi.resendEmailChange(token);
+          set({
+            pendingEmailChange: response.emailChange,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error:
+              error instanceof Error ? error.message : "Kod gönderilemedi.",
+          });
+          throw error;
+        }
+      },
+
       loadMe: async () => {
         const token = get().token;
 
@@ -267,6 +389,7 @@ export const useAuthStore = create<AuthState>()(
             hasCheckedSession: true,
             pendingVerificationEmail: null,
             pendingPasswordResetEmail: null,
+            pendingEmailChange: null,
             requiresEmailVerification: false,
           });
           return;
@@ -287,6 +410,7 @@ export const useAuthStore = create<AuthState>()(
             hasCheckedSession: true,
             pendingVerificationEmail: null,
             pendingPasswordResetEmail: null,
+            pendingEmailChange: response.emailChange,
             requiresEmailVerification: false,
             error: null,
           });
@@ -299,6 +423,7 @@ export const useAuthStore = create<AuthState>()(
             hasCheckedSession: true,
             pendingVerificationEmail: null,
             pendingPasswordResetEmail: null,
+            pendingEmailChange: null,
             requiresEmailVerification: false,
           });
         }
@@ -312,6 +437,7 @@ export const useAuthStore = create<AuthState>()(
           hasCheckedSession: true,
           pendingVerificationEmail: null,
           pendingPasswordResetEmail: null,
+          pendingEmailChange: null,
           requiresEmailVerification: false,
           error: null,
         }),
@@ -327,6 +453,7 @@ export const useAuthStore = create<AuthState>()(
             hasCheckedSession: true,
             pendingVerificationEmail: null,
             pendingPasswordResetEmail: null,
+            pendingEmailChange: null,
             requiresEmailVerification: false,
             error: null,
           });
@@ -349,6 +476,7 @@ export const useAuthStore = create<AuthState>()(
             hasCheckedSession: true,
             pendingVerificationEmail: null,
             pendingPasswordResetEmail: null,
+            pendingEmailChange: null,
             requiresEmailVerification: false,
             error: null,
           });
@@ -381,6 +509,11 @@ export const useAuthStore = create<AuthState>()(
       },
       partialize: (state) => ({
         token: state.token,
+        user: state.user,
+        isAuthenticated:
+          state.user?.id === "local-test-user" ? state.isAuthenticated : false,
+        hasCheckedSession:
+          state.user?.id === "local-test-user" ? state.hasCheckedSession : false,
       }),
     },
   ),
@@ -405,6 +538,7 @@ function applyAuthResult(
       hasCheckedSession: true,
       pendingVerificationEmail: response.email,
       pendingPasswordResetEmail: null,
+      pendingEmailChange: null,
       requiresEmailVerification: true,
       error: null,
     });
@@ -419,6 +553,7 @@ function applyAuthResult(
     hasCheckedSession: true,
     pendingVerificationEmail: null,
     pendingPasswordResetEmail: null,
+    pendingEmailChange: null,
     requiresEmailVerification: false,
     error: null,
   });

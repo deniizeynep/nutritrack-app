@@ -22,6 +22,17 @@ export type AuthResult = AuthResponse | EmailVerificationRequiredResponse;
 
 export type MeResponse = {
   user: AuthUser;
+  emailChange: EmailChangeStatus | null;
+};
+
+export type EmailChangeStatus = {
+  email: string;
+  expiresAt: string;
+  resendAvailableAt: string | null;
+};
+
+export type EmailChangeResponse = {
+  emailChange: EmailChangeStatus;
 };
 
 export type RegisterPayload = {
@@ -108,6 +119,40 @@ export const authApi = {
 
   me: (token: string) => {
     return apiRequest<MeResponse>("/auth/me", {
+      token,
+    });
+  },
+
+  updateProfile: (fullName: string, token: string) => {
+    return apiRequest<{ user: AuthUser }>("/auth/me", {
+      method: "PATCH",
+      body: { fullName },
+      token,
+    });
+  },
+
+  requestEmailChange: (email: string, token: string) => {
+    return apiRequest<EmailChangeResponse>("/auth/me/email-change", {
+      method: "POST",
+      body: { email },
+      token,
+    });
+  },
+
+  verifyEmailChange: (code: string, token: string) => {
+    return apiRequest<{ user: AuthUser; emailChange: null }>(
+      "/auth/me/email-change/verify",
+      {
+        method: "POST",
+        body: { code },
+        token,
+      },
+    );
+  },
+
+  resendEmailChange: (token: string) => {
+    return apiRequest<EmailChangeResponse>("/auth/me/email-change/resend", {
+      method: "POST",
       token,
     });
   },

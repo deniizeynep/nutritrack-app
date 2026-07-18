@@ -80,6 +80,17 @@ export async function sendVerificationCode(email: string, code: string) {
   console.log("Verification email Brevo send completed");
 }
 
+export async function sendEmailChangeCode(email: string, code: string) {
+  console.log("Email change verification Brevo send started");
+  await sendBrevoEmail({
+    to: [{ email }],
+    subject: "Confirm your NutriTrack email change",
+    textContent: `Your NutriTrack email change code is: ${code}\nThis code expires in 10 minutes.`,
+    htmlContent: `<p>Your NutriTrack email change code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
+  });
+  console.log("Email change verification Brevo send completed");
+}
+
 export async function sendPasswordResetCode(email: string, code: string) {
   console.log("Password reset email Brevo send started");
   await sendBrevoEmail({
