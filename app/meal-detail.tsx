@@ -48,6 +48,8 @@ export default function MealDetailScreen() {
       return;
     }
 
+    // Controlled fields must be populated when the selected meal becomes available.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTitle(meal.title);
     setDescription(meal.description);
     setCategory(meal.category);
