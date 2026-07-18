@@ -111,6 +111,71 @@ export const translations = {
     en: "Settings",
   },
 
+  member: {
+    tr: "Üye",
+    en: "Member",
+  },
+
+  profileWeight: {
+    tr: "AĞIRLIK",
+    en: "WEIGHT",
+  },
+
+  profileTargetCalories: {
+    tr: "HEDEF KALORİ",
+    en: "CALORIE TARGET",
+  },
+
+  personalInformation: {
+    tr: "Kişisel Bilgiler",
+    en: "Personal Information",
+  },
+
+  personalInformationSubtitle: {
+    tr: "Boy, kilo ve yaş bilgileri",
+    en: "Height, weight and age details",
+  },
+
+  nutritionGoals: {
+    tr: "Beslenme Hedefleri",
+    en: "Nutrition Goals",
+  },
+
+  nutritionGoalsSubtitle: {
+    tr: "Kalori ve makro dağılımı",
+    en: "Calories and macro distribution",
+  },
+
+  reminders: {
+    tr: "Hatırlatıcılar",
+    en: "Reminders",
+  },
+
+  remindersSubtitle: {
+    tr: "Öğün ve su bildirimleri",
+    en: "Meal and water notifications",
+  },
+
+  appSettings: {
+    tr: "Uygulama Ayarları",
+    en: "App Settings",
+  },
+
+  appSettingsSubtitle: {
+    tr: "Dil, tema ve gizlilik",
+    en: "Language, theme and privacy",
+  },
+
+  remindersComingSoon: {
+    tr: "Hatırlatıcılar yakında",
+    en: "Reminders are coming soon",
+  },
+
+  remindersComingSoonSubtitle: {
+    tr: "Öğün ve su bildirimlerini sonraki güncellemelerde buradan yönetebileceksiniz.",
+    en: "You'll be able to manage meal and water notifications here in a future update.",
+  },
+
   targetCalories: {
     tr: "Kalori Hedefi",
     en: "Calorie Target",
