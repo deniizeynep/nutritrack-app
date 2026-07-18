@@ -622,6 +622,11 @@ export const translations = {
     en: "Snack",
   },
 
+  diarySnacks: {
+    tr: "Atıştırmalıklar",
+    en: "Snacks",
+  },
+
   addMealSubtitle: {
     tr: "Kalori ve makro değerlerini girerek günlük takibini güncelle.",
     en: "Update your daily tracking by entering calories and macros.",
@@ -635,6 +640,11 @@ export const translations = {
   noMealsYet: {
     tr: "Henüz öğün eklenmedi.",
     en: "No meals added yet.",
+  },
+
+  noMealInSection: {
+    tr: "Henüz bir şey eklenmedi",
+    en: "Nothing added yet",
   },
 
   noMealsSubtitle: {
@@ -1217,6 +1227,16 @@ export const translations = {
   editMeal: {
     tr: "Öğünü Düzenle",
     en: "Edit Meal",
+  },
+
+  showMealDetails: {
+    tr: "Öğün içeriğini göster",
+    en: "Show meal details",
+  },
+
+  hideMealDetails: {
+    tr: "Öğün içeriğini gizle",
+    en: "Hide meal details",
   },
 
   editMealSubtitle: {
