@@ -94,18 +94,7 @@ export default function GoalScreen() {
     };
   }, [age, heightCm, weightKg, gender, activityLevel, goalType, validationMessage]);
 
-  const handleSaveGoal = async () => {
-    if (validationMessage) {
-      Alert.alert(translate("error", language), validationMessage, [
-        { text: translate("ok", language) },
-      ]);
-      return;
-    }
-
-    if (!result) {
-      return;
-    }
-
+  const saveGoal = async (calculation: NonNullable<typeof result>) => {
     try {
       await setGoal(
         {
@@ -116,12 +105,12 @@ export default function GoalScreen() {
           gender,
           activityLevel,
           goalType,
-          bmr: result.bmr,
-          maintenanceCalories: result.maintenanceCalories,
-          targetCalories: result.targetCalories,
-          targetProtein: result.macroTargets.protein,
-          targetCarbs: result.macroTargets.carbs,
-          targetFat: result.macroTargets.fat,
+          bmr: calculation.bmr,
+          maintenanceCalories: calculation.maintenanceCalories,
+          targetCalories: calculation.targetCalories,
+          targetProtein: calculation.macroTargets.protein,
+          targetCarbs: calculation.macroTargets.carbs,
+          targetFat: calculation.macroTargets.fat,
         },
         token,
       );
@@ -133,6 +122,31 @@ export default function GoalScreen() {
         error instanceof Error ? error.message : translate("genericError", language),
       );
     }
+  };
+
+  const handleSaveGoal = () => {
+    if (validationMessage) {
+      Alert.alert(translate("error", language), validationMessage, [
+        { text: translate("ok", language) },
+      ]);
+      return;
+    }
+
+    if (!result) {
+      return;
+    }
+
+    Alert.alert(
+      translate("confirmGoalSave", language),
+      translate("confirmGoalSaveMessage", language),
+      [
+        { text: translate("cancel", language), style: "cancel" },
+        {
+          text: translate("save", language),
+          onPress: () => void saveGoal(result),
+        },
+      ],
+    );
   };
 
   return (
@@ -170,35 +184,10 @@ export default function GoalScreen() {
             </Pressable>
 
             <Text style={[styles.topTitle, { color: theme.colors.text }]}>
-              {translate("target", language)}
-            </Text>
-
-            <View style={styles.fakeSpace} />
-          </View>
-
-          <View style={styles.headerArea}>
-            <View
-              style={[
-                styles.logoBox,
-                {
-                  backgroundColor: theme.colors.primarySoft,
-                },
-              ]}
-            >
-              <Ionicons
-                name="flag-outline"
-                size={30}
-                color={theme.colors.primary}
-              />
-            </View>
-
-            <Text style={[styles.title, { color: theme.colors.text }]}>
               {translate("goalSetup", language)}
             </Text>
 
-            <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
-              {translate("goalSubtitle", language)}
-            </Text>
+            <View style={styles.fakeSpace} />
           </View>
 
           <View
@@ -254,17 +243,21 @@ export default function GoalScreen() {
             </Text>
 
             <View style={styles.chipRow}>
-              <OptionChip
-                label={translate("female", language)}
-                selected={gender === "female"}
-                onPress={() => setGender("female")}
-              />
+              <View style={styles.inputHalf}>
+                <OptionChip
+                  label={translate("female", language)}
+                  selected={gender === "female"}
+                  onPress={() => setGender("female")}
+                />
+              </View>
 
-              <OptionChip
-                label={translate("male", language)}
-                selected={gender === "male"}
-                onPress={() => setGender("male")}
-              />
+              <View style={styles.inputHalf}>
+                <OptionChip
+                  label={translate("male", language)}
+                  selected={gender === "male"}
+                  onPress={() => setGender("male")}
+                />
+              </View>
             </View>
 
             <Text style={[styles.groupTitle, { color: theme.colors.text }]}>
@@ -307,34 +300,38 @@ export default function GoalScreen() {
               {translate("goalType", language)}
             </Text>
 
-            <View style={styles.chipWrap}>
-              <OptionChip
-                label={translate("loseWeight", language)}
-                selected={goalType === "lose"}
-                onPress={() => setGoalType("lose")}
-              />
+            <View style={styles.chipRow}>
+              <View style={styles.inputHalf}>
+                <OptionChip
+                  label={translate("loseWeight", language)}
+                  selected={goalType === "lose"}
+                  onPress={() => setGoalType("lose")}
+                />
+              </View>
 
-              <OptionChip
-                label={translate("maintainWeight", language)}
-                selected={goalType === "maintain"}
-                onPress={() => setGoalType("maintain")}
-              />
+              <View style={styles.inputHalf}>
+                <OptionChip
+                  label={translate("maintainWeight", language)}
+                  selected={goalType === "maintain"}
+                  onPress={() => setGoalType("maintain")}
+                />
+              </View>
 
-              <OptionChip
-                label={translate("gainWeight", language)}
-                selected={goalType === "gain"}
-                onPress={() => setGoalType("gain")}
-              />
+              <View style={styles.inputHalf}>
+                <OptionChip
+                  label={translate("gainWeight", language)}
+                  selected={goalType === "gain"}
+                  onPress={() => setGoalType("gain")}
+                />
+              </View>
             </View>
 
             <Button
               onPress={handleSaveGoal}
               style={styles.calculateButton}
-              disabled={!result || Boolean(validationMessage) || isLoading}
+              disabled={isLoading}
             >
-              {result
-                ? translate("saveGoal", language)
-                : translate("fillInfoToCalculate", language)}
+              {translate("saveGoal", language)}
             </Button>
           </View>
 
@@ -527,14 +524,6 @@ export default function GoalScreen() {
               </View>
             </View>
           ) : null}
-
-          <Button
-            variant="secondary"
-            onPress={() => router.replace("/(tabs)/home" as Href)}
-            style={styles.homeButton}
-          >
-            {translate("home", language)}
-          </Button>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -646,40 +635,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   topTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "900",
   },
   fakeSpace: {
     width: 40,
   },
-  headerArea: {
-    marginTop: 20,
-    marginBottom: 24,
-    alignItems: "center",
-  },
-  logoBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 23,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 18,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "900",
-    letterSpacing: -0.8,
-    textAlign: "center",
-  },
-  subtitle: {
-    marginTop: 10,
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: "600",
-    textAlign: "center",
-    maxWidth: 315,
-  },
   card: {
+    marginTop: 20,
     borderWidth: 1,
     borderRadius: 30,
     padding: 18,
@@ -726,9 +689,6 @@ const styles = StyleSheet.create({
   },
   calculateButton: {
     marginTop: 4,
-  },
-  homeButton: {
-    marginTop: 18,
   },
   resultCard: {
     marginTop: 18,
