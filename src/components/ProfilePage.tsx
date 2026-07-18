@@ -9,10 +9,12 @@ import { Screen } from "./Screen";
 export function ProfilePage({
   title,
   subtitle,
+  compactHeader = false,
   children,
 }: {
   title: string;
   subtitle: string;
+  compactHeader?: boolean;
   children: ReactNode;
 }) {
   const themeMode = useAppStore((state) => state.themeMode);
@@ -35,11 +37,23 @@ export function ProfilePage({
           >
             <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
           </Pressable>
+          {compactHeader ? (
+            <Text style={[styles.topBarTitle, { color: theme.colors.text }]}>
+              {title}
+            </Text>
+          ) : null}
+          {compactHeader ? <View style={styles.backButtonPlaceholder} /> : null}
         </View>
-        <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
-        <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
-          {subtitle}
-        </Text>
+        {!compactHeader ? (
+          <>
+            <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
+            <Text
+              style={[styles.subtitle, { color: theme.colors.mutedText }]}
+            >
+              {subtitle}
+            </Text>
+          </>
+        ) : null}
         <View style={styles.body}>{children}</View>
       </ScrollView>
     </Screen>
@@ -48,7 +62,12 @@ export function ProfilePage({
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 48 },
-  topBar: { height: 48, justifyContent: "center" },
+  topBar: {
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   backButton: {
     width: 42,
     height: 42,
@@ -57,6 +76,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  backButtonPlaceholder: { width: 42 },
+  topBarTitle: { fontSize: 16, fontWeight: "900" },
   title: { marginTop: 16, fontSize: 28, fontWeight: "900" },
   subtitle: { marginTop: 7, fontSize: 13, lineHeight: 19, fontWeight: "600" },
   body: { marginTop: 24 },

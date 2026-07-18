@@ -127,13 +127,58 @@ export const translations = {
   },
 
   personalInformation: {
-    tr: "Kişisel Bilgiler",
-    en: "Personal Information",
+    tr: "Hesap Bilgileri",
+    en: "Account Information",
   },
 
   personalInformationSubtitle: {
-    tr: "Boy, kilo ve yaş bilgileri",
-    en: "Height, weight and age details",
+    tr: "Hesap ve kişisel ölçü bilgileri",
+    en: "Account details and personal measurements",
+  },
+
+  firstName: {
+    tr: "Ad",
+    en: "First Name",
+  },
+
+  lastName: {
+    tr: "Soyad",
+    en: "Last Name",
+  },
+
+  birthDate: {
+    tr: "Doğum Tarihi",
+    en: "Date of Birth",
+  },
+
+  save: {
+    tr: "Kaydet",
+    en: "Save",
+  },
+
+  focusOnYourGoal: {
+    tr: "Hedefine Odaklan",
+    en: "Focus on Your Goal",
+  },
+
+  personalDataNote: {
+    tr: "Kişisel verilerin, sana özel beslenme planını oluşturmamız için temel oluşturur.",
+    en: "Your personal data forms the basis of the nutrition plan we create for you.",
+  },
+
+  accountInformationValidation: {
+    tr: "Boy 100-230 cm, kilo 30-250 kg arasında tam sayı olmalı.",
+    en: "Height must be a whole number from 100-230 cm and weight from 30-250 kg.",
+  },
+
+  accountInformationSaved: {
+    tr: "Bilgiler Kaydedildi",
+    en: "Information Saved",
+  },
+
+  accountInformationSavedMessage: {
+    tr: "Cinsiyet, boy ve kilo bilgilerin güncellendi.",
+    en: "Your gender, height, and weight have been updated.",
   },
 
   nutritionGoals: {
