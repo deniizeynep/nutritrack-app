@@ -170,32 +170,13 @@ export default function GoalScreen() {
             </Pressable>
 
             <Text style={[styles.topTitle, { color: theme.colors.text }]}>
-              {translate("target", language)}
+              {translate("goalSetup", language)}
             </Text>
 
             <View style={styles.fakeSpace} />
           </View>
 
           <View style={styles.headerArea}>
-            <View
-              style={[
-                styles.logoBox,
-                {
-                  backgroundColor: theme.colors.primarySoft,
-                },
-              ]}
-            >
-              <Ionicons
-                name="flag-outline"
-                size={30}
-                color={theme.colors.primary}
-              />
-            </View>
-
-            <Text style={[styles.title, { color: theme.colors.text }]}>
-              {translate("goalSetup", language)}
-            </Text>
-
             <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
               {translate("goalSubtitle", language)}
             </Text>
@@ -646,33 +627,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   topTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "900",
   },
   fakeSpace: {
     width: 40,
   },
   headerArea: {
-    marginTop: 20,
+    marginTop: 14,
     marginBottom: 24,
     alignItems: "center",
   },
-  logoBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 23,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 18,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "900",
-    letterSpacing: -0.8,
-    textAlign: "center",
-  },
   subtitle: {
-    marginTop: 10,
     fontSize: 13,
     lineHeight: 20,
     fontWeight: "600",
