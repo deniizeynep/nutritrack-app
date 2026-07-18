@@ -251,6 +251,16 @@ export const translations = {
     en: "Choose an option",
   },
 
+  appVersion: {
+    tr: "NutriTrack v4.2.0 (Build 824)",
+    en: "NutriTrack v4.2.0 (Build 824)",
+  },
+
+  appTagline: {
+    tr: "Sağlığınız için özenle tasarlandı",
+    en: "Made with care for your health",
+  },
+
   darkMode: {
     tr: "Karanlık Mod",
     en: "Dark Mode",

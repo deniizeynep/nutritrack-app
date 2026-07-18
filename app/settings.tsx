@@ -200,6 +200,14 @@ export default function SettingsScreen() {
           onEnabledChange={setWaterTrackingEnabled}
         />
       </View>
+      <View style={styles.appInfo}>
+        <Text style={[styles.appVersion, { color: theme.colors.mutedText }]}>
+          {translate("appVersion", language)}
+        </Text>
+        <Text style={[styles.appTagline, { color: theme.colors.mutedText }]}>
+          {translate("appTagline", language)}
+        </Text>
+      </View>
       <SelectionModal
         visible={selection !== null}
         title={translate(selection === "language" ? "appLanguage" : "unitSystem", language)}
@@ -414,4 +422,7 @@ const styles = StyleSheet.create({
   modalOptionText: { fontSize: 14, fontWeight: "700" },
   modalCancel: { alignItems: "center", paddingTop: 16 },
   modalCancelText: { fontSize: 13, fontWeight: "800" },
+  appInfo: { alignItems: "center", marginTop: 30, paddingBottom: 8 },
+  appVersion: { fontSize: 11, fontWeight: "600" },
+  appTagline: { marginTop: 4, fontSize: 9, fontWeight: "500", opacity: 0.7 },
 });
