@@ -116,8 +116,18 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Hero: Calorie Ring */}
-          <View style={styles.heroSection}>
+          {/* Summary Card */}
+          <View
+            style={[
+              styles.summaryCard,
+              {
+                backgroundColor: theme.colors.card,
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            {/* Calorie Ring */}
+            <View style={styles.heroSection}>
             {(() => {
               const RING_SIZE = 256;
               const progress = Math.min(
@@ -169,7 +179,7 @@ export default function HomeScreen() {
                   <View
                     style={[
                       styles.ringInner,
-                      { backgroundColor: theme.colors.background },
+                      { backgroundColor: theme.colors.card },
                     ]}
                   />
 
@@ -297,6 +307,7 @@ export default function HomeScreen() {
               </Text>
             </Pressable>
           </View>
+          </View>
 
           {/* Meals Section */}
           <View style={styles.mealsSection}>
@@ -419,10 +430,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 120,
   },
+  summaryCard: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+  },
   heroSection: {
     alignItems: "center",
-    marginTop: 12,
-    marginBottom: 28,
+    marginBottom: 20,
   },
   ringTrackBg: {
     position: "absolute",
@@ -494,12 +510,11 @@ const styles = StyleSheet.create({
   },
   nutrientSection: {
     gap: 14,
-    marginBottom: 28,
+    marginBottom: 20,
   },
   quickActions: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 32,
   },
   actionButton: {
     flex: 1,
