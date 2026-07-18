@@ -1,5 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeIn, FadeInRight, FadeInLeft } from "react-native-reanimated";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMemo, useState } from "react";
 import * as Print from "expo-print";
@@ -19,6 +23,13 @@ export default function StatsScreen() {
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
   const [period, setPeriod] = useState<StatsPeriod>("weekly");
+  const [segmentWidth, setSegmentWidth] = useState(0);
+  const segmentPosition = useSharedValue(0);
+
+  const segmentIndicatorStyle = useAnimatedStyle(() => ({
+    width: segmentWidth,
+    transform: [{ translateX: segmentPosition.value * segmentWidth }],
+  }));
 
   const meals = useMealStore((state) => state.meals);
   const goal = useGoalStore((state) => state.goal);
@@ -340,20 +351,30 @@ export default function StatsScreen() {
           </Text>
         </View>
 
-        <View style={[styles.segmentedControl, { backgroundColor: theme.colors.cardSoft }]}>
-          {PERIODS.map((periodOption) => {
+        <View
+          style={[styles.segmentedControl, { backgroundColor: theme.colors.cardSoft }]}
+          onLayout={(event) => {
+            setSegmentWidth((event.nativeEvent.layout.width - 8) / PERIODS.length);
+          }}
+        >
+          <Animated.View
+            style={[
+              styles.segmentIndicator,
+              { backgroundColor: theme.colors.primary },
+              segmentIndicatorStyle,
+            ]}
+          />
+          {PERIODS.map((periodOption, index) => {
             const selected = periodOption === period;
 
             return (
               <Pressable
                 key={periodOption}
-                onPress={() => setPeriod(periodOption)}
-                style={[
-                  styles.segment,
-                  {
-                    backgroundColor: selected ? theme.colors.primary : "transparent",
-                  },
-                ]}
+                onPress={() => {
+                  setPeriod(periodOption);
+                  segmentPosition.value = withTiming(index, { duration: 250 });
+                }}
+                style={styles.segment}
               >
                 <Text
                   style={[
@@ -371,7 +392,7 @@ export default function StatsScreen() {
         </View>
 
         {hasPeriodMeals ? (
-          <Animated.View key={period} entering={period === "monthly" ? FadeInRight.duration(300) : FadeInLeft.duration(300)}>
+          <View>
             <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
               <Text style={[styles.cardEyebrow, { color: theme.colors.mutedText }]}>
                 {translate("averageIntake", language)}
@@ -546,9 +567,9 @@ export default function StatsScreen() {
                 <Text style={styles.exportButtonText}>PDF</Text>
               </Pressable>
             </View>
-          </Animated.View>
+          </View>
         ) : (
-          <Animated.View entering={FadeIn.duration(300)}>
+          <View>
             <View
               style={[
                 styles.emptyCard,
@@ -569,7 +590,7 @@ export default function StatsScreen() {
                 {translate("addMealsToBuildStats", language)}
               </Text>
             </View>
-          </Animated.View>
+          </View>
         )}
       </ScrollView>
     </Screen>
@@ -743,6 +764,14 @@ const styles = StyleSheet.create({
     padding: 4,
     borderRadius: 12,
     marginBottom: 16,
+    position: "relative",
+  },
+  segmentIndicator: {
+    position: "absolute",
+    top: 4,
+    bottom: 4,
+    left: 4,
+    borderRadius: 10,
   },
   segment: {
     flex: 1,
@@ -750,6 +779,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 1,
   },
   segmentText: {
     fontSize: 13,
