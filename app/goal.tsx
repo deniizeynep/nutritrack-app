@@ -300,24 +300,30 @@ export default function GoalScreen() {
               {translate("goalType", language)}
             </Text>
 
-            <View style={styles.chipWrap}>
-              <OptionChip
-                label={translate("loseWeight", language)}
-                selected={goalType === "lose"}
-                onPress={() => setGoalType("lose")}
-              />
+            <View style={styles.chipRow}>
+              <View style={styles.inputHalf}>
+                <OptionChip
+                  label={translate("loseWeight", language)}
+                  selected={goalType === "lose"}
+                  onPress={() => setGoalType("lose")}
+                />
+              </View>
 
-              <OptionChip
-                label={translate("maintainWeight", language)}
-                selected={goalType === "maintain"}
-                onPress={() => setGoalType("maintain")}
-              />
+              <View style={styles.inputHalf}>
+                <OptionChip
+                  label={translate("maintainWeight", language)}
+                  selected={goalType === "maintain"}
+                  onPress={() => setGoalType("maintain")}
+                />
+              </View>
 
-              <OptionChip
-                label={translate("gainWeight", language)}
-                selected={goalType === "gain"}
-                onPress={() => setGoalType("gain")}
-              />
+              <View style={styles.inputHalf}>
+                <OptionChip
+                  label={translate("gainWeight", language)}
+                  selected={goalType === "gain"}
+                  onPress={() => setGoalType("gain")}
+                />
+              </View>
             </View>
 
             <Button
