@@ -1,12 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import Animated, { FadeIn, FadeInRight, FadeInLeft } from "react-native-reanimated";
+import { LayoutAnimation, Platform, UIManager, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useMemo, useRef, useState } from "react";
 import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
 import { useGoalStore } from "../../src/stores/goalStore";
 import { useMealStore, type Meal } from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
+
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 type StatsPeriod = "weekly" | "monthly";
 
@@ -17,6 +22,7 @@ export default function StatsScreen() {
   const language = useAppStore((state) => state.language);
   const theme = getTheme(themeMode);
   const [period, setPeriod] = useState<StatsPeriod>("weekly");
+  const prevPeriod = useRef<StatsPeriod>("weekly");
 
   const meals = useMealStore((state) => state.meals);
   const goal = useGoalStore((state) => state.goal);
@@ -113,6 +119,21 @@ export default function StatsScreen() {
     ? Math.min(Math.round((dailyAverage / goal.targetCalories) * 100), 999)
     : 0;
 
+  const handlePeriodChange = (newPeriod: StatsPeriod) => {
+    if (newPeriod === period) return;
+
+    LayoutAnimation.configureNext(LayoutAnimation.create(
+      300,
+      LayoutAnimation.Types.easeInEaseOut,
+      LayoutAnimation.Properties.opacity,
+    ));
+
+    prevPeriod.current = period;
+    setPeriod(newPeriod);
+  };
+
+  const enteringAnim = period === "monthly" ? FadeInRight.duration(300) : FadeInLeft.duration(300);
+
   return (
     <Screen>
       <ScrollView
@@ -133,7 +154,7 @@ export default function StatsScreen() {
             return (
               <Pressable
                 key={periodOption}
-                onPress={() => setPeriod(periodOption)}
+                onPress={() => handlePeriodChange(periodOption)}
                 style={[
                   styles.segment,
                   {
@@ -157,7 +178,7 @@ export default function StatsScreen() {
         </View>
 
         {hasPeriodMeals ? (
-          <>
+          <Animated.View key={period} entering={enteringAnim}>
             <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
               <Text style={[styles.cardEyebrow, { color: theme.colors.mutedText }]}>
                 {translate("averageIntake", language)}
@@ -229,7 +250,7 @@ export default function StatsScreen() {
               </View>
             </View>
 
-            <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+            <View style={[styles.card, styles.macroCard, { backgroundColor: theme.colors.card }]}>
               <Text style={[styles.cardTitle, { color: theme.colors.primary }]}>
                 {translate("macroDistribution", language)}
               </Text>
@@ -256,7 +277,7 @@ export default function StatsScreen() {
               </View>
             </View>
 
-            <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+            <View style={[styles.card, styles.goalCard, { backgroundColor: theme.colors.card }]}>
               <Text style={[styles.cardTitle, { color: theme.colors.primary }]}>
                 {translate("goalProgress", language)}
               </Text>
@@ -302,28 +323,30 @@ export default function StatsScreen() {
                 </View>
               </View>
             </View>
-          </>
+          </Animated.View>
         ) : (
-          <View
-            style={[
-              styles.emptyCard,
-              { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
-            ]}
-          >
+          <Animated.View entering={FadeIn.duration(300)}>
             <View
-              style={[styles.emptyIconBox, { backgroundColor: theme.colors.primarySoft }]}
+              style={[
+                styles.emptyCard,
+                { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+              ]}
             >
-              <Ionicons name="analytics-outline" size={30} color={theme.colors.primary} />
+              <View
+                style={[styles.emptyIconBox, { backgroundColor: theme.colors.primarySoft }]}
+              >
+                <Ionicons name="analytics-outline" size={30} color={theme.colors.primary} />
+              </View>
+
+              <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+                {translate("noRecordsForPeriod", language)}
+              </Text>
+
+              <Text style={[styles.emptySubtitle, { color: theme.colors.mutedText }]}>
+                {translate("addMealsToBuildStats", language)}
+              </Text>
             </View>
-
-            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
-              {translate("noRecordsForPeriod", language)}
-            </Text>
-
-            <Text style={[styles.emptySubtitle, { color: theme.colors.mutedText }]}>
-              {translate("addMealsToBuildStats", language)}
-            </Text>
-          </View>
+          </Animated.View>
         )}
       </ScrollView>
     </Screen>
@@ -505,6 +528,12 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
   },
+  macroCard: {
+    borderRadius: 20,
+  },
+  goalCard: {
+    borderRadius: 20,
+  },
   cardEyebrow: {
     fontSize: 12,
     fontWeight: "600",
@@ -557,10 +586,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     marginBottom: 16,
-    alignItems: "stretch",
   },
   bentoCard: {
-    flex: 1,
+    flexBasis: "48%",
+    flexShrink: 0,
+    flexGrow: 0,
     borderRadius: 16,
     padding: 16,
     borderLeftWidth: 4,
