@@ -127,6 +127,7 @@ export function activateLocalTestUser() {
     hasCheckedSession: true,
     pendingVerificationEmail: null,
     pendingPasswordResetEmail: null,
+    pendingEmailChange: null,
     requiresEmailVerification: false,
     error: null,
   });
