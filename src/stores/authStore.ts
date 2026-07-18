@@ -509,6 +509,11 @@ export const useAuthStore = create<AuthState>()(
       },
       partialize: (state) => ({
         token: state.token,
+        user: state.user,
+        isAuthenticated:
+          state.user?.id === "local-test-user" ? state.isAuthenticated : false,
+        hasCheckedSession:
+          state.user?.id === "local-test-user" ? state.hasCheckedSession : false,
       }),
     },
   ),

@@ -25,6 +25,7 @@ export default function PersonalInformationScreen() {
   const updateProfile = useAuthStore((state) => state.updateProfile);
   const requestEmailChange = useAuthStore((state) => state.requestEmailChange);
   const pendingEmailChange = useAuthStore((state) => state.pendingEmailChange);
+  const loadMe = useAuthStore((state) => state.loadMe);
   const goal = useGoalStore((state) => state.goal);
   const goalIsLoading = useGoalStore((state) => state.isLoading);
   const setGoal = useGoalStore((state) => state.setGoal);
@@ -37,6 +38,12 @@ export default function PersonalInformationScreen() {
   const [firstName, setFirstName] = useState(initialName.firstName);
   const [lastName, setLastName] = useState(initialName.lastName);
   const [email, setEmail] = useState(user?.email ?? "");
+
+  useEffect(() => {
+    if (token && !user && !authIsLoading) {
+      void loadMe();
+    }
+  }, [authIsLoading, loadMe, token, user]);
 
   useEffect(() => {
     if (!goal) {
