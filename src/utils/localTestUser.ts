@@ -24,6 +24,7 @@ type MealSeedTuple = [
 
 const goal: GoalData = {
   age: 25,
+  birthDate: "2001-07-18",
   heightCm: 165,
   weightKg: 62,
   gender: "female",

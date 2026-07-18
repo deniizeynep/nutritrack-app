@@ -221,6 +221,21 @@ export const translations = {
     en: "Email verification pending",
   },
 
+  confirmAccountChanges: {
+    tr: "Emin misiniz?",
+    en: "Are you sure?",
+  },
+
+  confirmAccountChangesMessage: {
+    tr: "Değiştirdiğiniz hesap bilgileri kaydedilecek. Devam etmek istiyor musunuz?",
+    en: "Your changed account information will be saved. Do you want to continue?",
+  },
+
+  noAccountChanges: {
+    tr: "Kaydedilecek bir değişiklik bulunmuyor.",
+    en: "There are no changes to save.",
+  },
+
   nutritionGoals: {
     tr: "Beslenme Hedefleri",
     en: "Nutrition Goals",

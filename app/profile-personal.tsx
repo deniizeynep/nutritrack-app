@@ -73,29 +73,14 @@ export default function PersonalInformationScreen() {
     setEmail(user?.email ?? "");
   }, [user?.email]);
 
-  const handleSave = async () => {
-    const parsedHeight = Number(heightCm);
-    const parsedWeight = Number(weightKg);
-    const parsedBirthDate = parseBirthDate(birthDate);
-    const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
-    const normalizedEmail = email.trim().toLowerCase();
-
-    if (
-      !goal ||
-      firstName.trim().length < 2 ||
-      !/^[^\s@]+@gmail\.com$/.test(normalizedEmail) ||
-      !parsedBirthDate ||
-      !Number.isInteger(parsedHeight) ||
-      parsedHeight < 100 ||
-      parsedHeight > 230 ||
-      !Number.isInteger(parsedWeight) ||
-      parsedWeight < 30 ||
-      parsedWeight > 250
-    ) {
-      Alert.alert(
-        translate("error", language),
-        translate("accountInformationValidation", language),
-      );
+  const saveChanges = async (
+    parsedHeight: number,
+    parsedWeight: number,
+    parsedBirthDate: NonNullable<ReturnType<typeof parseBirthDate>>,
+    fullName: string,
+    normalizedEmail: string,
+  ) => {
+    if (!goal) {
       return;
     }
 
@@ -147,6 +132,68 @@ export default function PersonalInformationScreen() {
           : translate("genericError", language),
       );
     }
+  };
+
+  const handleSave = () => {
+    const parsedHeight = Number(heightCm);
+    const parsedWeight = Number(weightKg);
+    const parsedBirthDate = parseBirthDate(birthDate);
+    const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (
+      !goal ||
+      firstName.trim().length < 2 ||
+      !/^[^\s@]+@gmail\.com$/.test(normalizedEmail) ||
+      !parsedBirthDate ||
+      !Number.isInteger(parsedHeight) ||
+      parsedHeight < 100 ||
+      parsedHeight > 230 ||
+      !Number.isInteger(parsedWeight) ||
+      parsedWeight < 30 ||
+      parsedWeight > 250
+    ) {
+      Alert.alert(
+        translate("error", language),
+        translate("accountInformationValidation", language),
+      );
+      return;
+    }
+
+    const hasChanges =
+      fullName !== user?.fullName.trim() ||
+      normalizedEmail !== user?.email.toLowerCase() ||
+      parsedBirthDate.iso !== goal.birthDate ||
+      gender !== goal.gender ||
+      parsedHeight !== goal.heightCm ||
+      parsedWeight !== goal.weightKg;
+
+    if (!hasChanges) {
+      Alert.alert(
+        translate("personalInformation", language),
+        translate("noAccountChanges", language),
+      );
+      return;
+    }
+
+    Alert.alert(
+      translate("confirmAccountChanges", language),
+      translate("confirmAccountChangesMessage", language),
+      [
+        { text: translate("cancel", language), style: "cancel" },
+        {
+          text: translate("save", language),
+          onPress: () =>
+            void saveChanges(
+              parsedHeight,
+              parsedWeight,
+              parsedBirthDate,
+              fullName,
+              normalizedEmail,
+            ),
+        },
+      ],
+    );
   };
 
   return (
