@@ -10,6 +10,7 @@ import type {
 
 export type GoalData = {
   age: number;
+  birthDate?: string | null;
   heightCm: number;
   weightKg: number;
   gender: Gender;

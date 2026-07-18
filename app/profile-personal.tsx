@@ -27,6 +27,7 @@ export default function PersonalInformationScreen() {
   const [heightCm, setHeightCm] = useState(goal ? String(goal.heightCm) : "");
   const [weightKg, setWeightKg] = useState(goal ? String(goal.weightKg) : "");
   const [gender, setGender] = useState<Gender>(goal?.gender ?? "female");
+  const [birthDate, setBirthDate] = useState(formatBirthDate(goal?.birthDate));
   const { firstName, lastName } = splitFullName(user?.fullName ?? "");
 
   useEffect(() => {
@@ -39,14 +40,17 @@ export default function PersonalInformationScreen() {
     setHeightCm(String(goal.heightCm));
     setWeightKg(String(goal.weightKg));
     setGender(goal.gender);
+    setBirthDate(formatBirthDate(goal.birthDate));
   }, [goal]);
 
   const handleSave = async () => {
     const parsedHeight = Number(heightCm);
     const parsedWeight = Number(weightKg);
+    const parsedBirthDate = parseBirthDate(birthDate);
 
     if (
       !goal ||
+      !parsedBirthDate ||
       !Number.isInteger(parsedHeight) ||
       parsedHeight < 100 ||
       parsedHeight > 230 ||
@@ -62,7 +66,7 @@ export default function PersonalInformationScreen() {
     }
 
     const calories = calculateDailyCalories({
-      age: goal.age,
+      age: parsedBirthDate.age,
       heightCm: parsedHeight,
       weightKg: parsedWeight,
       gender,
@@ -75,6 +79,8 @@ export default function PersonalInformationScreen() {
       await setGoal(
         {
           ...goal,
+          age: parsedBirthDate.age,
+          birthDate: parsedBirthDate.iso,
           heightCm: parsedHeight,
           weightKg: parsedWeight,
           gender,
@@ -151,8 +157,11 @@ export default function PersonalInformationScreen() {
         <Input
           label={translate("birthDate", language)}
           icon="calendar-outline"
-          value="-"
-          editable={false}
+          value={birthDate}
+          onChangeText={(value) => setBirthDate(formatBirthDateInput(value))}
+          placeholder={translate("birthDatePlaceholder", language)}
+          keyboardType="number-pad"
+          maxLength={10}
         />
 
         <View style={styles.inputRow}>
@@ -255,6 +264,62 @@ function splitFullName(fullName: string) {
   return {
     firstName: firstName || "-",
     lastName: lastNameParts.join(" ") || "-",
+  };
+}
+
+function formatBirthDate(value?: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const [year, month, day] = value.split("-");
+  return `${day}.${month}.${year}`;
+}
+
+function formatBirthDateInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4)];
+  return parts.filter(Boolean).join(".");
+}
+
+function parseBirthDate(value: string) {
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, dayText, monthText, yearText] = match;
+  const day = Number(dayText);
+  const month = Number(monthText);
+  const year = Number(yearText);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  const today = new Date();
+  let age = today.getFullYear() - year;
+
+  if (
+    today.getMonth() < month - 1 ||
+    (today.getMonth() === month - 1 && today.getDate() < day)
+  ) {
+    age -= 1;
+  }
+
+  if (date > today || age < 13 || age > 100) {
+    return null;
+  }
+
+  return {
+    age,
+    iso: `${yearText}-${monthText}-${dayText}`,
   };
 }
 

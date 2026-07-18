@@ -110,6 +110,7 @@ export default function GoalScreen() {
       await setGoal(
         {
           age: Number(age),
+          birthDate: savedGoal?.birthDate,
           heightCm: Number(heightCm),
           weightKg: Number(weightKg),
           gender,

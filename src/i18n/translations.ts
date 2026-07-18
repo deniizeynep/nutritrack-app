@@ -151,6 +151,11 @@ export const translations = {
     en: "Date of Birth",
   },
 
+  birthDatePlaceholder: {
+    tr: "GG.AA.YYYY",
+    en: "DD.MM.YYYY",
+  },
+
   save: {
     tr: "Kaydet",
     en: "Save",
@@ -167,8 +172,8 @@ export const translations = {
   },
 
   accountInformationValidation: {
-    tr: "Boy 100-230 cm, kilo 30-250 kg arasında tam sayı olmalı.",
-    en: "Height must be a whole number from 100-230 cm and weight from 30-250 kg.",
+    tr: "Geçerli bir doğum tarihi gir. Yaş 13-100, boy 100-230 cm, kilo 30-250 kg arasında olmalı.",
+    en: "Enter a valid birth date. Age must be 13-100, height 100-230 cm, and weight 30-250 kg.",
   },
 
   accountInformationSaved: {
@@ -177,8 +182,8 @@ export const translations = {
   },
 
   accountInformationSavedMessage: {
-    tr: "Cinsiyet, boy ve kilo bilgilerin güncellendi.",
-    en: "Your gender, height, and weight have been updated.",
+    tr: "Doğum tarihi, cinsiyet, boy ve kilo bilgilerin güncellendi.",
+    en: "Your birth date, gender, height, and weight have been updated.",
   },
 
   nutritionGoals: {

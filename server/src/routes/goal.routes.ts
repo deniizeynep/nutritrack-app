@@ -9,6 +9,11 @@ router.use(authMiddleware);
 
 const goalSchema = z.object({
   age: z.number().int().min(13).max(100),
+  birthDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine(isValidDate)
+    .nullish(),
   heightCm: z.number().int().min(100).max(230),
   weightKg: z.number().int().min(30).max(250),
   gender: z.enum(["female", "male"]),
@@ -28,6 +33,17 @@ const goalSchema = z.object({
   targetFat: z.number().int().nonnegative().optional().default(0),
 });
 
+function isValidDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
 function getUserId(req: AuthRequest) {
   if (!req.userId) {
     throw new Error("User id not found");
@@ -39,6 +55,7 @@ function getUserId(req: AuthRequest) {
 function formatGoal(goal: {
   id: string;
   age: number;
+  birthDate: Date | null;
   heightCm: number;
   weightKg: number;
   gender: string;
@@ -56,6 +73,7 @@ function formatGoal(goal: {
   return {
     id: goal.id,
     age: goal.age,
+    birthDate: goal.birthDate?.toISOString().slice(0, 10) ?? null,
     heightCm: goal.heightCm,
     weightKg: goal.weightKg,
     gender: goal.gender,
@@ -113,6 +131,12 @@ router.put("/", async (req, res) => {
       },
       update: {
         age: parsed.data.age,
+        birthDate:
+          parsed.data.birthDate === undefined
+            ? undefined
+            : parsed.data.birthDate === null
+              ? null
+              : new Date(`${parsed.data.birthDate}T00:00:00.000Z`),
         heightCm: parsed.data.heightCm,
         weightKg: parsed.data.weightKg,
         gender: parsed.data.gender,
@@ -127,6 +151,9 @@ router.put("/", async (req, res) => {
       },
       create: {
         age: parsed.data.age,
+        birthDate: parsed.data.birthDate
+          ? new Date(`${parsed.data.birthDate}T00:00:00.000Z`)
+          : undefined,
         heightCm: parsed.data.heightCm,
         weightKg: parsed.data.weightKg,
         gender: parsed.data.gender,
