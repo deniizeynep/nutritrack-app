@@ -176,12 +176,6 @@ export default function GoalScreen() {
             <View style={styles.fakeSpace} />
           </View>
 
-          <View style={styles.headerArea}>
-            <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
-              {translate("goalSubtitle", language)}
-            </Text>
-          </View>
-
           <View
             style={[
               styles.card,
@@ -235,17 +229,21 @@ export default function GoalScreen() {
             </Text>
 
             <View style={styles.chipRow}>
-              <OptionChip
-                label={translate("female", language)}
-                selected={gender === "female"}
-                onPress={() => setGender("female")}
-              />
+              <View style={styles.inputHalf}>
+                <OptionChip
+                  label={translate("female", language)}
+                  selected={gender === "female"}
+                  onPress={() => setGender("female")}
+                />
+              </View>
 
-              <OptionChip
-                label={translate("male", language)}
-                selected={gender === "male"}
-                onPress={() => setGender("male")}
-              />
+              <View style={styles.inputHalf}>
+                <OptionChip
+                  label={translate("male", language)}
+                  selected={gender === "male"}
+                  onPress={() => setGender("male")}
+                />
+              </View>
             </View>
 
             <Text style={[styles.groupTitle, { color: theme.colors.text }]}>
@@ -311,11 +309,9 @@ export default function GoalScreen() {
             <Button
               onPress={handleSaveGoal}
               style={styles.calculateButton}
-              disabled={!result || Boolean(validationMessage) || isLoading}
+              disabled={isLoading}
             >
-              {result
-                ? translate("saveGoal", language)
-                : translate("fillInfoToCalculate", language)}
+              {translate("saveGoal", language)}
             </Button>
           </View>
 
@@ -633,19 +629,8 @@ const styles = StyleSheet.create({
   fakeSpace: {
     width: 40,
   },
-  headerArea: {
-    marginTop: 14,
-    marginBottom: 24,
-    alignItems: "center",
-  },
-  subtitle: {
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: "600",
-    textAlign: "center",
-    maxWidth: 315,
-  },
   card: {
+    marginTop: 20,
     borderWidth: 1,
     borderRadius: 30,
     padding: 18,
