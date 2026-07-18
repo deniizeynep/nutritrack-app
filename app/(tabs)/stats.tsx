@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import Animated, { FadeIn, FadeInRight, FadeInLeft } from "react-native-reanimated";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import * as Print from "expo-print";
 import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
@@ -8,18 +10,9 @@ import { useGoalStore } from "../../src/stores/goalStore";
 import { useMealStore, type Meal } from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
 
-type DayStats = {
-  dateKey: string;
-  label: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-};
+type StatsPeriod = "weekly" | "monthly";
 
-type StatsPeriod = "weekly" | "monthly" | "yearly";
-
-const PERIODS: StatsPeriod[] = ["weekly", "monthly", "yearly"];
+const PERIODS: StatsPeriod[] = ["weekly", "monthly"];
 
 export default function StatsScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
@@ -49,14 +42,6 @@ export default function StatsScreen() {
     });
   }, [meals, period, language]);
 
-  const chartData = useMemo(() => {
-    if (period !== "yearly") {
-      return periodData;
-    }
-
-    return getYearlyChartData(periodData, language);
-  }, [period, periodData, language]);
-
   const filteredMeals = useMemo(() => {
     const periodDateKeys = new Set(periodData.map((day) => day.dateKey));
 
@@ -79,56 +64,283 @@ export default function StatsScreen() {
     periodData[0],
   );
 
-  const goalProgress = goal && goal.targetCalories > 0
-    ? Math.min((dailyAverage / goal.targetCalories) * 100, 999)
-    : 0;
+  const previousWeekAverage = useMemo(() => {
+    const prevDays = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 13);
+
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() - 7);
+
+    for (
+      const date = new Date(startDate);
+      date <= endDate;
+      date.setDate(date.getDate() + 1)
+    ) {
+      const dateKey = getDateKey(date);
+      const dayMeals = meals.filter((meal) => getMealDateKey(meal) === dateKey);
+      prevDays.push(dayMeals.reduce((total, meal) => total + meal.calories, 0));
+    }
+
+    return prevDays.length > 0
+      ? Math.round(prevDays.reduce((a, b) => a + b, 0) / prevDays.length)
+      : 0;
+  }, [meals]);
+
+  const previousMonthAverage = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+    const prevDays = [];
+
+    for (
+      const date = new Date(lastMonthStart);
+      date <= lastMonthEnd;
+      date.setDate(date.getDate() + 1)
+    ) {
+      const dateKey = getDateKey(date);
+      const dayMeals = meals.filter((meal) => getMealDateKey(meal) === dateKey);
+      prevDays.push(dayMeals.reduce((total, meal) => total + meal.calories, 0));
+    }
+
+    return prevDays.length > 0
+      ? Math.round(prevDays.reduce((a, b) => a + b, 0) / prevDays.length)
+      : 0;
+  }, [meals]);
+
+  const comparisonAverage = useMemo(() => {
+    return period === "weekly" ? previousWeekAverage : previousMonthAverage;
+  }, [period, previousWeekAverage, previousMonthAverage]);
+
+  const weeklyChangePercent = useMemo(() => {
+    if (comparisonAverage === 0) return 0;
+    return Math.round(
+      ((dailyAverage - comparisonAverage) / comparisonAverage) * 100,
+    );
+  }, [dailyAverage, comparisonAverage]);
 
   const maxChartValue = Math.max(
-    ...chartData.map((day) => day.calories),
+    ...periodData.map((day) => day.calories),
     targetCalories,
     1,
   );
 
+  const totalMacroGrams = totalProtein + totalCarbs + totalFat;
+
+  const proteinPercent = totalMacroGrams > 0 ? Math.round((totalProtein / totalMacroGrams) * 100) : 0;
+  const carbsPercent = totalMacroGrams > 0 ? Math.round((totalCarbs / totalMacroGrams) * 100) : 0;
+  const fatPercent = totalMacroGrams > 0 ? Math.round((totalFat / totalMacroGrams) * 100) : 0;
+
   const hasPeriodMeals = filteredMeals.length > 0;
+
+  const goalProgress = goal && goal.targetCalories > 0
+    ? Math.min(Math.round((dailyAverage / goal.targetCalories) * 100), 999)
+    : 0;
+
+  const avgCaloriesDisplay = dailyAverage.toLocaleString();
+  const comparisonPeriodText = period === "weekly"
+    ? (language === "tr" ? "geçen haftaya" : "last week")
+    : (language === "tr" ? "geçen aya" : "last month");
+
+  const insightText = useMemo(() => {
+    if (weeklyChangePercent > 15) {
+      return language === "tr"
+        ? `Kalori alımınız ${comparisonPeriodText} göre %${weeklyChangePercent} arttı. Hedefinize ulaşmak için porsiyon boyutlarını gözden geçirin.`
+        : `Your calorie intake increased by ${weeklyChangePercent}% compared to ${comparisonPeriodText}. Review your portion sizes to stay on track.`;
+    }
+    if (weeklyChangePercent < -15) {
+      return language === "tr"
+        ? `Harika! Kalori alımınız ${comparisonPeriodText} göre %${Math.abs(weeklyChangePercent)} azaldı. Bu tempoyu koruyun!`
+        : `Great! Your calorie intake decreased by ${Math.abs(weeklyChangePercent)}% compared to ${comparisonPeriodText}. Keep it up!`;
+    }
+    if (goalProgress >= 85) {
+      return language === "tr"
+        ? `Günlük hedefinizin %${goalProgress}’ine ulaştınız. Tutarsız günlere odaklanarak beslenme düzeninizi iyileştirebilirsiniz.`
+        : `You've reached ${goalProgress}% of your daily target. Focus on inconsistent days to improve your nutrition routine.`;
+    }
+    if (goalProgress < 50) {
+      return language === "tr"
+        ? `Günlük hedefinizin sadece %${goalProgress}’ine ulaştınız. Düzenli öğünler ve atıştırmalarla alımınızı artırabilirsiniz.`
+        : `You've only reached ${goalProgress}% of your daily target. You can increase your intake with regular meals and snacks.`;
+    }
+    return language === "tr"
+      ? `${period === "weekly" ? "Bu hafta" : "Bu ay"} dengeli besleniyorsunuz. Günlük ortalamanız ${avgCaloriesDisplay} kcal, hedefinize çok yakınsınız.`
+      : `You're eating balanced ${period === "weekly" ? "this week" : "this month"}. Your daily average is ${avgCaloriesDisplay} kcal, very close to your target.`;
+  }, [weeklyChangePercent, goalProgress, avgCaloriesDisplay, language, comparisonPeriodText, period]);
+
+  const insightColor = useMemo(() => {
+    if (weeklyChangePercent > 15 || goalProgress < 50) return "#E74C3C";
+    if (weeklyChangePercent < -15 || goalProgress >= 85) return "#22C55E";
+    return theme.colors.primary;
+  }, [weeklyChangePercent, goalProgress, theme.colors.primary]);
+
+  const insightIcon = useMemo(() => {
+    if (weeklyChangePercent > 15 || goalProgress < 50) return "warning" as const;
+    if (weeklyChangePercent < -15 || goalProgress >= 85) return "checkmark-circle" as const;
+    return "information-circle" as const;
+  }, [weeklyChangePercent, goalProgress]);
+
+  const handleExportPdf = async () => {
+    const periodLabel = translate(period, language);
+
+    const today = new Date();
+    const dateStr = today.toLocaleDateString(language === "tr" ? "tr-TR" : "en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    const macroBarHtml = (label: string, percent: number, grams: number, color: string) => `
+      <div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-weight:600;font-size:13px;">${label}</span>
+          <span style="font-weight:700;font-size:13px;color:${color};">${percent}% (${grams}g)</span>
+        </div>
+        <div style="background:#f0f0f0;border-radius:999px;height:10px;overflow:hidden;">
+          <div style="background:${color};height:100%;border-radius:999px;width:${Math.min(percent, 100)}%;"></div>
+        </div>
+      </div>`;
+
+    const dayBarsHtml = periodData.map((day) => {
+      const heightPct = maxChartValue > 0 ? Math.round((day.calories / maxChartValue) * 100) : 0;
+      return `
+        <div style="text-align:center;flex:1;">
+          <div style="background:#f0f0f0;border-radius:6px;height:100px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;">
+            <div style="background:#4CAF50;height:${heightPct}%;border-radius:6px;"></div>
+          </div>
+          <div style="font-size:10px;margin-top:6px;color:#888;">${day.label}</div>
+          <div style="font-size:9px;color:#aaa;">${day.calories}</div>
+        </div>`;
+    }).join("");
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 30px; color: #1a1a1a; }
+          h1 { color: #4CAF50; font-size: 24px; margin-bottom: 4px; }
+          h2 { font-size: 16px; color: #333; margin: 24px 0 12px; border-bottom: 2px solid #EAF8EF; padding-bottom: 6px; }
+          .subtitle { color: #888; font-size: 12px; margin-bottom: 20px; }
+          .card { border: 1px solid #eee; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+          .big-number { font-size: 28px; font-weight: 800; color: #4CAF50; }
+          .change { font-size: 12px; font-weight: 600; }
+          .change.up { color: #22C55E; }
+          .change.down { color: #E74C3C; }
+          .bento { display: flex; gap: 12px; margin-bottom: 16px; }
+          .bento-item { flex: 1; border-left: 4px solid #4CAF50; padding: 12px; border-radius: 12px; background: #fafafa; }
+          .bento-label { font-size: 11px; color: #888; font-weight: 600; }
+          .bento-value { font-size: 18px; font-weight: 700; margin: 4px 0 2px; }
+          .bento-sub { font-size: 12px; color: #888; }
+          .chart { display: flex; align-items: flex-end; gap: 4px; margin-top: 12px; }
+          .insight { border-left: 4px solid #4CAF50; padding: 12px; margin-bottom: 16px; border-radius: 12px; background: #fafafa; }
+          .insight-title { font-weight: 600; font-size: 12px; margin-bottom: 6px; }
+          .insight-text { font-size: 14px; line-height: 1.6; }
+          .comparison { margin-bottom: 12px; }
+          .comparison-label { font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #888; }
+          .comparison-bar { background: #f0f0f0; border-radius: 999px; height: 10px; overflow: hidden; margin-bottom: 4px; }
+          .comparison-fill { height: 100%; border-radius: 999px; }
+          .comparison-value { font-size: 12px; font-weight: 600; }
+          .footer { text-align: center; color: #aaa; font-size: 10px; margin-top: 30px; }
+        </style>
+      </head>
+      <body>
+        <h1>${language === "tr" ? "İstatistikler" : "Statistics"} — ${periodLabel}</h1>
+        <div class="subtitle">${dateStr}</div>
+
+        <div class="card">
+          <div style="font-size:12px;color:#888;font-weight:600;margin-bottom:4px;">${translate("averageIntake", language)}</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <div class="big-number">${dailyAverage.toLocaleString()} kcal</div>
+            ${weeklyChangePercent !== 0
+              ? `<span class="change ${weeklyChangePercent > 0 ? "up" : "down"}">${weeklyChangePercent > 0 ? "+" : ""}${weeklyChangePercent}% ${translate(period === "weekly" ? "vsLastWeek" : "vsLastMonth", language)}</span>`
+              : ""}
+          </div>
+          <div class="chart">${dayBarsHtml}</div>
+        </div>
+
+        <div class="bento">
+          <div class="bento-item">
+            <div class="bento-label">${translate("highestDay", language)}</div>
+            <div class="bento-value" style="color:#4CAF50;">${highestDay?.label ?? "-"}</div>
+            <div class="bento-sub">${highestDay?.calories ? `${highestDay.calories.toLocaleString()} kcal` : "0 kcal"}</div>
+          </div>
+          <div class="bento-item" style="border-left-color:#81C784;">
+            <div class="bento-label">${translate("dailyAverage", language)}</div>
+            <div class="bento-value">${dailyAverage.toLocaleString()} kcal</div>
+            <div class="bento-sub">${translate("targetLabel", language)}: ${targetCalories.toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>${translate("macroDistribution", language)}</h2>
+          ${macroBarHtml(translate("protein", language), proteinPercent, totalProtein, "#2F80ED")}
+          ${macroBarHtml(translate("carbs", language), carbsPercent, totalCarbs, "#F2994A")}
+          ${macroBarHtml(translate("fat", language), fatPercent, totalFat, "#9B51E0")}
+        </div>
+
+        <div class="insight" style="border-left-color:${insightColor};">
+          <div class="insight-title" style="color:${insightColor};">${translate(period === "weekly" ? "weeklyHighlight" : "monthlyHighlight", language)}</div>
+          <div class="insight-text">${insightText}</div>
+        </div>
+
+        ${period === "monthly" ? `<div class="card">
+          <h2>${translate("thisMonthVsLast", language)}</h2>
+          <div class="comparison">
+            <div class="comparison-label">${translate("thisMonthLabel", language)}</div>
+            <div class="comparison-bar">
+              <div class="comparison-fill" style="background:#4CAF50;width:${maxChartValue > 0 ? Math.min((dailyAverage / maxChartValue) * 100, 100) : 0}%;"></div>
+            </div>
+            <div class="comparison-value">${dailyAverage.toLocaleString()} ${translate("kcalPerDayAvg", language)}</div>
+          </div>
+          <div class="comparison">
+            <div class="comparison-label">${translate("lastMonthLabel", language)}</div>
+            <div class="comparison-bar">
+              <div class="comparison-fill" style="background:#999;width:${maxChartValue > 0 ? Math.min((previousMonthAverage / maxChartValue) * 100, 100) : 0}%;"></div>
+            </div>
+            <div class="comparison-value">${previousMonthAverage.toLocaleString()} ${translate("kcalPerDayAvg", language)}</div>
+          </div>
+        </div>` : ""}
+
+        <div class="footer">
+          NutriTrack — ${language === "tr" ? "Beslenme Takip Uygulaması" : "Nutrition Tracking App"}
+        </div>
+      </body>
+      </html>`;
+
+    try {
+      await Print.printAsync({ html });
+    } catch (error) {
+      console.error("PDF EXPORT ERROR:", error);
+      Alert.alert(
+        language === "tr" ? "Hata" : "Error",
+        language === "tr"
+          ? `PDF oluşturulurken hata: ${error instanceof Error ? error.message : String(error)}`
+          : `PDF error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  };
 
   return (
     <Screen>
       <ScrollView
-        style={[
-          styles.container,
-          {
-            backgroundColor: theme.colors.background,
-          },
-        ]}
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerArea}>
-          <View
-            style={[
-              styles.logoBox,
-              {
-                backgroundColor: theme.colors.primarySoft,
-              },
-            ]}
-          >
-            <Ionicons
-              name="bar-chart-outline"
-              size={30}
-              color={theme.colors.primary}
-            />
-          </View>
-
-          <Text style={[styles.title, { color: theme.colors.text }]}> 
-            {translate("stats", language)}
-          </Text>
-
-          <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
-            {translate("statsSubtitle", language)}
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: theme.colors.primary }]}>
+            {language === "tr" ? "İstatistikler" : "Statistics"}
           </Text>
         </View>
 
-        <View style={styles.periodSelector}>
+        <View style={[styles.segmentedControl, { backgroundColor: theme.colors.cardSoft }]}>
           {PERIODS.map((periodOption) => {
             const selected = periodOption === period;
 
@@ -137,22 +349,17 @@ export default function StatsScreen() {
                 key={periodOption}
                 onPress={() => setPeriod(periodOption)}
                 style={[
-                  styles.periodPill,
+                  styles.segment,
                   {
-                    backgroundColor: selected
-                      ? theme.colors.primary
-                      : theme.colors.card,
-                    borderColor: selected
-                      ? theme.colors.primary
-                      : theme.colors.border,
+                    backgroundColor: selected ? theme.colors.primary : "transparent",
                   },
                 ]}
               >
                 <Text
                   style={[
-                    styles.periodPillText,
+                    styles.segmentText,
                     {
-                      color: selected ? "#FFFFFF" : theme.colors.text,
+                      color: selected ? "#FFFFFF" : theme.colors.mutedText,
                     },
                   ]}
                 >
@@ -164,100 +371,32 @@ export default function StatsScreen() {
         </View>
 
         {hasPeriodMeals ? (
-          <>
-            <View style={styles.statGrid}>
-              <StatCard
-                icon="flame-outline"
-                label={translate("totalCalories", language)}
-                value={`${totalCalories} kcal`}
-              />
-
-              <StatCard
-                icon="analytics-outline"
-                label={translate("dailyAverage", language)}
-                value={`${dailyAverage} kcal`}
-              />
-
-              <StatCard
-                icon="trophy-outline"
-                label={translate("highestDay", language)}
-                value={
-                  highestDay?.calories
-                    ? `${highestDay.calories} kcal`
-                    : `0 kcal`
-                }
-              />
-
-              <StatCard
-                icon="restaurant-outline"
-                label={translate("totalMeals", language)}
-                value={`${filteredMeals.length}`}
-              />
-            </View>
-
-            <View
-              style={[
-                styles.chartCard,
-                {
-                  backgroundColor: theme.colors.card,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              <View style={styles.cardHeader}>
-                <View>
+          <Animated.View key={period} entering={period === "monthly" ? FadeInRight.duration(300) : FadeInLeft.duration(300)}>
+            <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+              <Text style={[styles.cardEyebrow, { color: theme.colors.mutedText }]}>
+                {translate("averageIntake", language)}
+              </Text>
+              <View style={styles.averageRow}>
+                <Text style={[styles.averageValue, { color: theme.colors.primary }]}>
+                  {dailyAverage.toLocaleString()} kcal
+                </Text>
+                {weeklyChangePercent !== 0 && (
                   <Text
                     style={[
-                      styles.cardEyebrow,
+                      styles.changePercent,
                       {
-                        color: theme.colors.mutedText,
+                        color: weeklyChangePercent > 0 ? "#22C55E" : theme.colors.danger,
                       },
                     ]}
                   >
-                    {translate(period, language)}
+                    {weeklyChangePercent > 0 ? "+" : ""}
+                    {weeklyChangePercent}% {translate(period === "weekly" ? "vsLastWeek" : "vsLastMonth", language)}
                   </Text>
-
-                  <Text
-                    style={[
-                      styles.cardTitle,
-                      {
-                        color: theme.colors.text,
-                      },
-                    ]}
-                  >
-                    {translate("calorieHistory", language)}
-                  </Text>
-                </View>
-
-                <View
-                  style={[
-                    styles.targetBadge,
-                    {
-                      backgroundColor: theme.colors.primarySoft,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="flag-outline"
-                    size={16}
-                    color={theme.colors.primary}
-                  />
-
-                  <Text
-                    style={[
-                      styles.targetBadgeText,
-                      {
-                        color: theme.colors.primary,
-                      },
-                    ]}
-                  >
-                    {targetCalories} kcal
-                  </Text>
-                </View>
+                )}
               </View>
 
               <View style={styles.chartArea}>
-                {chartData.map((day) => (
+                {periodData.map((day) => (
                   <DayBar
                     key={day.dateKey}
                     label={day.label}
@@ -268,171 +407,172 @@ export default function StatsScreen() {
               </View>
             </View>
 
-            <View
-              style={[
-                styles.macroCard,
-                {
-                  backgroundColor: theme.colors.card,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              <Text style={[styles.cardTitle, { color: theme.colors.text }]}> 
-                {translate("macroTotals", language)}
+            <View style={styles.bentoGrid}>
+              <View
+                style={[
+                  styles.bentoCard,
+                  { backgroundColor: theme.colors.card, borderLeftColor: theme.colors.primary },
+                ]}
+              >
+                <Text style={[styles.bentoLabel, { color: theme.colors.mutedText }]}>
+                  {translate("highestDay", language)}
+                </Text>
+                <Text style={[styles.bentoValue, { color: theme.colors.primary }]}>
+                  {highestDay?.label ?? "-"}
+                </Text>
+                <Text style={[styles.bentoSub, { color: theme.colors.mutedText }]}>
+                  {highestDay?.calories ? `${highestDay.calories.toLocaleString()} kcal` : "0 kcal"}
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.bentoCard,
+                  { backgroundColor: theme.colors.card, borderLeftColor: theme.colors.primarySoft },
+                ]}
+              >
+                <Text style={[styles.bentoLabel, { color: theme.colors.mutedText }]}>
+                  {translate("dailyAverage", language)}
+                </Text>
+                <Text style={[styles.bentoValue, { color: theme.colors.text }]}>
+                  {dailyAverage.toLocaleString()} kcal
+                </Text>
+                <Text style={[styles.bentoSub, { color: theme.colors.mutedText }]}>
+                  {translate("targetLabel", language)}: {targetCalories.toLocaleString()}
+                </Text>
+              </View>
+            </View>
+
+            <View style={[styles.card, styles.macroCard, { backgroundColor: theme.colors.card }]}>
+              <Text style={[styles.cardTitle, { color: theme.colors.primary }]}>
+                {translate("macroDistribution", language)}
               </Text>
 
               <View style={styles.macroList}>
-                <MacroLine
+                <MacroBar
                   label={translate("protein", language)}
-                  value={totalProtein}
-                  color={theme.colors.protein}
+                  percent={proteinPercent}
+                  grams={totalProtein}
+                  color="#2F80ED"
                 />
-
-                <MacroLine
+                <MacroBar
                   label={translate("carbs", language)}
-                  value={totalCarbs}
-                  color={theme.colors.carbs}
+                  percent={carbsPercent}
+                  grams={totalCarbs}
+                  color="#F2994A"
                 />
-
-                <MacroLine
+                <MacroBar
                   label={translate("fat", language)}
-                  value={totalFat}
-                  color={theme.colors.fat}
+                  percent={fatPercent}
+                  grams={totalFat}
+                  color="#9B51E0"
                 />
               </View>
             </View>
 
-            <View
-              style={[
-                styles.goalCard,
-                {
-                  backgroundColor: theme.colors.card,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              <View style={styles.goalHeader}>
-                <Text style={[styles.cardTitle, { color: theme.colors.text }]}> 
-                  {translate("goalProgress", language)}
-                </Text>
-
-                <Text style={[styles.goalPercent, { color: theme.colors.primary }]}> 
-                  {goal ? `${Math.round(goalProgress)}%` : "-"}
+            <View style={[styles.card, { backgroundColor: theme.colors.card, borderLeftWidth: 4, borderLeftColor: insightColor }]}>
+              <View style={styles.insightHeader}>
+                <Ionicons name={insightIcon} size={22} color={insightColor} />
+                <Text style={[styles.cardEyebrow, { color: insightColor, marginLeft: 8 }]}>
+                  {translate(period === "weekly" ? "weeklyHighlight" : "monthlyHighlight", language)}
                 </Text>
               </View>
+              <Text style={[styles.insightText, { color: theme.colors.text }]}>
+                {insightText}
+              </Text>
+            </View>
 
-              {goal ? (
-                <>
+            <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+              <Text style={[styles.cardTitle, { color: theme.colors.primary }]}>
+                {translate(period === "weekly" ? "thisWeekVsLast" : "thisMonthVsLast", language)}
+              </Text>
+
+              <View style={styles.comparisonRow}>
+                <Text style={[styles.comparisonLabel, { color: theme.colors.mutedText }]}>
+                  {translate(period === "weekly" ? "thisWeekLabel" : "thisMonthLabel", language)}
+                </Text>
+                <View style={[styles.comparisonBarTrack, { backgroundColor: theme.colors.cardSoft }]}>
                   <View
                     style={[
-                      styles.goalTrack,
-                      { backgroundColor: theme.colors.cardSoft },
+                      styles.comparisonBarFill,
+                      {
+                        width: `${maxChartValue > 0 ? Math.min((dailyAverage / maxChartValue) * 100, 100) : 0}%`,
+                        backgroundColor: theme.colors.primary,
+                      },
                     ]}
-                  >
-                    <View
-                      style={[
-                        styles.goalFill,
-                        {
-                          width: `${Math.min(goalProgress, 100)}%`,
-                          backgroundColor: theme.colors.primary,
-                        },
-                      ]}
-                    />
-                  </View>
-
-                  <Text
-                    style={[styles.goalText, { color: theme.colors.mutedText }]}
-                  >
-                    {translate("ofDailyTargetAverage", language)}
-                  </Text>
-                </>
-              ) : (
-                <Text style={[styles.goalText, { color: theme.colors.mutedText }]}> 
-                  {translate("setGoalForBetterStats", language)}
+                  />
+                </View>
+                <Text style={[styles.comparisonValue, { color: theme.colors.text }]}>
+                  {dailyAverage.toLocaleString()} {translate("kcalPerDayAvg", language)}
                 </Text>
-              )}
+              </View>
+
+              <View style={styles.comparisonRow}>
+                <Text style={[styles.comparisonLabel, { color: theme.colors.mutedText }]}>
+                  {translate(period === "weekly" ? "lastWeekLabel" : "lastMonthLabel", language)}
+                </Text>
+                <View style={[styles.comparisonBarTrack, { backgroundColor: theme.colors.cardSoft }]}>
+                  <View
+                    style={[
+                      styles.comparisonBarFill,
+                      {
+                        width: `${maxChartValue > 0 ? Math.min((comparisonAverage / maxChartValue) * 100, 100) : 0}%`,
+                        backgroundColor: theme.colors.mutedText,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={[styles.comparisonValue, { color: theme.colors.text }]}>
+                  {comparisonAverage.toLocaleString()} {translate("kcalPerDayAvg", language)}
+                </Text>
+              </View>
             </View>
-          </>
+
+            <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+              <View style={styles.exportHeader}>
+                <Ionicons name="document-text-outline" size={22} color={theme.colors.primary} />
+                <Text style={[styles.cardTitle, { color: theme.colors.primary, marginBottom: 0, marginLeft: 8 }]}>
+                  {language === "tr" ? "Rapor" : "Report"}
+                </Text>
+              </View>
+              <Text style={[styles.exportDescription, { color: theme.colors.mutedText }]}>
+                {translate(period === "weekly" ? "downloadWeeklyPdf" : "downloadMonthlyPdf", language)}
+              </Text>
+              <Pressable
+                style={[styles.exportButton, { backgroundColor: theme.colors.primary }]}
+                onPress={handleExportPdf}
+              >
+                <Ionicons name="download-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.exportButtonText}>PDF</Text>
+              </Pressable>
+            </View>
+          </Animated.View>
         ) : (
-          <View
-            style={[
-              styles.emptyCard,
-              {
-                backgroundColor: theme.colors.card,
-                borderColor: theme.colors.border,
-              },
-            ]}
-          >
+          <Animated.View entering={FadeIn.duration(300)}>
             <View
               style={[
-                styles.emptyIconBox,
-                {
-                  backgroundColor: theme.colors.primarySoft,
-                },
+                styles.emptyCard,
+                { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
               ]}
             >
-              <Ionicons
-                name="analytics-outline"
-                size={30}
-                color={theme.colors.primary}
-              />
+              <View
+                style={[styles.emptyIconBox, { backgroundColor: theme.colors.primarySoft }]}
+              >
+                <Ionicons name="analytics-outline" size={30} color={theme.colors.primary} />
+              </View>
+
+              <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+                {translate("noRecordsForPeriod", language)}
+              </Text>
+
+              <Text style={[styles.emptySubtitle, { color: theme.colors.mutedText }]}>
+                {translate("addMealsToBuildStats", language)}
+              </Text>
             </View>
-
-            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}> 
-              {translate("noRecordsForPeriod", language)}
-            </Text>
-
-            <Text
-              style={[styles.emptySubtitle, { color: theme.colors.mutedText }]}
-            >
-              {translate("addMealsToBuildStats", language)}
-            </Text>
-          </View>
+          </Animated.View>
         )}
       </ScrollView>
     </Screen>
-  );
-}
-
-type StatCardProps = {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-};
-
-function StatCard({ icon, label, value }: StatCardProps) {
-  const themeMode = useAppStore((state) => state.themeMode);
-  const theme = getTheme(themeMode);
-
-  return (
-    <View
-      style={[
-        styles.statCard,
-        {
-          backgroundColor: theme.colors.card,
-          borderColor: theme.colors.border,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.statIconBox,
-          {
-            backgroundColor: theme.colors.primarySoft,
-          },
-        ]}
-      >
-        <Ionicons name={icon} size={19} color={theme.colors.primary} />
-      </View>
-
-      <Text style={[styles.statValue, { color: theme.colors.text }]}>
-        {value}
-      </Text>
-
-      <Text style={[styles.statLabel, { color: theme.colors.mutedText }]}>
-        {label}
-      </Text>
-    </View>
   );
 }
 
@@ -445,6 +585,7 @@ type DayBarProps = {
 function DayBar({ label, calories, maxValue }: DayBarProps) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
+  const [showValue, setShowValue] = useState(false);
 
   const heightPercent = Math.max(
     (calories / maxValue) * 100,
@@ -452,8 +593,21 @@ function DayBar({ label, calories, maxValue }: DayBarProps) {
   );
 
   return (
-    <View style={styles.dayBarItem}>
-      <View style={styles.barWrapper}>
+    <Pressable
+      delayLongPress={250}
+      onLongPress={() => setShowValue(true)}
+      onPressOut={() => setShowValue(false)}
+      style={styles.dayBarItem}
+      accessibilityLabel={`${label}, ${calories.toLocaleString()} kcal`}
+    >
+      {showValue && (
+        <View style={[styles.barTooltip, { backgroundColor: theme.colors.text }]}>
+          <Text style={[styles.barTooltipText, { color: theme.colors.background }]}>
+            {calories.toLocaleString()} kcal
+          </Text>
+        </View>
+      )}
+      <View style={[styles.barWrapper, { backgroundColor: theme.colors.cardSoft }]}>
         <View
           style={[
             styles.barFill,
@@ -465,60 +619,38 @@ function DayBar({ label, calories, maxValue }: DayBarProps) {
           ]}
         />
       </View>
-
-      <Text style={[styles.barValue, { color: theme.colors.mutedText }]}>
-        {calories > 0 ? calories : "-"}
-      </Text>
-
-      <Text style={[styles.barLabel, { color: theme.colors.text }]}>
+      <Text style={[styles.barLabel, { color: theme.colors.mutedText }]}>
         {label}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
-type MacroLineProps = {
+type MacroBarProps = {
   label: string;
-  value: number;
+  percent: number;
+  grams: number;
   color: string;
 };
 
-function MacroLine({ label, value, color }: MacroLineProps) {
+function MacroBar({ label, percent, grams, color }: MacroBarProps) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
 
-  const maxValue = Math.max(value, 1);
-  const percent = Math.min((value / maxValue) * 100, 100);
-
   return (
-    <View>
-      <View style={styles.macroHeader}>
-        <View style={styles.macroLabelRow}>
-          <View style={[styles.macroDot, { backgroundColor: color }]} />
-
-          <Text style={[styles.macroLabel, { color: theme.colors.text }]}>
-            {label}
-          </Text>
-        </View>
-
-        <Text style={[styles.macroValue, { color: theme.colors.mutedText }]}>
-          {value}g
+    <View style={styles.macroRow}>
+      <View style={styles.macroInfo}>
+        <Text style={[styles.macroLabel, { color: theme.colors.text }]}>{label}</Text>
+        <Text style={[styles.macroValue, { color: theme.colors.primary }]}>
+          {percent}% ({grams}g)
         </Text>
       </View>
-
-      <View
-        style={[
-          styles.macroTrack,
-          {
-            backgroundColor: theme.colors.cardSoft,
-          },
-        ]}
-      >
+      <View style={[styles.macroTrack, { backgroundColor: theme.colors.cardSoft }]}>
         <View
           style={[
             styles.macroFill,
             {
-              width: `${percent}%`,
+              width: `${Math.min(percent, 100)}%`,
               backgroundColor: color,
             },
           ]}
@@ -558,10 +690,6 @@ function getPeriodDays(period: StatsPeriod, language: "tr" | "en") {
     startDate.setDate(1);
   }
 
-  if (period === "yearly") {
-    startDate.setMonth(0, 1);
-  }
-
   for (
     const date = new Date(startDate);
     date <= today;
@@ -588,49 +716,7 @@ function getDayLabel(date: Date, period: StatsPeriod, language: "tr" | "en") {
     });
   }
 
-  if (period === "monthly") {
-    return String(date.getDate());
-  }
-
-  return date.toLocaleDateString(locale, {
-    month: "short",
-  });
-}
-
-function getYearlyChartData(days: DayStats[], language: "tr" | "en") {
-  const locale = language === "tr" ? "tr-TR" : "en-US";
-  const months = new Map<string, DayStats>();
-
-  days.forEach((day) => {
-    const date = new Date(`${day.dateKey}T00:00:00`);
-    const monthKey = day.dateKey.slice(0, 7);
-    const existingMonth = months.get(monthKey);
-
-    if (!existingMonth) {
-      months.set(monthKey, {
-        dateKey: monthKey,
-        label: date.toLocaleDateString(locale, {
-          month: "short",
-        }),
-        calories: day.calories,
-        protein: day.protein,
-        carbs: day.carbs,
-        fat: day.fat,
-      });
-
-      return;
-    }
-
-    months.set(monthKey, {
-      ...existingMonth,
-      calories: existingMonth.calories + day.calories,
-      protein: existingMonth.protein + day.protein,
-      carbs: existingMonth.carbs + day.carbs,
-      fat: existingMonth.fat + day.fat,
-    });
-  });
-
-  return Array.from(months.values());
+  return String(date.getDate());
 }
 
 const styles = StyleSheet.create({
@@ -642,181 +728,166 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 120,
   },
-  headerArea: {
+  header: {
     marginTop: 8,
-    marginBottom: 24,
-    alignItems: "center",
-  },
-  logoBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 23,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 18,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "900",
-    letterSpacing: -0.8,
-    textAlign: "center",
-  },
-  subtitle: {
-    marginTop: 10,
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: "600",
-    textAlign: "center",
-    maxWidth: 315,
-  },
-  periodSelector: {
-    flexDirection: "row",
-    gap: 10,
     marginBottom: 16,
-  },
-  periodPill: {
-    flex: 1,
-    minHeight: 42,
-    borderWidth: 1,
-    borderRadius: 999,
     alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 12,
   },
-  periodPillText: {
-    fontSize: 12,
-    fontWeight: "900",
-    textTransform: "capitalize",
-  },
-  statGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 16,
-  },
-  statCard: {
-    width: "48%",
-    borderWidth: 1,
-    borderRadius: 22,
-    padding: 12,
-    minHeight: 112,
-  },
-  statIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 13,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  statLabel: {
-    marginTop: 4,
-    fontSize: 10,
-    lineHeight: 14,
+  headerTitle: {
+    fontSize: 24,
     fontWeight: "700",
+    letterSpacing: -0.5,
   },
-  chartCard: {
-    borderWidth: 1,
-    borderRadius: 24,
-    padding: 18,
-  },
-  cardHeader: {
+  segmentedControl: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 18,
+    padding: 4,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  card: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  macroCard: {
+    borderRadius: 20,
   },
   cardEyebrow: {
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "600",
+    letterSpacing: 0.05,
     marginBottom: 4,
   },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: "900",
-  },
-  targetBadge: {
-    minHeight: 34,
-    borderRadius: 999,
-    paddingHorizontal: 10,
+  averageRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    marginBottom: 16,
   },
-  targetBadgeText: {
+  averageValue: {
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  changePercent: {
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: "600",
   },
   chartArea: {
-    height: 230,
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    gap: 8,
+    height: 120,
+    gap: 6,
   },
   dayBarItem: {
     flex: 1,
     alignItems: "center",
+    position: "relative",
+  },
+  barTooltip: {
+    position: "absolute",
+    top: -30,
+    zIndex: 10,
+    minWidth: 68,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  barTooltipText: {
+    fontSize: 10,
+    fontWeight: "700",
   },
   barWrapper: {
-    height: 145,
+    height: 100,
     width: "100%",
-    borderRadius: 999,
+    borderRadius: 8,
     overflow: "hidden",
     justifyContent: "flex-end",
   },
   barFill: {
     width: "100%",
-    borderRadius: 999,
-  },
-  barValue: {
-    marginTop: 8,
-    fontSize: 10,
-    fontWeight: "800",
+    borderRadius: 8,
   },
   barLabel: {
-    marginTop: 5,
-    fontSize: 11,
-    fontWeight: "900",
-    textTransform: "capitalize",
+    marginTop: 8,
+    fontSize: 10,
+    fontWeight: "600",
   },
-  macroCard: {
-    marginTop: 16,
-    borderWidth: 1,
-    borderRadius: 24,
-    padding: 18,
+  bentoGrid: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+  },
+  bentoCard: {
+    flexBasis: "48%",
+    flexShrink: 0,
+    flexGrow: 0,
+    borderRadius: 16,
+    padding: 16,
+    borderLeftWidth: 4,
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  bentoLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.05,
+    marginBottom: 4,
+  },
+  bentoValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  bentoSub: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 16,
   },
   macroList: {
-    marginTop: 18,
-    gap: 16,
+    gap: 14,
   },
-  macroHeader: {
-    marginBottom: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  macroLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  macroRow: {
     gap: 8,
   },
-  macroDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 999,
+  macroInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   macroLabel: {
     fontSize: 13,
-    fontWeight: "900",
+    fontWeight: "600",
   },
   macroValue: {
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   macroTrack: {
     height: 8,
@@ -827,36 +898,59 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 999,
   },
-  goalCard: {
-    marginTop: 16,
-    borderWidth: 1,
-    borderRadius: 24,
-    padding: 18,
-  },
-  goalHeader: {
+  insightHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  goalPercent: {
-    fontSize: 20,
-    fontWeight: "900",
+  insightText: {
+    fontSize: 14,
+    fontWeight: "500",
+    lineHeight: 22,
   },
-  goalTrack: {
+  comparisonRow: {
+    marginBottom: 12,
+  },
+  comparisonLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  comparisonBarTrack: {
     height: 10,
     borderRadius: 999,
     overflow: "hidden",
+    marginBottom: 4,
   },
-  goalFill: {
+  comparisonBarFill: {
     height: "100%",
     borderRadius: 999,
   },
-  goalText: {
-    marginTop: 10,
+  comparisonValue: {
     fontSize: 12,
-    lineHeight: 18,
+    fontWeight: "600",
+  },
+  exportHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  exportDescription: {
+    fontSize: 13,
+    fontWeight: "500",
+    marginBottom: 14,
+  },
+  exportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  exportButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
     fontWeight: "700",
   },
   emptyCard: {
