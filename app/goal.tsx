@@ -504,14 +504,6 @@ export default function GoalScreen() {
               </View>
             </View>
           ) : null}
-
-          <Button
-            variant="secondary"
-            onPress={() => router.replace("/(tabs)/home" as Href)}
-            style={styles.homeButton}
-          >
-            {translate("home", language)}
-          </Button>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -677,9 +669,6 @@ const styles = StyleSheet.create({
   },
   calculateButton: {
     marginTop: 4,
-  },
-  homeButton: {
-    marginTop: 18,
   },
   resultCard: {
     marginTop: 18,
