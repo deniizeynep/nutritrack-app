@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeInRight, FadeInLeft } from "react-native-reanimated";
-import { LayoutAnimation, Platform, UIManager, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { LayoutAnimation, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMemo, useRef, useState } from "react";
 import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
@@ -8,10 +8,6 @@ import { useAppStore } from "../../src/stores/appStore";
 import { useGoalStore } from "../../src/stores/goalStore";
 import { useMealStore, type Meal } from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
-
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 type StatsPeriod = "weekly" | "monthly";
 
