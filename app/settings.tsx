@@ -1,5 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  Alert,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { router } from "expo-router";
 import { ProfilePage } from "../src/components/ProfilePage";
 import { translate } from "../src/i18n/translations";
@@ -10,6 +19,7 @@ import { useMealStore } from "../src/stores/mealStore";
 import { getTheme } from "../src/theme/theme";
 
 export default function SettingsScreen() {
+  const [selection, setSelection] = useState<"language" | "unit" | null>(null);
   const themeMode = useAppStore((state) => state.themeMode);
   const language = useAppStore((state) => state.language);
   const unitSystem = useAppStore((state) => state.unitSystem);
@@ -90,37 +100,13 @@ export default function SettingsScreen() {
             language === "tr" ? "turkishLocale" : "englishLocale",
             language,
           )}
-          onPress={() =>
-            Alert.alert(translate("appLanguage", language), "", [
-              {
-                text: translate("turkishLocale", language),
-                onPress: () => setLanguage("tr"),
-              },
-              {
-                text: translate("englishLocale", language),
-                onPress: () => setLanguage("en"),
-              },
-              { text: translate("cancel", language), style: "cancel" },
-            ])
-          }
+          onPress={() => setSelection("language")}
         />
         <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
         <SettingsRow
           label={translate("unitSystem", language)}
           value={translate(unitSystem === "metric" ? "metricUnits" : "imperialUnits", language)}
-          onPress={() =>
-            Alert.alert(translate("unitSystem", language), "", [
-              {
-                text: translate("metricUnits", language),
-                onPress: () => setUnitSystem("metric"),
-              },
-              {
-                text: translate("imperialUnits", language),
-                onPress: () => setUnitSystem("imperial"),
-              },
-              { text: translate("cancel", language), style: "cancel" },
-            ])
-          }
+          onPress={() => setSelection("unit")}
         />
       </View>
 
@@ -214,6 +200,32 @@ export default function SettingsScreen() {
           onEnabledChange={setWaterTrackingEnabled}
         />
       </View>
+      <SelectionModal
+        visible={selection !== null}
+        title={translate(selection === "language" ? "appLanguage" : "unitSystem", language)}
+        language={language}
+        selectedValue={selection === "language" ? language : unitSystem}
+        options={
+          selection === "language"
+            ? [
+                { value: "tr", label: translate("turkishLocale", language) },
+                { value: "en", label: translate("englishLocale", language) },
+              ]
+            : [
+                { value: "metric", label: translate("metricUnits", language) },
+                { value: "imperial", label: translate("imperialUnits", language) },
+              ]
+        }
+        onSelect={(value) => {
+          if (selection === "language") {
+            setLanguage(value as "tr" | "en");
+          } else {
+            setUnitSystem(value as "metric" | "imperial");
+          }
+          setSelection(null);
+        }}
+        onClose={() => setSelection(null)}
+      />
     </ProfilePage>
   );
 }
@@ -277,6 +289,69 @@ function NotificationRow({
   );
 }
 
+function SelectionModal({
+  visible,
+  title,
+  language,
+  selectedValue,
+  options,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  title: string;
+  language: "tr" | "en";
+  selectedValue: string;
+  options: { value: string; label: string }[];
+  onSelect: (value: string) => void;
+  onClose: () => void;
+}) {
+  const themeMode = useAppStore((state) => state.themeMode);
+  const theme = getTheme(themeMode);
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.modalBackdrop} onPress={onClose}>
+        <Pressable
+          style={[styles.modalCard, { backgroundColor: theme.colors.card }]}
+          onPress={(event) => event.stopPropagation()}
+        >
+          <Text style={[styles.modalTitle, { color: theme.colors.text }]}>{title}</Text>
+          <Text style={[styles.modalSubtitle, { color: theme.colors.mutedText }]}>
+            {translate("chooseOption", language)}
+          </Text>
+          <View style={[styles.modalOptions, { borderColor: theme.colors.border }]}>
+            {options.map((option, index) => (
+              <Pressable
+                key={option.value}
+                onPress={() => onSelect(option.value)}
+                style={[
+                  styles.modalOption,
+                  index > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.border },
+                ]}
+              >
+                <Text style={[styles.modalOptionText, { color: theme.colors.text }]}>
+                  {option.label}
+                </Text>
+                <Ionicons
+                  name={selectedValue === option.value ? "checkmark-circle" : "ellipse-outline"}
+                  size={22}
+                  color={selectedValue === option.value ? theme.colors.primary : theme.colors.mutedText}
+                />
+              </Pressable>
+            ))}
+          </View>
+          <Pressable onPress={onClose} style={styles.modalCancel}>
+            <Text style={[styles.modalCancelText, { color: theme.colors.primary }]}>
+              {translate("cancel", language)}
+            </Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: "row",
@@ -316,4 +391,27 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 13, fontWeight: "600" },
   rowValue: { marginTop: 3, fontSize: 11, fontWeight: "500" },
   divider: { height: StyleSheet.hairlineWidth },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.38)",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    borderRadius: 22,
+    padding: 18,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "900" },
+  modalSubtitle: { marginTop: 5, fontSize: 12, fontWeight: "600" },
+  modalOptions: { marginTop: 16, borderWidth: 1, borderRadius: 14, overflow: "hidden" },
+  modalOption: {
+    minHeight: 54,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  modalOptionText: { fontSize: 14, fontWeight: "700" },
+  modalCancel: { alignItems: "center", paddingTop: 16 },
+  modalCancelText: { fontSize: 13, fontWeight: "800" },
 });

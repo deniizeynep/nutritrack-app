@@ -246,6 +246,11 @@ export const translations = {
     en: "Imperial (lb, kcal)",
   },
 
+  chooseOption: {
+    tr: "Bir seçenek belirle",
+    en: "Choose an option",
+  },
+
   darkMode: {
     tr: "Karanlık Mod",
     en: "Dark Mode",
