@@ -1391,9 +1391,44 @@ export const translations = {
     en: "Swipe between days",
   },
 
+  member: {
+    tr: "Üye",
+    en: "Member",
+  },
+
+  day: {
+    tr: "gün",
+    en: "day",
+  },
+
   ok: {
     tr: "Tamam",
     en: "OK",
+  },
+
+  averageIntake: {
+    tr: "Ortalama Alım",
+    en: "Average Intake",
+  },
+
+  vsLastWeek: {
+    tr: "vs geçen hafta",
+    en: "vs last week",
+  },
+
+  targetLabel: {
+    tr: "Hedef",
+    en: "Target",
+  },
+
+  macroDistribution: {
+    tr: "Makro Dağılımı",
+    en: "Macro Distribution",
+  },
+
+  goalProximity: {
+    tr: "Hedeflerinize %15 daha yakınsınız.",
+    en: "You are 15% closer to your goals.",
   },
 } as const;
 
