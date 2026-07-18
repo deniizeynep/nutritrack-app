@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Alert,
   Pressable,
@@ -16,73 +16,81 @@ import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
 import { useAuthStore } from "../../src/stores/authStore";
 import { useGoalStore } from "../../src/stores/goalStore";
-import { useMealStore, type MealCategory } from "../../src/stores/mealStore";
+import {
+  useMealStore,
+  type Meal,
+  type MealCategory,
+} from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
 import { calculateMacroTargets } from "../../src/utils/calorieCalculator";
 
+function getTodayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+type DayStats = {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+function computeDayStats(dayMeals: Meal[]): DayStats {
+  return {
+    calories: dayMeals.reduce((t, m) => t + m.calories, 0),
+    protein: dayMeals.reduce((t, m) => t + m.protein, 0),
+    carbs: dayMeals.reduce((t, m) => t + m.carbs, 0),
+    fat: dayMeals.reduce((t, m) => t + m.fat, 0),
+  };
+}
+
 export default function HomeScreen() {
-  const themeMode = useAppStore((state) => state.themeMode);
-  const language = useAppStore((state) => state.language);
-  const toggleTheme = useAppStore((state) => state.toggleTheme);
-  const setLanguage = useAppStore((state) => state.setLanguage);
+  const themeMode = useAppStore((s) => s.themeMode);
+  const language = useAppStore((s) => s.language);
 
   const theme = getTheme(themeMode);
-  const token = useAuthStore((state) => state.token);
-  const goal = useGoalStore((state) => state.goal);
-  const fetchGoal = useGoalStore((state) => state.fetchGoal);
-  const meals = useMealStore((state) => state.meals);
-  const fetchMeals = useMealStore((state) => state.fetchMeals);
-  const deleteMeal = useMealStore((state) => state.deleteMeal);
+  const token = useAuthStore((s) => s.token);
+  const goal = useGoalStore((s) => s.goal);
+  const fetchGoal = useGoalStore((s) => s.fetchGoal);
+  const meals = useMealStore((s) => s.meals);
+  const fetchMeals = useMealStore((s) => s.fetchMeals);
+  const deleteMeal = useMealStore((s) => s.deleteMeal);
 
   useEffect(() => {
     fetchMeals(token);
     fetchGoal(token);
   }, [fetchGoal, fetchMeals, token]);
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = useMemo(() => getTodayKey(), []);
 
-  const todaysMeals = meals.filter((meal) => {
-    const mealDate = meal.loggedAt ?? meal.createdAt;
-    return mealDate.slice(0, 10) === todayKey;
-  });
+  const todayMeals = useMemo(
+    () =>
+      meals.filter((meal) => {
+        const d = meal.loggedAt ?? meal.createdAt;
+        return d.slice(0, 10) === todayKey;
+      }),
+    [meals, todayKey],
+  );
 
-  const consumedCalories = todaysMeals.reduce(
-    (total, meal) => total + meal.calories,
-    0,
-  );
-  const consumedProtein = todaysMeals.reduce(
-    (total, meal) => total + meal.protein,
-    0,
-  );
-  const consumedCarbs = todaysMeals.reduce(
-    (total, meal) => total + meal.carbs,
-    0,
-  );
-  const consumedFat = todaysMeals.reduce((total, meal) => total + meal.fat, 0);
+  const stats = useMemo(() => computeDayStats(todayMeals), [todayMeals]);
 
   const targetCalories = goal?.targetCalories ?? 2000;
-  const fallbackMacroTargets = calculateMacroTargets(
+  const fallbackMacros = calculateMacroTargets(
     goal?.targetCalories ?? 2000,
     goal?.goalType ?? "maintain",
   );
-  const targetProtein = goal?.targetProtein || fallbackMacroTargets.protein;
-  const targetCarbs = goal?.targetCarbs || fallbackMacroTargets.carbs;
-  const targetFat = goal?.targetFat || fallbackMacroTargets.fat;
-  const remainingCalories = targetCalories - consumedCalories;
-  const progressPercent = Math.min(
-    (consumedCalories / targetCalories) * 100,
-    100,
-  );
+  const targetProtein = goal?.targetProtein || fallbackMacros.protein;
+  const targetCarbs = goal?.targetCarbs || fallbackMacros.carbs;
+  const targetFat = goal?.targetFat || fallbackMacros.fat;
+
+  const remaining = targetCalories - stats.calories;
 
   const confirmDeleteMeal = (mealId: string) => {
     Alert.alert(
       translate("confirmDeleteMeal", language),
       translate("confirmDeleteMealMessage", language),
       [
-        {
-          text: translate("cancel", language),
-          style: "cancel",
-        },
+        { text: translate("cancel", language), style: "cancel" },
         {
           text: translate("deleteMeal", language),
           style: "destructive",
@@ -94,337 +102,285 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <ScrollView
-        style={[
-          styles.container,
-          {
-            backgroundColor: theme.colors.background,
-          },
-        ]}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+      <View
+        style={[styles.outer, { backgroundColor: theme.colors.background }]}
       >
-        <View style={styles.header}>
-          <View style={styles.headerSpacer} />
-
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-            {translate("today", language)}
-          </Text>
-
-          <View style={styles.headerActions}>
-            <Pressable
-              onPress={() => setLanguage(language === "tr" ? "en" : "tr")}
-              style={[
-                styles.smallButton,
-                {
-                  backgroundColor: theme.colors.card,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              <Text
-                style={[styles.smallButtonText, { color: theme.colors.text }]}
-              >
-                {language === "tr" ? "EN" : "TR"}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={toggleTheme}
-              style={[
-                styles.smallButton,
-                {
-                  backgroundColor: theme.colors.card,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              <Text
-                style={[styles.smallButtonText, { color: theme.colors.text }]}
-              >
-                {themeMode === "dark" ? "☀️" : "🌙"}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <View
-          style={[
-            styles.summaryCard,
-            {
-              backgroundColor: theme.colors.card,
-              borderColor: theme.colors.border,
-            },
-          ]}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          <View style={styles.summaryHeader}>
-            <Text
-              style={[styles.sectionLabel, { color: theme.colors.mutedText }]}
-            >
-              {translate("dailySummary", language)}
+          {/* Header - scrolls with content */}
+          <View style={styles.header}>
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+              {translate("today", language)}
             </Text>
-
-            {goal ? (
-              <View
-                style={[
-                  styles.savedGoalBadge,
-                  {
-                    backgroundColor: theme.colors.primarySoft,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.savedGoalText,
-                    { color: theme.colors.primary },
-                  ]}
-                >
-                  {translate("savedGoal", language)}
-                </Text>
-              </View>
-            ) : null}
           </View>
 
-          <View style={styles.calorieCenter}>
-            <View
-              style={[
-                styles.calorieRing,
-                {
-                  borderColor: theme.colors.primarySoft,
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.calorieRingInner,
-                  {
-                    borderColor: theme.colors.primary,
-                  },
-                ]}
-              >
-                <Text
-                  style={[styles.calorieNumber, { color: theme.colors.text }]}
-                >
-                  {consumedCalories.toLocaleString("tr-TR")}
-                </Text>
-
-                <Text
-                  style={[
-                    styles.calorieTarget,
-                    { color: theme.colors.mutedText },
-                  ]}
-                >
-                  / {targetCalories.toLocaleString("tr-TR")} kcal
-                </Text>
-
-                <Text
-                  style={[styles.remaining, { color: theme.colors.primary }]}
-                >
-                  {translate("remaining", language)} {remainingCalories} kcal
-                </Text>
-              </View>
-            </View>
-          </View>
-
+          {/* Summary Card */}
           <View
             style={[
-              styles.mainProgressTrack,
+              styles.summaryCard,
               {
-                backgroundColor: theme.colors.cardSoft,
+                backgroundColor: theme.colors.card,
+                borderColor: theme.colors.border,
               },
             ]}
           >
-            <View
-              style={[
-                styles.mainProgressFill,
-                {
-                  width: `${progressPercent}%`,
-                  backgroundColor: theme.colors.primary,
-                },
-              ]}
-            />
+            {/* Calorie Ring */}
+            <View style={styles.heroSection}>
+            {(() => {
+              const RING_SIZE = 256;
+              const progress = Math.min(
+                Math.max(stats.calories / targetCalories, 0),
+                1,
+              );
+              const angle = progress * 360;
+              const rightRot = angle <= 180 ? angle - 180 : 0;
+              const leftRot = angle > 180 ? 360 - angle : 180;
+              const showLeft = angle > 180;
+
+              return (
+                <View
+                  style={{ width: RING_SIZE, height: RING_SIZE }}
+                >
+                  <View
+                    style={[
+                      styles.ringTrackBg,
+                      { backgroundColor: theme.colors.cardSoft },
+                    ]}
+                  />
+
+                  <View style={styles.ringClipRight}>
+                    <View
+                      style={[
+                        styles.ringHalfRight,
+                        {
+                          backgroundColor: theme.colors.primary,
+                          transform: [{ rotate: `${rightRot}deg` }],
+                        },
+                      ]}
+                    />
+                  </View>
+
+                  {showLeft ? (
+                    <View style={styles.ringClipLeft}>
+                      <View
+                        style={[
+                          styles.ringHalfLeft,
+                          {
+                            backgroundColor: theme.colors.primary,
+                            transform: [{ rotate: `${leftRot}deg` }],
+                          },
+                        ]}
+                      />
+                    </View>
+                  ) : null}
+
+                  <View
+                    style={[
+                      styles.ringInner,
+                      { backgroundColor: theme.colors.card },
+                    ]}
+                  />
+
+                  <View style={styles.ringCenter}>
+                    <Text
+                      style={[
+                        styles.calorieNumber,
+                        { color: theme.colors.text },
+                      ]}
+                    >
+                      {stats.calories.toLocaleString("tr-TR")}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.calorieTarget,
+                        { color: theme.colors.mutedText },
+                      ]}
+                    >
+                      / {targetCalories.toLocaleString("tr-TR")} kcal
+                    </Text>
+                    <Text
+                      style={[
+                        styles.remaining,
+                        { color: theme.colors.primary },
+                      ]}
+                    >
+                      {translate("remaining", language)} {remaining} kcal
+                    </Text>
+                  </View>
+                </View>
+              );
+            })()}
           </View>
 
-          <View style={styles.macroRow}>
+          {/* Nutrient Progress Bars */}
+          <View style={styles.nutrientSection}>
             <MacroProgress
               label={translate("protein", language)}
-              current={consumedProtein}
+              current={stats.protein}
               target={targetProtein}
               color={theme.colors.protein}
             />
-
             <MacroProgress
               label={translate("carbs", language)}
-              current={consumedCarbs}
+              current={stats.carbs}
               target={targetCarbs}
               color={theme.colors.carbs}
             />
-
             <MacroProgress
               label={translate("fat", language)}
-              current={consumedFat}
+              current={stats.fat}
               target={targetFat}
               color={theme.colors.fat}
             />
           </View>
-          <Pressable
-            onPress={() => router.push("/goal" as Href)}
-            style={[
-              styles.goalButton,
-              {
-                backgroundColor: theme.colors.primarySoft,
-              },
-            ]}
-          >
-            <Ionicons
-              name="flag-outline"
-              size={18}
-              color={theme.colors.primary}
-            />
 
-            <Text
-              style={[styles.goalButtonText, { color: theme.colors.primary }]}
-            >
-              {translate("goalSetup", language)}
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.quickActions}>
-          <Pressable
-            onPress={() => router.push("/add-meal" as Href)}
-            style={[
-              styles.actionCard,
-              {
-                backgroundColor: theme.colors.card,
-                borderColor: theme.colors.border,
-              },
-            ]}
-          >
-            <Ionicons
-              name="add-circle-outline"
-              size={28}
-              color={theme.colors.primary}
-            />
-            <Text style={[styles.actionText, { color: theme.colors.text }]}>
-              {translate("addMeal", language)}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => router.push("/scan-barcode" as Href)}
-            style={[
-              styles.actionCard,
-              {
-                backgroundColor: theme.colors.card,
-                borderColor: theme.colors.border,
-              },
-            ]}
-          >
-            <Ionicons
-              name="barcode-outline"
-              size={28}
-              color={theme.colors.primary}
-            />
-            <Text style={[styles.actionText, { color: theme.colors.text }]}>
-              {translate("scanBarcode", language)}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => router.push("/scan-photo" as Href)}
-            style={[
-              styles.actionCard,
-              {
-                backgroundColor: theme.colors.card,
-                borderColor: theme.colors.border,
-              },
-            ]}
-          >
-            <Ionicons
-              name="camera-outline"
-              size={28}
-              color={theme.colors.primary}
-            />
-            <Text style={[styles.actionText, { color: theme.colors.text }]}>
-              {translate("scanWithPhoto", language)}
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            {translate("meals", language)}
-          </Text>
-
-          <Text style={[styles.seeAll, { color: theme.colors.primary }]}>
-            Daha fazla
-          </Text>
-        </View>
-
-        <View style={styles.mealList}>
-          {todaysMeals.length > 0 ? (
-            todaysMeals.map((meal) => (
-              <MealCard
-                key={meal.id}
-                icon={getMealIcon(meal.category)}
-                title={meal.title}
-                items={
-                  meal.description ||
-                  getMealCategoryLabel(meal.category, language)
-                }
-                calories={meal.calories}
-                protein={meal.protein}
-                carbs={meal.carbs}
-                fat={meal.fat}
-                onPress={() =>
-                  router.push(`/meal-detail?mealId=${meal.id}` as Href)
-                }
-                onDelete={() => confirmDeleteMeal(meal.id)}
-              />
-            ))
-          ) : (
-            <View
+          {/* Quick Actions */}
+          <View style={styles.quickActions}>
+            <Pressable
+              onPress={() => router.push("/add-meal" as Href)}
               style={[
-                styles.emptyCard,
+                styles.actionButton,
+                styles.actionPrimary,
+                { backgroundColor: theme.colors.primarySoft },
+              ]}
+            >
+              <Ionicons
+                name="add"
+                size={24}
+                color={theme.colors.primary}
+              />
+              <Text
+                style={[
+                  styles.actionLabel,
+                  { color: theme.colors.primary },
+                ]}
+              >
+                {translate("addMeal", language)}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push("/scan-barcode" as Href)}
+              style={[
+                styles.actionButton,
+                styles.actionSecondary,
                 {
                   backgroundColor: theme.colors.card,
                   borderColor: theme.colors.border,
                 },
               ]}
             >
+              <Ionicons
+                name="barcode-outline"
+                size={24}
+                color={theme.colors.text}
+              />
+              <Text
+                style={[styles.actionLabel, { color: theme.colors.text }]}
+              >
+                {translate("scanBarcode", language)}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push("/scan-photo" as Href)}
+              style={[
+                styles.actionButton,
+                styles.actionSecondary,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name="camera-outline"
+                size={24}
+                color={theme.colors.text}
+              />
+              <Text
+                style={[styles.actionLabel, { color: theme.colors.text }]}
+              >
+                {translate("scanWithPhoto", language)}
+              </Text>
+            </Pressable>
+          </View>
+          </View>
+
+          {/* Meals Section */}
+          <View style={styles.mealsSection}>
+            <View style={styles.mealsHeader}>
+              <Text
+                style={[styles.mealsTitle, { color: theme.colors.text }]}
+              >
+                {translate("meals", language)}
+              </Text>
+            </View>
+
+            {todayMeals.length === 0 ? (
               <View
                 style={[
-                  styles.emptyIconBox,
+                  styles.emptyCard,
                   {
-                    backgroundColor: theme.colors.primarySoft,
+                    backgroundColor: theme.colors.card,
+                    borderColor: theme.colors.border,
                   },
                 ]}
               >
-                <Ionicons
-                  name="restaurant-outline"
-                  size={26}
-                  color={theme.colors.primary}
-                />
+                <View
+                  style={[
+                    styles.emptyIconBox,
+                    { backgroundColor: theme.colors.primarySoft },
+                  ]}
+                >
+                  <Ionicons
+                    name="restaurant-outline"
+                    size={26}
+                    color={theme.colors.primary}
+                  />
+                </View>
+                <Text
+                  style={[styles.emptyTitle, { color: theme.colors.text }]}
+                >
+                  {translate("noMealsYet", language)}
+                </Text>
+                <Text
+                  style={[
+                    styles.emptySubtitle,
+                    { color: theme.colors.mutedText },
+                  ]}
+                >
+                  {translate("noMealsSubtitle", language)}
+                </Text>
               </View>
-
-              <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
-                {translate("noMealsYet", language)}
-              </Text>
-
-              <Text
-                style={[
-                  styles.emptySubtitle,
-                  { color: theme.colors.mutedText },
-                ]}
-              >
-                {translate("noMealsSubtitle", language)}
-              </Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-
+            ) : (
+              <View style={styles.mealList}>
+                {todayMeals.map((meal) => (
+                  <MealCard
+                    key={meal.id}
+                    icon={getMealIcon(meal.category)}
+                    title={meal.title}
+                    items={
+                      meal.description ||
+                      getMealCategoryLabel(meal.category, language)
+                    }
+                    calories={meal.calories}
+                    protein={meal.protein}
+                    carbs={meal.carbs}
+                    fat={meal.fat}
+                    onPress={() =>
+                      router.push(`/meal-detail?mealId=${meal.id}` as Href)
+                    }
+                    onDelete={() => confirmDeleteMeal(meal.id)}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </View>
     </Screen>
   );
 }
@@ -444,192 +400,151 @@ function getMealIcon(category: MealCategory) {
   }
 }
 
-function getMealCategoryLabel(category: MealCategory, language: "tr" | "en") {
-  const labels = {
-    breakfast: {
-      tr: "Kahvaltı",
-      en: "Breakfast",
-    },
-    lunch: {
-      tr: "Öğle Yemeği",
-      en: "Lunch",
-    },
-    dinner: {
-      tr: "Akşam Yemeği",
-      en: "Dinner",
-    },
-    snack: {
-      tr: "Ara Öğün",
-      en: "Snack",
-    },
+function getMealCategoryLabel(
+  category: MealCategory,
+  language: "tr" | "en",
+) {
+  const labels: Record<MealCategory, { tr: string; en: string }> = {
+    breakfast: { tr: "Kahvaltı", en: "Breakfast" },
+    lunch: { tr: "Öğle Yemeği", en: "Lunch" },
+    dinner: { tr: "Akşam Yemeği", en: "Dinner" },
+    snack: { tr: "Ara Öğün", en: "Snack" },
   };
-
   return labels[category][language];
 }
 
 const styles = StyleSheet.create({
-  container: {
+  outer: {
     flex: 1,
   },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 120,
-  },
   header: {
-    marginBottom: 16,
-    flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingVertical: 8,
     alignItems: "center",
-    justifyContent: "space-between",
-  },
-  headerSpacer: {
-    width: 84,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "900",
+    fontSize: 20,
+    fontWeight: "700",
   },
-  headerActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  smallButton: {
-    width: 38,
-    height: 36,
-    borderRadius: 13,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  smallButtonText: {
-    fontSize: 12,
-    fontWeight: "900",
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 120,
   },
   summaryCard: {
     borderWidth: 1,
-    borderRadius: 28,
+    borderRadius: 20,
     padding: 20,
+    marginBottom: 24,
   },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  calorieCenter: {
+  heroSection: {
     alignItems: "center",
-    justifyContent: "center",
+    marginBottom: 20,
   },
-  calorieRing: {
-    width: 190,
-    height: 190,
-    borderRadius: 95,
-    borderWidth: 14,
-    alignItems: "center",
-    justifyContent: "center",
+  ringTrackBg: {
+    position: "absolute",
+    width: 256,
+    height: 256,
+    borderRadius: 128,
   },
-  calorieRingInner: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    borderWidth: 8,
+  ringClipRight: {
+    position: "absolute",
+    left: 128,
+    top: 0,
+    width: 128,
+    height: 256,
+    overflow: "hidden",
+  },
+  ringHalfRight: {
+    width: 128,
+    height: 256,
+    borderTopRightRadius: 128,
+    borderBottomRightRadius: 128,
+    transformOrigin: [0, 128, 0],
+  },
+  ringClipLeft: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: 128,
+    height: 256,
+    overflow: "hidden",
+  },
+  ringHalfLeft: {
+    width: 128,
+    height: 256,
+    borderTopLeftRadius: 128,
+    borderBottomLeftRadius: 128,
+    transformOrigin: [128, 128, 0],
+  },
+  ringInner: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+  },
+  ringCenter: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    width: 240,
+    height: 240,
     alignItems: "center",
     justifyContent: "center",
   },
   calorieNumber: {
-    fontSize: 34,
-    fontWeight: "900",
+    fontSize: 40,
+    fontWeight: "800",
+    letterSpacing: -1.6,
   },
   calorieTarget: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "400",
     marginTop: 2,
   },
   remaining: {
     fontSize: 12,
-    fontWeight: "800",
-    marginTop: 8,
+    fontWeight: "600",
+    marginTop: 6,
   },
-  mainProgressTrack: {
-    height: 10,
-    borderRadius: 999,
-    marginTop: 22,
-    overflow: "hidden",
-  },
-  mainProgressFill: {
-    height: "100%",
-    borderRadius: 999,
-  },
-  macroRow: {
-    marginTop: 22,
-    flexDirection: "row",
-    gap: 12,
+  nutrientSection: {
+    gap: 14,
+    marginBottom: 20,
   },
   quickActions: {
-    marginTop: 18,
     flexDirection: "row",
     gap: 12,
   },
-  actionCard: {
+  actionButton: {
     flex: 1,
-    minHeight: 92,
-    borderWidth: 1,
-    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 16,
     gap: 8,
-    padding: 10,
+    borderRadius: 16,
   },
-  actionText: {
-    fontSize: 12,
+  actionPrimary: {},
+  actionSecondary: {
+    borderWidth: 1,
+  },
+  actionLabel: {
+    fontSize: 10,
     fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
     textAlign: "center",
   },
-  sectionHeader: {
-    marginTop: 28,
+  mealsSection: {},
+  mealsHeader: {
     marginBottom: 14,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
   },
-  sectionTitle: {
+  mealsTitle: {
     fontSize: 20,
-    fontWeight: "900",
-  },
-  seeAll: {
-    fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   mealList: {
     gap: 12,
-  },
-  goalButton: {
-    marginTop: 18,
-    height: 46,
-    borderRadius: 17,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  goalButtonText: {
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  summaryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 18,
-  },
-  savedGoalBadge: {
-    paddingHorizontal: 10,
-    height: 28,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  savedGoalText: {
-    fontSize: 11,
-    fontWeight: "900",
   },
   emptyCard: {
     borderWidth: 1,
@@ -647,14 +562,14 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: "700",
     textAlign: "center",
   },
   emptySubtitle: {
     marginTop: 6,
     fontSize: 13,
     lineHeight: 19,
-    fontWeight: "600",
+    fontWeight: "500",
     textAlign: "center",
   },
 });
