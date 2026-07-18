@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps, ReactNode } from "react";
 import { useState } from "react";
-import { StyleSheet, Switch, Text, View } from "react-native";
+import { StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { ProfilePage } from "../src/components/ProfilePage";
 import { translate } from "../src/i18n/translations";
 import { useAppStore } from "../src/stores/appStore";
@@ -24,13 +24,6 @@ export default function RemindersScreen() {
       subtitle={translate("remindersSubtitle", language)}
       compactHeader
     >
-      <Text style={[styles.heading, { color: theme.colors.text }]}>
-        {translate("manageDailyRoutine", language)}
-      </Text>
-      <Text style={[styles.description, { color: theme.colors.mutedText }]}>
-        {translate("manageDailyRoutineSubtitle", language)}
-      </Text>
-
       <View style={styles.cardList}>
         <ReminderCard
           icon="cafe-outline"
@@ -42,7 +35,7 @@ export default function RemindersScreen() {
         >
           <TimeRow
             label={translate("reminderTime", language)}
-            time="08:30"
+            initialTime="08:30"
             theme={theme}
           />
         </ReminderCard>
@@ -57,7 +50,7 @@ export default function RemindersScreen() {
         >
           <TimeRow
             label={translate("reminderTime", language)}
-            time="13:00"
+            initialTime="13:00"
             theme={theme}
           />
         </ReminderCard>
@@ -72,7 +65,7 @@ export default function RemindersScreen() {
         >
           <TimeRow
             label={translate("reminderTime", language)}
-            time="19:30"
+            initialTime="19:30"
             theme={theme}
           />
         </ReminderCard>
@@ -91,9 +84,9 @@ export default function RemindersScreen() {
               {translate("startAndEnd", language)}
             </Text>
             <View style={styles.timeRange}>
-              <TimeValue time="08:00" theme={theme} />
+              <TimeInput initialTime="08:00" theme={theme} />
               <Text style={[styles.timeSeparator, { color: theme.colors.mutedText }]}>-</Text>
-              <TimeValue time="22:00" theme={theme} />
+              <TimeInput initialTime="22:00" theme={theme} />
             </View>
           </View>
         </ReminderCard>
@@ -155,35 +148,67 @@ function ReminderCard({
   );
 }
 
-function TimeRow({ label, time, theme }: { label: string; time: string; theme: AppTheme }) {
+function TimeRow({
+  label,
+  initialTime,
+  theme,
+}: {
+  label: string;
+  initialTime: string;
+  theme: AppTheme;
+}) {
   return (
     <View style={[styles.timeRow, { backgroundColor: theme.colors.cardSoft }]}>
       <Text style={[styles.timeLabel, { color: theme.colors.mutedText }]}>{label}</Text>
       <View style={styles.editTime}>
-        <TimeValue time={time} theme={theme} />
+        <TimeInput initialTime={initialTime} theme={theme} />
         <Ionicons name="pencil" size={14} color={theme.colors.primary} />
       </View>
     </View>
   );
 }
 
-function TimeValue({ time, theme }: { time: string; theme: AppTheme }) {
+function TimeInput({ initialTime, theme }: { initialTime: string; theme: AppTheme }) {
+  const [time, setTime] = useState(initialTime);
+  const [lastValidTime, setLastValidTime] = useState(initialTime);
+
+  const handleChange = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 4);
+    setTime(digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits);
+  };
+
+  const handleBlur = () => {
+    if (/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+      setLastValidTime(time);
+      return;
+    }
+
+    setTime(lastValidTime);
+  };
+
   return (
-    <View
+    <TextInput
       style={[
-        styles.timeValue,
-        { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+        styles.timeInput,
+        {
+          backgroundColor: theme.colors.card,
+          borderColor: theme.colors.border,
+          color: theme.colors.primary,
+        },
       ]}
-    >
-      <Text style={[styles.timeText, { color: theme.colors.primary }]}>{time}</Text>
-    </View>
+      value={time}
+      onChangeText={handleChange}
+      onBlur={handleBlur}
+      keyboardType="number-pad"
+      maxLength={5}
+      selectTextOnFocus
+      textAlign="center"
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  heading: { fontSize: 22, lineHeight: 29, fontWeight: "900" },
-  description: { marginTop: 5, fontSize: 13, lineHeight: 19, fontWeight: "500" },
-  cardList: { marginTop: 18, gap: 14 },
+  cardList: { gap: 14 },
   card: { borderWidth: 1, borderRadius: 18, padding: 14 },
   cardHeader: { flexDirection: "row", alignItems: "center" },
   iconCircle: {
@@ -215,14 +240,15 @@ const styles = StyleSheet.create({
   editTime: { flexDirection: "row", alignItems: "center", gap: 8 },
   timeRange: { flexDirection: "row", alignItems: "center", gap: 5 },
   timeSeparator: { fontSize: 12, fontWeight: "700" },
-  timeValue: {
+  timeInput: {
     minWidth: 58,
     height: 30,
     paddingHorizontal: 8,
+    paddingVertical: 0,
     borderWidth: 1,
     borderRadius: 7,
-    alignItems: "center",
-    justifyContent: "center",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
-  timeText: { fontSize: 12, fontWeight: "800", letterSpacing: 0.3 },
 });

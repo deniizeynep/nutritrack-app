@@ -211,16 +211,6 @@ export const translations = {
     en: "Language, theme and privacy",
   },
 
-  manageDailyRoutine: {
-    tr: "Günlük Rutinini Yönet",
-    en: "Manage Your Daily Routine",
-  },
-
-  manageDailyRoutineSubtitle: {
-    tr: "Öğünlerini ve su tüketimini kaçırmamak için bildirimlerini ayarla.",
-    en: "Set notifications so you don't miss your meals and water intake.",
-  },
-
   everyDay: {
     tr: "HER GÜN",
     en: "EVERY DAY",
