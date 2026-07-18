@@ -1391,6 +1391,16 @@ export const translations = {
     en: "Swipe between days",
   },
 
+  member: {
+    tr: "Üye",
+    en: "Member",
+  },
+
+  day: {
+    tr: "gün",
+    en: "day",
+  },
+
   ok: {
     tr: "Tamam",
     en: "OK",
