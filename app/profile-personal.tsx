@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router, type Href } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "../src/components/Button";
@@ -22,8 +23,13 @@ export default function PersonalInformationScreen() {
   const unitSystem = useAppStore((state) => state.unitSystem);
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
+  const authIsLoading = useAuthStore((state) => state.isLoading);
+  const updateProfile = useAuthStore((state) => state.updateProfile);
+  const requestEmailChange = useAuthStore((state) => state.requestEmailChange);
+  const pendingEmailChange = useAuthStore((state) => state.pendingEmailChange);
+  const loadMe = useAuthStore((state) => state.loadMe);
   const goal = useGoalStore((state) => state.goal);
-  const isLoading = useGoalStore((state) => state.isLoading);
+  const goalIsLoading = useGoalStore((state) => state.isLoading);
   const setGoal = useGoalStore((state) => state.setGoal);
   const theme = getTheme(themeMode);
   const [heightCm, setHeightCm] = useState(goal ? String(goal.heightCm) : "");
@@ -31,7 +37,17 @@ export default function PersonalInformationScreen() {
     goal ? String(formatWeight(goal.weightKg, unitSystem).split(" ")[0]) : "",
   );
   const [gender, setGender] = useState<Gender>(goal?.gender ?? "female");
-  const { firstName, lastName } = splitFullName(user?.fullName ?? "");
+  const [birthDate, setBirthDate] = useState(formatBirthDate(goal?.birthDate));
+  const initialName = splitFullName(user?.fullName ?? "");
+  const [firstName, setFirstName] = useState(initialName.firstName);
+  const [lastName, setLastName] = useState(initialName.lastName);
+  const [email, setEmail] = useState(user?.email ?? "");
+
+  useEffect(() => {
+    if (token && !user && !authIsLoading) {
+      void loadMe();
+    }
+  }, [authIsLoading, loadMe, token, user]);
 
   useEffect(() => {
     if (!goal) {
@@ -43,14 +59,94 @@ export default function PersonalInformationScreen() {
     setHeightCm(String(goal.heightCm));
     setWeightKg(String(formatWeight(goal.weightKg, unitSystem).split(" ")[0]));
     setGender(goal.gender);
+    setBirthDate(formatBirthDate(goal.birthDate));
   }, [goal, unitSystem]);
 
-  const handleSave = async () => {
+  useEffect(() => {
+    const name = splitFullName(user?.fullName ?? "");
+
+    // Controlled fields must follow account data refreshed after a save.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFirstName(name.firstName);
+    setLastName(name.lastName);
+  }, [user?.fullName]);
+
+  useEffect(() => {
+    // Keep an unsaved email edit when only the user's name is refreshed.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setEmail(user?.email ?? "");
+  }, [user?.email]);
+
+  const saveChanges = async (
+    parsedHeight: number,
+    parsedWeight: number,
+    parsedBirthDate: NonNullable<ReturnType<typeof parseBirthDate>>,
+    fullName: string,
+    normalizedEmail: string,
+  ) => {
+    if (!goal) {
+      return;
+    }
+
+    const calories = calculateDailyCalories({
+      age: parsedBirthDate.age,
+      heightCm: parsedHeight,
+      weightKg: parsedWeight,
+      gender,
+      activityLevel: goal.activityLevel,
+      goalType: goal.goalType,
+    });
+    const macros = calculateMacroTargets(calories.targetCalories, goal.goalType);
+
+    try {
+      await Promise.all([
+        setGoal(
+          {
+            ...goal,
+            age: parsedBirthDate.age,
+            birthDate: parsedBirthDate.iso,
+            heightCm: parsedHeight,
+            weightKg: parsedWeight,
+            gender,
+            ...calories,
+            targetProtein: macros.protein,
+            targetCarbs: macros.carbs,
+            targetFat: macros.fat,
+          },
+          token,
+        ),
+        updateProfile(fullName),
+      ]);
+
+      if (normalizedEmail !== user?.email.toLowerCase()) {
+        await requestEmailChange(normalizedEmail);
+        router.push("/profile-email-verification" as Href);
+        return;
+      }
+
+      router.back();
+    } catch (error) {
+      Alert.alert(
+        translate("error", language),
+        error instanceof Error
+          ? error.message
+          : translate("genericError", language),
+      );
+    }
+  };
+
+  const handleSave = () => {
     const parsedHeight = Number(heightCm);
     const parsedWeight = Math.round(displayToKg(Number(weightKg), unitSystem) * 10) / 10;
+    const parsedBirthDate = parseBirthDate(birthDate);
+    const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
+    const normalizedEmail = email.trim().toLowerCase();
 
     if (
       !goal ||
+      firstName.trim().length < 2 ||
+      !/^[^\s@]+@gmail\.com$/.test(normalizedEmail) ||
+      !parsedBirthDate ||
       !Number.isInteger(parsedHeight) ||
       parsedHeight < 100 ||
       parsedHeight > 230 ||
@@ -64,42 +160,40 @@ export default function PersonalInformationScreen() {
       return;
     }
 
-    const calories = calculateDailyCalories({
-      age: goal.age,
-      heightCm: parsedHeight,
-      weightKg: parsedWeight,
-      gender,
-      activityLevel: goal.activityLevel,
-      goalType: goal.goalType,
-    });
-    const macros = calculateMacroTargets(calories.targetCalories, goal.goalType);
+    const hasChanges =
+      fullName !== user?.fullName.trim() ||
+      normalizedEmail !== user?.email.toLowerCase() ||
+      parsedBirthDate.iso !== goal.birthDate ||
+      gender !== goal.gender ||
+      parsedHeight !== goal.heightCm ||
+      parsedWeight !== goal.weightKg;
 
-    try {
-      await setGoal(
-        {
-          ...goal,
-          heightCm: parsedHeight,
-          weightKg: parsedWeight,
-          gender,
-          ...calories,
-          targetProtein: macros.protein,
-          targetCarbs: macros.carbs,
-          targetFat: macros.fat,
-        },
-        token,
-      );
+    if (!hasChanges) {
       Alert.alert(
-        translate("accountInformationSaved", language),
-        translate("accountInformationSavedMessage", language),
+        translate("personalInformation", language),
+        translate("noAccountChanges", language),
       );
-    } catch (error) {
-      Alert.alert(
-        translate("error", language),
-        error instanceof Error
-          ? error.message
-          : translate("genericError", language),
-      );
+      return;
     }
+
+    Alert.alert(
+      translate("confirmAccountChanges", language),
+      translate("confirmAccountChangesMessage", language),
+      [
+        { text: translate("cancel", language), style: "cancel" },
+        {
+          text: translate("save", language),
+          onPress: () =>
+            void saveChanges(
+              parsedHeight,
+              parsedWeight,
+              parsedBirthDate,
+              fullName,
+              normalizedEmail,
+            ),
+        },
+      ],
+    );
   };
 
   return (
@@ -109,19 +203,51 @@ export default function PersonalInformationScreen() {
       compactHeader
     >
       <View style={styles.form}>
+        {pendingEmailChange ? (
+          <Pressable
+            onPress={() =>
+              router.push("/profile-email-verification" as Href)
+            }
+            style={[
+              styles.pendingEmailCard,
+              {
+                backgroundColor: theme.colors.primarySoft,
+                borderColor: theme.colors.primary,
+              },
+            ]}
+          >
+            <Ionicons name="mail-unread-outline" size={21} color={theme.colors.primary} />
+            <View style={styles.pendingEmailTextArea}>
+              <Text
+                style={[styles.pendingEmailTitle, { color: theme.colors.text }]}
+              >
+                {translate("pendingEmailChange", language)}
+              </Text>
+              <Text
+                style={[styles.pendingEmailText, { color: theme.colors.mutedText }]}
+              >
+                {pendingEmailChange.email}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={19} color={theme.colors.primary} />
+          </Pressable>
+        ) : null}
+
         <View style={styles.inputRow}>
           <View style={styles.halfInput}>
             <Input
               label={translate("firstName", language)}
               value={firstName}
-              editable={false}
+              onChangeText={setFirstName}
+              autoCapitalize="words"
             />
           </View>
           <View style={styles.halfInput}>
             <Input
               label={translate("lastName", language)}
               value={lastName}
-              editable={false}
+              onChangeText={setLastName}
+              autoCapitalize="words"
             />
           </View>
         </View>
@@ -129,8 +255,10 @@ export default function PersonalInformationScreen() {
         <Input
           label={translate("email", language)}
           icon="mail-outline"
-          value={user?.email ?? "-"}
-          editable={false}
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
         />
 
         <Text style={[styles.label, { color: theme.colors.mutedText }]}>
@@ -154,8 +282,11 @@ export default function PersonalInformationScreen() {
         <Input
           label={translate("birthDate", language)}
           icon="calendar-outline"
-          value="-"
-          editable={false}
+          value={birthDate}
+          onChangeText={(value) => setBirthDate(formatBirthDateInput(value))}
+          placeholder={translate("birthDatePlaceholder", language)}
+          keyboardType="number-pad"
+          maxLength={10}
         />
 
         <View style={styles.inputRow}>
@@ -181,7 +312,7 @@ export default function PersonalInformationScreen() {
 
         <Button
           onPress={handleSave}
-          disabled={isLoading || !goal}
+          disabled={authIsLoading || goalIsLoading || !goal}
           style={styles.saveButton}
         >
           {translate("save", language)}
@@ -253,11 +384,67 @@ function GenderOption({
 }
 
 function splitFullName(fullName: string) {
-  const [firstName = "-", ...lastNameParts] = fullName.trim().split(/\s+/);
+  const [firstName = "", ...lastNameParts] = fullName.trim().split(/\s+/);
 
   return {
-    firstName: firstName || "-",
-    lastName: lastNameParts.join(" ") || "-",
+    firstName,
+    lastName: lastNameParts.join(" "),
+  };
+}
+
+function formatBirthDate(value?: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const [year, month, day] = value.split("-");
+  return `${day}.${month}.${year}`;
+}
+
+function formatBirthDateInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4)];
+  return parts.filter(Boolean).join(".");
+}
+
+function parseBirthDate(value: string) {
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, dayText, monthText, yearText] = match;
+  const day = Number(dayText);
+  const month = Number(monthText);
+  const year = Number(yearText);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  const today = new Date();
+  let age = today.getFullYear() - year;
+
+  if (
+    today.getMonth() < month - 1 ||
+    (today.getMonth() === month - 1 && today.getDate() < day)
+  ) {
+    age -= 1;
+  }
+
+  if (date > today || age < 13 || age > 100) {
+    return null;
+  }
+
+  return {
+    age,
+    iso: `${yearText}-${monthText}-${dayText}`,
   };
 }
 
@@ -302,4 +489,16 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     textAlign: "center",
   },
+  pendingEmailCard: {
+    minHeight: 68,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  pendingEmailTextArea: { flex: 1 },
+  pendingEmailTitle: { fontSize: 13, fontWeight: "900" },
+  pendingEmailText: { marginTop: 3, fontSize: 12, fontWeight: "600" },
 });

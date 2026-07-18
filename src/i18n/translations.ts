@@ -151,6 +151,11 @@ export const translations = {
     en: "Date of Birth",
   },
 
+  birthDatePlaceholder: {
+    tr: "GG.AA.YYYY",
+    en: "DD.MM.YYYY",
+  },
+
   save: {
     tr: "Kaydet",
     en: "Save",
@@ -167,8 +172,8 @@ export const translations = {
   },
 
   accountInformationValidation: {
-    tr: "Boy 100-230 cm, kilo 30-250 kg arasında tam sayı olmalı.",
-    en: "Height must be a whole number from 100-230 cm and weight from 30-250 kg.",
+    tr: "Ad, soyad ve Gmail adresini kontrol et. Yaş 13-100, boy 100-230 cm, kilo 30-250 kg arasında olmalı.",
+    en: "Check your first name, last name, and Gmail address. Age must be 13-100, height 100-230 cm, and weight 30-250 kg.",
   },
 
   accountInformationSaved: {
@@ -177,8 +182,58 @@ export const translations = {
   },
 
   accountInformationSavedMessage: {
-    tr: "Cinsiyet, boy ve kilo bilgilerin güncellendi.",
-    en: "Your gender, height, and weight have been updated.",
+    tr: "Ad, soyad, doğum tarihi, cinsiyet, boy ve kilo bilgilerin güncellendi.",
+    en: "Your name, birth date, gender, height, and weight have been updated.",
+  },
+
+  emailChangeVerification: {
+    tr: "E-posta Doğrulama",
+    en: "Email Verification",
+  },
+
+  emailChangeVerificationSubtitle: {
+    tr: "Yeni e-posta adresini doğrula",
+    en: "Verify your new email address",
+  },
+
+  verifyNewEmail: {
+    tr: "Yeni E-postanı Doğrula",
+    en: "Verify Your New Email",
+  },
+
+  emailChangeCodeSent: {
+    tr: "Yeni e-posta adresine gönderilen 6 haneli kodu gir. Doğrulama tamamlanana kadar mevcut adresin aktif kalır.",
+    en: "Enter the 6-digit code sent to your new email. Your current address remains active until verification is complete.",
+  },
+
+  emailChangeCompleted: {
+    tr: "E-posta Güncellendi",
+    en: "Email Updated",
+  },
+
+  emailChangeCompletedMessage: {
+    tr: "Yeni e-posta adresin doğrulandı ve hesap bilgilerin güncellendi.",
+    en: "Your new email address was verified and your account information was updated.",
+  },
+
+  pendingEmailChange: {
+    tr: "E-posta doğrulaması bekliyor",
+    en: "Email verification pending",
+  },
+
+  confirmAccountChanges: {
+    tr: "Emin misiniz?",
+    en: "Are you sure?",
+  },
+
+  confirmAccountChangesMessage: {
+    tr: "Değiştirdiğiniz hesap bilgileri kaydedilecek. Devam etmek istiyor musunuz?",
+    en: "Your changed account information will be saved. Do you want to continue?",
+  },
+
+  noAccountChanges: {
+    tr: "Kaydedilecek bir değişiklik bulunmuyor.",
+    en: "There are no changes to save.",
   },
 
   nutritionGoals: {
@@ -841,6 +896,16 @@ export const translations = {
   saveGoal: {
     tr: "Hedefi Kaydet",
     en: "Save Goal",
+  },
+
+  confirmGoalSave: {
+    tr: "Emin misiniz?",
+    en: "Are you sure?",
+  },
+
+  confirmGoalSaveMessage: {
+    tr: "Beslenme hedefiniz kaydedilecek. Devam etmek istiyor musunuz?",
+    en: "Your nutrition goal will be saved. Do you want to continue?",
   },
 
   savedGoal: {

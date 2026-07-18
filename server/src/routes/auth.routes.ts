@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { randomInt } from "crypto";
 import { Router } from "express";
 import { OAuth2Client } from "google-auth-library";
 import { z } from "zod";
@@ -6,6 +7,7 @@ import { prisma } from "../lib/prisma";
 import { authMiddleware, type AuthRequest } from "../middleware/authMiddleware";
 import { authRateLimiter } from "../middleware/rateLimit";
 import {
+  sendEmailChangeCode,
   sendPasswordResetCode,
   sendVerificationCode,
 } from "../services/email.service";
@@ -60,6 +62,20 @@ const googleAuthSchema = z.object({
   idToken: z.string().min(1),
 });
 
+const updateProfileSchema = z
+  .object({
+    fullName: z.string().trim().min(2).max(100),
+  })
+  .strict();
+
+const emailChangeSchema = z.object({
+  email: gmailSchema,
+});
+
+const emailChangeVerificationSchema = z.object({
+  code: z.string().regex(/^\d{6}$/),
+});
+
 type GoogleTokenPayload = {
   email?: string;
   sub?: string;
@@ -98,7 +114,7 @@ function getGoogleDisplayName(email: string, name?: string | null) {
 }
 
 function generateOtp() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(randomInt(100000, 1000000));
 }
 
 function getOtpExpiry() {
@@ -183,6 +199,61 @@ async function issuePasswordResetOtp(userId: string) {
   });
 
   return otp.code;
+}
+
+function formatEmailChange(user: {
+  pendingEmail: string | null;
+  emailChangeOtpExpiresAt: Date | null;
+  emailChangeOtpLastSentAt: Date | null;
+}) {
+  if (!user.pendingEmail || !user.emailChangeOtpExpiresAt) {
+    return null;
+  }
+
+  return {
+    email: user.pendingEmail,
+    expiresAt: user.emailChangeOtpExpiresAt.toISOString(),
+    resendAvailableAt: user.emailChangeOtpLastSentAt
+      ? new Date(user.emailChangeOtpLastSentAt.getTime() + 60 * 1000).toISOString()
+      : null,
+  };
+}
+
+async function saveEmailChangeOtp(userId: string, email: string) {
+  const otp = await createOtpData();
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      pendingEmail: email,
+      emailChangeOtpHash: otp.hash,
+      emailChangeOtpExpiresAt: otp.expiresAt,
+      emailChangeOtpLastSentAt: otp.lastSentAt,
+      emailChangeOtpAttempts: 0,
+    },
+  });
+
+  try {
+    await sendEmailChangeCode(email, otp.code);
+  } catch (error) {
+    await prisma.user.updateMany({
+      where: {
+        id: userId,
+        pendingEmail: email,
+        emailChangeOtpHash: otp.hash,
+      },
+      data: {
+        pendingEmail: null,
+        emailChangeOtpHash: null,
+        emailChangeOtpExpiresAt: null,
+        emailChangeOtpLastSentAt: null,
+        emailChangeOtpAttempts: 0,
+      },
+    });
+    throw error;
+  }
+
+  return otp;
 }
 
 function verificationRequiredResponse(email: string, message: string) {
@@ -724,6 +795,248 @@ router.post("/google", authRateLimiter, async (req, res) => {
   }
 });
 
+router.patch("/me", authMiddleware, async (req, res) => {
+  try {
+    const userId = (req as AuthRequest).userId;
+    const parsed = updateProfileSchema.safeParse(req.body);
+
+    if (!userId) {
+      res.status(401).json({ message: "Kullanıcı doğrulanamadı." });
+      return;
+    }
+
+    if (!parsed.success) {
+      res.status(400).json({ message: "Ad ve soyad bilgisi geçersiz." });
+      return;
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { fullName: parsed.data.fullName },
+    });
+
+    res.json({ user: formatUser(user) });
+  } catch (error) {
+    console.error("UPDATE PROFILE ERROR:", error);
+    res.status(500).json({ message: "Hesap bilgileri güncellenemedi." });
+  }
+});
+
+router.post(
+  "/me/email-change",
+  authMiddleware,
+  authRateLimiter,
+  async (req, res) => {
+    try {
+      const userId = (req as AuthRequest).userId;
+      const parsed = emailChangeSchema.safeParse(req.body);
+
+      if (!userId) {
+        res.status(401).json({ message: "Kullanıcı doğrulanamadı." });
+        return;
+      }
+
+      if (!parsed.success) {
+        res.status(400).json({ message: "Geçerli bir Gmail adresi girin." });
+        return;
+      }
+
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+
+      if (!user) {
+        res.status(404).json({ message: "Kullanıcı bulunamadı." });
+        return;
+      }
+
+      if (user.email === parsed.data.email) {
+        res.status(400).json({ message: "Yeni e-posta mevcut adresle aynı." });
+        return;
+      }
+
+      if (
+        user.emailChangeOtpLastSentAt &&
+        Date.now() - user.emailChangeOtpLastSentAt.getTime() < 60 * 1000
+      ) {
+        res.status(429).json({
+          message: "Yeni kod istemeden önce biraz bekleyin.",
+        });
+        return;
+      }
+
+      const emailOwner = await prisma.user.findUnique({
+        where: { email: parsed.data.email },
+        select: { id: true },
+      });
+
+      if (emailOwner && emailOwner.id !== userId) {
+        res.status(409).json({ message: "Bu e-posta başka bir hesapta kullanılıyor." });
+        return;
+      }
+
+      const otp = await saveEmailChangeOtp(userId, parsed.data.email);
+      res.status(202).json({
+        emailChange: {
+          email: parsed.data.email,
+          expiresAt: otp.expiresAt.toISOString(),
+          resendAvailableAt: new Date(
+            otp.lastSentAt.getTime() + 60 * 1000,
+          ).toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error("REQUEST EMAIL CHANGE ERROR:", error);
+      res.status(502).json({ message: "Doğrulama kodu gönderilemedi." });
+    }
+  },
+);
+
+router.post(
+  "/me/email-change/verify",
+  authMiddleware,
+  authRateLimiter,
+  async (req, res) => {
+    try {
+      const userId = (req as AuthRequest).userId;
+      const parsed = emailChangeVerificationSchema.safeParse(req.body);
+
+      if (!userId) {
+        res.status(401).json({ message: "Kullanıcı doğrulanamadı." });
+        return;
+      }
+
+      if (!parsed.success) {
+        res.status(400).json({ message: "Kod hatalı veya süresi dolmuş." });
+        return;
+      }
+
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+
+      if (
+        !user?.pendingEmail ||
+        !user.emailChangeOtpHash ||
+        !user.emailChangeOtpExpiresAt ||
+        user.emailChangeOtpAttempts >= 5
+      ) {
+        res.status(400).json({ message: "Kod hatalı veya süresi dolmuş." });
+        return;
+      }
+
+      if (user.emailChangeOtpExpiresAt.getTime() < Date.now()) {
+        res.status(400).json({
+          message: "Kodun süresi doldu. Lütfen yeni kod isteyin.",
+        });
+        return;
+      }
+
+      const isCodeValid = await bcrypt.compare(
+        parsed.data.code,
+        user.emailChangeOtpHash,
+      );
+
+      if (!isCodeValid) {
+        await prisma.user.updateMany({
+          where: { id: userId, emailChangeOtpHash: user.emailChangeOtpHash },
+          data: { emailChangeOtpAttempts: { increment: 1 } },
+        });
+        res.status(400).json({ message: "Kod hatalı veya süresi dolmuş." });
+        return;
+      }
+
+      const pendingEmail = user.pendingEmail;
+      const otpHash = user.emailChangeOtpHash;
+      const updatedUser = await prisma.$transaction(async (transaction) => {
+        const result = await transaction.user.updateMany({
+          where: {
+            id: userId,
+            pendingEmail,
+            emailChangeOtpHash: otpHash,
+          },
+          data: {
+            email: pendingEmail,
+            emailVerified: true,
+            pendingEmail: null,
+            emailChangeOtpHash: null,
+            emailChangeOtpExpiresAt: null,
+            emailChangeOtpLastSentAt: null,
+            emailChangeOtpAttempts: 0,
+            emailOtpHash: null,
+            emailOtpExpiresAt: null,
+            emailOtpLastSentAt: null,
+            passwordResetOtpHash: null,
+            passwordResetOtpExpiresAt: null,
+            passwordResetOtpLastSentAt: null,
+          },
+        });
+
+        if (result.count !== 1) {
+          throw new Error("EMAIL_CHANGE_ALREADY_USED");
+        }
+
+        return transaction.user.findUniqueOrThrow({ where: { id: userId } });
+      });
+
+      res.json({ user: formatUser(updatedUser), emailChange: null });
+    } catch (error) {
+      if ((error as { code?: string }).code === "P2002") {
+        res.status(409).json({
+          message: "Bu e-posta başka bir hesapta kullanılıyor.",
+        });
+        return;
+      }
+
+      console.error("VERIFY EMAIL CHANGE ERROR:", error);
+      res.status(500).json({ message: "E-posta değişikliği doğrulanamadı." });
+    }
+  },
+);
+
+router.post(
+  "/me/email-change/resend",
+  authMiddleware,
+  authRateLimiter,
+  async (req, res) => {
+    try {
+      const userId = (req as AuthRequest).userId;
+
+      if (!userId) {
+        res.status(401).json({ message: "Kullanıcı doğrulanamadı." });
+        return;
+      }
+
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+
+      if (!user?.pendingEmail) {
+        res.status(400).json({ message: "Bekleyen e-posta değişikliği yok." });
+        return;
+      }
+
+      if (
+        user.emailChangeOtpLastSentAt &&
+        Date.now() - user.emailChangeOtpLastSentAt.getTime() < 60 * 1000
+      ) {
+        res.status(429).json({
+          message: "Yeni kod istemeden önce biraz bekleyin.",
+        });
+        return;
+      }
+
+      const otp = await saveEmailChangeOtp(userId, user.pendingEmail);
+      res.json({
+        emailChange: {
+          email: user.pendingEmail,
+          expiresAt: otp.expiresAt.toISOString(),
+          resendAvailableAt: new Date(
+            otp.lastSentAt.getTime() + 60 * 1000,
+          ).toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error("RESEND EMAIL CHANGE ERROR:", error);
+      res.status(502).json({ message: "Doğrulama kodu gönderilemedi." });
+    }
+  },
+);
+
 router.get("/me", authMiddleware, async (req, res) => {
   try {
     const userId = (req as AuthRequest).userId;
@@ -744,6 +1057,9 @@ router.get("/me", authMiddleware, async (req, res) => {
         fullName: true,
         email: true,
         emailVerified: true,
+        pendingEmail: true,
+        emailChangeOtpExpiresAt: true,
+        emailChangeOtpLastSentAt: true,
       },
     });
 
@@ -755,7 +1071,8 @@ router.get("/me", authMiddleware, async (req, res) => {
     }
 
     res.json({
-      user,
+      user: formatUser(user),
+      emailChange: formatEmailChange(user),
     });
   } catch (error) {
     console.error("ME ERROR:", error);

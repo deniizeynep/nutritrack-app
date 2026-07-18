@@ -24,6 +24,7 @@ type MealSeedTuple = [
 
 const goal: GoalData = {
   age: 25,
+  birthDate: "2001-07-18",
   heightCm: 165,
   weightKg: 62,
   gender: "female",
@@ -127,6 +128,7 @@ export function activateLocalTestUser() {
     hasCheckedSession: true,
     pendingVerificationEmail: null,
     pendingPasswordResetEmail: null,
+    pendingEmailChange: null,
     requiresEmailVerification: false,
     error: null,
   });
