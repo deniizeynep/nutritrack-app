@@ -86,13 +86,15 @@ export default function DiaryScreen() {
   }, [meals]);
 
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
-  const [expandedMealIds, setExpandedMealIds] = useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<MealCategory[]>(
+    [],
+  );
 
-  const toggleMealDetails = (mealId: string) => {
-    setExpandedMealIds((currentIds) =>
-      currentIds.includes(mealId)
-        ? currentIds.filter((id) => id !== mealId)
-        : [...currentIds, mealId],
+  const toggleCategoryDetails = (category: MealCategory) => {
+    setExpandedCategories((currentCategories) =>
+      currentCategories.includes(category)
+        ? currentCategories.filter((item) => item !== category)
+        : [...currentCategories, category],
     );
   };
 
@@ -341,6 +343,9 @@ export default function DiaryScreen() {
                     const sectionMeals = selectedDay.meals.filter(
                       (meal) => meal.category === section.category,
                     );
+                    const detailsExpanded = expandedCategories.includes(
+                      section.category,
+                    );
 
                     return (
                       <View
@@ -370,15 +375,42 @@ export default function DiaryScreen() {
                               {translate(section.labelKey, language)}
                             </Text>
                           </View>
+
+                          <Pressable
+                            accessibilityLabel={translate(
+                              detailsExpanded
+                                ? "hideMealDetails"
+                                : "showMealDetails",
+                              language,
+                            )}
+                            accessibilityRole="button"
+                            accessibilityState={{
+                              disabled: sectionMeals.length === 0,
+                              expanded: detailsExpanded,
+                            }}
+                            disabled={sectionMeals.length === 0}
+                            hitSlop={8}
+                            onPress={() =>
+                              toggleCategoryDetails(section.category)
+                            }
+                            style={styles.categoryDetailsButton}
+                          >
+                            <Ionicons
+                              name={
+                                detailsExpanded ? "chevron-up" : "chevron-down"
+                              }
+                              size={20}
+                              color={
+                                sectionMeals.length > 0
+                                  ? theme.colors.primary
+                                  : theme.colors.mutedText
+                              }
+                            />
+                          </Pressable>
                         </View>
 
                         {sectionMeals.length > 0 ? (
-                          sectionMeals.map((meal) => {
-                            const detailsExpanded = expandedMealIds.includes(
-                              meal.id,
-                            );
-
-                            return (
+                          sectionMeals.map((meal) => (
                               <View key={meal.id} style={styles.mealEntry}>
                                 <View style={styles.mealRow}>
                                   <View style={styles.mealRowContent}>
@@ -435,30 +467,6 @@ export default function DiaryScreen() {
                                         name="create-outline"
                                         size={18}
                                         color={theme.colors.mutedText}
-                                      />
-                                    </Pressable>
-
-                                    <Pressable
-                                      accessibilityLabel={translate(
-                                        detailsExpanded
-                                          ? "hideMealDetails"
-                                          : "showMealDetails",
-                                        language,
-                                      )}
-                                      accessibilityState={{
-                                        expanded: detailsExpanded,
-                                      }}
-                                      hitSlop={7}
-                                      onPress={() => toggleMealDetails(meal.id)}
-                                    >
-                                      <Ionicons
-                                        name={
-                                          detailsExpanded
-                                            ? "chevron-up"
-                                            : "chevron-down"
-                                        }
-                                        size={19}
-                                        color={theme.colors.primary}
                                       />
                                     </Pressable>
 
@@ -527,8 +535,7 @@ export default function DiaryScreen() {
                                   </View>
                                 ) : null}
                               </View>
-                            );
-                          })
+                          ))
                         ) : (
                           <View
                             style={[
@@ -880,6 +887,8 @@ const styles = StyleSheet.create({
     minHeight: 30,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
   },
   mealSectionHeading: {
     flex: 1,
@@ -891,6 +900,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
     letterSpacing: -0.3,
+  },
+  categoryDetailsButton: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
   },
   mealRow: {
     minHeight: 48,
