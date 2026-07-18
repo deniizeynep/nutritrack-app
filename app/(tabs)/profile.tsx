@@ -10,40 +10,26 @@ import { useMealStore } from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
 import { calculateMacroTargets } from "../../src/utils/calorieCalculator";
 
-const PROTEIN_COLOR = "#1F4D3A";
-const CARBS_COLOR = "#B8863B";
-const FAT_COLOR = "#8C9C86";
-
 export default function ProfileScreen() {
-  const themeMode = useAppStore((s) => s.themeMode);
-  const language = useAppStore((s) => s.language);
-  const setThemeMode = useAppStore((s) => s.setThemeMode);
-  const setLanguage = useAppStore((s) => s.setLanguage);
-  const user = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
-  const logout = useAuthStore((s) => s.logout);
-  const deleteAccount = useAuthStore((s) => s.deleteAccount);
-  const goal = useGoalStore((s) => s.goal);
-  const clearGoal = useGoalStore((s) => s.clearGoal);
-  const clearMeals = useMealStore((s) => s.clearMeals);
+  const themeMode = useAppStore((state) => state.themeMode);
+  const language = useAppStore((state) => state.language);
+  const setThemeMode = useAppStore((state) => state.setThemeMode);
+  const setLanguage = useAppStore((state) => state.setLanguage);
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const logout = useAuthStore((state) => state.logout);
+  const deleteAccount = useAuthStore((state) => state.deleteAccount);
+  const goal = useGoalStore((state) => state.goal);
+  const clearGoal = useGoalStore((state) => state.clearGoal);
+  const clearMeals = useMealStore((state) => state.clearMeals);
   const theme = getTheme(themeMode);
-
-  const initials =
-    user?.fullName
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "??";
-
-  const fallback = calculateMacroTargets(
+  const fallbackMacroTargets = calculateMacroTargets(
     goal?.targetCalories ?? 2000,
     goal?.goalType ?? "maintain",
   );
-  const targetProtein = goal?.targetProtein || fallback.protein;
-  const targetCarbs = goal?.targetCarbs || fallback.carbs;
-  const targetFat = goal?.targetFat || fallback.fat;
-  const totalMacroGrams = targetProtein + targetCarbs + targetFat;
+  const targetProtein = goal?.targetProtein || fallbackMacroTargets.protein;
+  const targetCarbs = goal?.targetCarbs || fallbackMacroTargets.carbs;
+  const targetFat = goal?.targetFat || fallbackMacroTargets.fat;
 
   const confirmClearMeals = () => {
     Alert.alert(
@@ -64,9 +50,7 @@ export default function ProfileScreen() {
             } catch (error) {
               Alert.alert(
                 translate("error", language),
-                error instanceof Error
-                  ? error.message
-                  : translate("genericError", language),
+                error instanceof Error ? error.message : translate("genericError", language),
               );
             }
           },
@@ -131,341 +115,289 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
-              <Text style={styles.avatarText}>{initials}</Text>
+        <View style={styles.headerArea}>
+          <View style={[styles.avatarBox, { backgroundColor: theme.colors.primarySoft }]}>
+            <Ionicons name="person-outline" size={34} color={theme.colors.primary} />
+          </View>
+
+          <Text style={[styles.title, { color: theme.colors.text }]}>
+            {user?.fullName || translate("guestUser", language)}
+          </Text>
+
+          <View style={styles.statRow}>
+            <StatCard
+              icon="resize-outline"
+              label={translate("height", language)}
+              value={goal?.heightCm ? `${goal.heightCm} cm` : "-"}
+            />
+            <StatCard
+              icon="scale-outline"
+              label={translate("weight", language)}
+              value={goal?.weightKg ? `${goal.weightKg} kg` : "-"}
+            />
+            <StatCard
+              icon="calendar-outline"
+              label={translate("age", language)}
+              value={goal?.age ? `${goal.age}` : "-"}
+            />
+          </View>
+        </View>
+
+        <Section title={translate("account", language)}>
+          <InfoRow
+            label={translate("fullName", language)}
+            value={user?.fullName || translate("guestUser", language)}
+          />
+          <InfoRow label={translate("email", language)} value={user?.email || "-"} />
+          <InfoRow
+            label={translate("emailVerificationStatus", language)}
+            value={
+              user?.emailVerified
+                ? translate("emailVerified", language)
+                : translate("emailNotVerifiedStatus", language)
+            }
+          />
+        </Section>
+
+        <Section title={translate("goalSummary", language)}>
+          {goal ? (
+            <View>
+              <InfoRow
+                label={translate("targetCalories", language)}
+                value={`${goal.targetCalories} kcal`}
+              />
+              <InfoRow
+                label={translate("targetProtein", language)}
+                value={`${targetProtein}g`}
+              />
+              <InfoRow
+                label={translate("targetCarbs", language)}
+                value={`${targetCarbs}g`}
+              />
+              <InfoRow label={translate("targetFat", language)} value={`${targetFat}g`} />
             </View>
-            <View style={styles.headerInfo}>
-              <Text style={[styles.userName, { color: theme.colors.text }]}>
-                {user?.fullName || translate("guestUser", language)}
-              </Text>
-              <Text style={[styles.userMeta, { color: theme.colors.mutedText }]}>
-                {translate("member", language)} · {user?.email || "-"}
-              </Text>
-            </View>
-          </View>
-          <Pressable
-            style={[
-              styles.settingsBtn,
-              { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
-            ]}
-          >
-            <Ionicons name="settings-outline" size={17} color={theme.colors.mutedText} />
-          </Pressable>
-        </View>
+          ) : (
+            <Text style={[styles.emptyText, { color: theme.colors.mutedText }]}>
+              {translate("noGoalYet", language)}
+            </Text>
+          )}
 
-        {/* Stats bar */}
-        <View style={[styles.statsBar, { borderTopColor: theme.colors.border, borderBottomColor: theme.colors.border }]}>
-          <View style={[styles.statItem, { borderRightColor: theme.colors.border }]}>
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>
-              {goal?.heightCm ?? "-"}
-            </Text>
-            <Text style={[styles.statLabel, { color: theme.colors.mutedText }]}>
-              CM {translate("height", language).toUpperCase()}
-            </Text>
-          </View>
-          <View style={[styles.statItem, { borderRightColor: theme.colors.border }]}>
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>
-              {goal?.weightKg ?? "-"}
-            </Text>
-            <Text style={[styles.statLabel, { color: theme.colors.mutedText }]}>
-              KG {translate("weight", language).toUpperCase()}
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>
-              {goal?.age ?? "-"}
-            </Text>
-            <Text style={[styles.statLabel, { color: theme.colors.mutedText }]}>
-              {translate("age", language).toUpperCase()}
-            </Text>
-          </View>
-        </View>
-
-        {/* Account card */}
-        <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
-          <View style={styles.cardHeader}>
-            <Text style={[styles.cardTitle, { color: theme.colors.mutedText }]}>
-              {translate("account", language)}
-            </Text>
-            {user?.emailVerified ? (
-              <View style={[styles.badge, { backgroundColor: theme.colors.primarySoft }]}>
-                <Text style={[styles.badgeText, { color: theme.colors.primary }]}>
-                  {translate("emailVerified", language)}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-          <View style={[styles.fieldRow, { borderTopColor: theme.colors.border }]}>
-            <Text style={[styles.fieldLabel, { color: theme.colors.mutedText }]}>
-              {translate("fullName", language).toUpperCase()}
-            </Text>
-            <Text style={[styles.fieldValue, { color: theme.colors.text }]}>
-              {user?.fullName || translate("guestUser", language)}
-            </Text>
-          </View>
-          <View style={[styles.fieldRow, { borderTopColor: theme.colors.border }]}>
-            <Text style={[styles.fieldLabel, { color: theme.colors.mutedText }]}>
-              {translate("email", language).toUpperCase()}
-            </Text>
-            <Text style={[styles.fieldValue, { color: theme.colors.text }]}>
-              {user?.email || "-"}
-            </Text>
-          </View>
-        </View>
-
-        {/* Goal card */}
-        <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
-          <View style={[styles.goalTopBorder, { backgroundColor: theme.colors.text }]} />
-          <View style={styles.goalHeader}>
-            <Text style={[styles.goalTitle, { color: theme.colors.text }]}>
-              {translate("goalSummary", language)}
-            </Text>
-          </View>
-          <View style={[styles.goalBody, { borderBottomColor: theme.colors.text }]}>
-            {goal ? (
-              <>
-                <View style={styles.calorieRow}>
-                  <Text style={[styles.calorieValue, { color: theme.colors.text }]}>
-                    {goal.targetCalories}
-                  </Text>
-                  <Text style={[styles.calorieUnit, { color: theme.colors.mutedText }]}>
-                    kcal / {translate("day", language)}
-                  </Text>
-                </View>
-
-                <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressSegment,
-                      {
-                        width: `${(targetProtein / totalMacroGrams) * 100}%`,
-                        backgroundColor: themeMode === "dark" ? "#6ED28A" : PROTEIN_COLOR,
-                      },
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.progressSegment,
-                      {
-                        width: `${(targetCarbs / totalMacroGrams) * 100}%`,
-                        backgroundColor: themeMode === "dark" ? "#FFB36B" : CARBS_COLOR,
-                      },
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.progressSegment,
-                      {
-                        width: `${(targetFat / totalMacroGrams) * 100}%`,
-                        backgroundColor: themeMode === "dark" ? "#C58BFF" : FAT_COLOR,
-                      },
-                    ]}
-                  />
-                </View>
-
-                <MacroRow
-                  color={themeMode === "dark" ? "#6ED28A" : PROTEIN_COLOR}
-                  label={translate("protein", language)}
-                  value={`${targetProtein} g`}
-                  border
-                  theme={theme}
-                />
-                <MacroRow
-                  color={themeMode === "dark" ? "#FFB36B" : CARBS_COLOR}
-                  label={translate("carbs", language)}
-                  value={`${targetCarbs} g`}
-                  border
-                  theme={theme}
-                />
-                <MacroRow
-                  color={themeMode === "dark" ? "#C58BFF" : FAT_COLOR}
-                  label={translate("fat", language)}
-                  value={`${targetFat} g`}
-                  theme={theme}
-                />
-              </>
-            ) : (
-              <Text style={[styles.emptyText, { color: theme.colors.mutedText }]}>
-                {translate("noGoalYet", language)}
-              </Text>
-            )}
-          </View>
-          <Pressable
-            style={styles.goalEditBtn}
+          <ActionButton
+            label={translate("editGoal", language)}
+            icon="flag-outline"
             onPress={() => router.push("/goal" as Href)}
-          >
-            <Ionicons name="flag-outline" size={15} color={theme.colors.primary} />
-            <Text style={[styles.goalEditText, { color: theme.colors.primary }]}>
-              {translate("editGoal", language)}
-            </Text>
-          </Pressable>
-        </View>
+          />
+        </Section>
 
-        {/* Preferences */}
-        <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
-          <Text style={[styles.prefsTitle, { color: theme.colors.mutedText }]}>
-            {translate("preferences", language)}
+        <Section title={translate("preferences", language)}>
+          <Text style={[styles.groupLabel, { color: theme.colors.mutedText }]}>
+            {translate("theme", language)}
           </Text>
-          <Text style={[styles.prefsLabel, { color: theme.colors.mutedText }]}>
-            {translate("theme", language).toUpperCase()}
-          </Text>
-          <View style={[styles.segmentGrid, { borderColor: theme.colors.border }]}>
-            <Pressable
+          <View style={styles.segmentRow}>
+            <ChoicePill
+              label={translate("lightTheme", language)}
+              selected={themeMode === "light"}
               onPress={() => setThemeMode("light")}
-              style={[
-                styles.segmentOption,
-                {
-                  backgroundColor: themeMode === "light" ? theme.colors.primary : "transparent",
-                  borderRightColor: theme.colors.border,
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "500",
-                  color: themeMode === "light" ? "#FFFFFF" : theme.colors.mutedText,
-                }}
-              >
-                {translate("lightTheme", language)}
-              </Text>
-            </Pressable>
-            <Pressable
+            />
+            <ChoicePill
+              label={translate("darkTheme", language)}
+              selected={themeMode === "dark"}
               onPress={() => setThemeMode("dark")}
-              style={[
-                styles.segmentOption,
-                { backgroundColor: themeMode === "dark" ? theme.colors.primary : "transparent" },
-              ]}
-            >
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "500",
-                  color: themeMode === "dark" ? "#FFFFFF" : theme.colors.mutedText,
-                }}
-              >
-                {translate("darkTheme", language)}
-              </Text>
-            </Pressable>
+            />
           </View>
 
-          <Text style={[styles.prefsLabel, { color: theme.colors.mutedText, marginTop: 12 }]}>
-            {translate("language", language).toUpperCase()}
+          <Text style={[styles.groupLabel, { color: theme.colors.mutedText }]}>
+            {translate("language", language)}
           </Text>
-          <View style={[styles.segmentGrid, { borderColor: theme.colors.border }]}>
-            <Pressable
+          <View style={styles.segmentRow}>
+            <ChoicePill
+              label={translate("turkish", language)}
+              selected={language === "tr"}
               onPress={() => setLanguage("tr")}
-              style={[
-                styles.segmentOption,
-                {
-                  backgroundColor: language === "tr" ? theme.colors.primary : "transparent",
-                  borderRightColor: theme.colors.border,
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "500",
-                  color: language === "tr" ? "#FFFFFF" : theme.colors.mutedText,
-                }}
-              >
-                {translate("turkish", language)}
-              </Text>
-            </Pressable>
-            <Pressable
+            />
+            <ChoicePill
+              label={translate("english", language)}
+              selected={language === "en"}
               onPress={() => setLanguage("en")}
-              style={[
-                styles.segmentOption,
-                { backgroundColor: language === "en" ? theme.colors.primary : "transparent" },
-              ]}
-            >
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "500",
-                  color: language === "en" ? "#FFFFFF" : theme.colors.mutedText,
-                }}
-              >
-                {translate("english", language)}
-              </Text>
-            </Pressable>
+            />
           </View>
-        </View>
+        </Section>
 
-        {/* Data */}
-        <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
-          <Pressable style={styles.dataRow} onPress={confirmClearMeals}>
-            <View style={styles.dataLeft}>
-              <Ionicons name="trash-outline" size={16} color={theme.colors.danger} />
-              <Text style={[styles.dataText, { color: theme.colors.danger }]}>
-                {translate("clearMeals", language)}
-              </Text>
+        <Section title={translate("data", language)}>
+          <DangerButton
+            icon="trash-outline"
+            label={translate("clearMeals", language)}
+            onPress={confirmClearMeals}
+          />
+        </Section>
+
+        <Section title={translate("appInfo", language)}>
+          <View style={styles.appInfoContent}>
+            <View style={[styles.appInfoIcon, { backgroundColor: theme.colors.primarySoft }]}>
+              <Text style={styles.appInfoEmoji}>🌿</Text>
             </View>
-            <Ionicons name="chevron-forward" size={15} color={theme.colors.mutedText} />
-          </Pressable>
-        </View>
-
-        {/* App info */}
-        <View style={styles.appInfo}>
-          <View style={[styles.appInfoIcon, { backgroundColor: theme.colors.primary }]}>
-            <Ionicons name="leaf" size={17} color="#FFFFFF" />
+            <Text style={[styles.appInfoName, { color: theme.colors.text }]}>
+              NutriTrack
+            </Text>
+            <Text style={[styles.appInfoVersion, { color: theme.colors.mutedText }]}>
+              {translate("version", language)} 1.0.0
+            </Text>
+            <Text style={[styles.appInfoDesc, { color: theme.colors.mutedText }]}>
+              {translate("smartNutritionTracking", language)}
+            </Text>
           </View>
-          <Text style={[styles.appInfoName, { color: theme.colors.text }]}>NutriTrack</Text>
-          <Text style={[styles.appInfoDesc, { color: theme.colors.mutedText }]}>
-            {translate("version", language)} 1.0.0 · {translate("smartNutritionTracking", language)}
-          </Text>
-        </View>
+        </Section>
 
-        {/* Action buttons */}
-        <View style={styles.actions}>
-          <Pressable
-            style={[styles.logoutBtn, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
+        <Section title={translate("accountActions", language)}>
+          <DangerButton
+            icon="log-out-outline"
+            label={translate("logout", language)}
             onPress={confirmLogout}
-          >
-            <Ionicons name="log-out-outline" size={16} color={theme.colors.text} />
-            <Text style={[styles.logoutText, { color: theme.colors.text }]}>
-              {translate("logout", language)}
-            </Text>
-          </Pressable>
-          <Pressable
-            style={styles.deleteBtn}
+          />
+          <View style={styles.actionGap} />
+          <DangerButton
+            icon="person-remove-outline"
+            label={translate("deleteAccount", language)}
             onPress={confirmDeleteAccount}
-          >
-            <Ionicons name="person-remove-outline" size={16} color="#A13B2E" />
-            <Text style={styles.deleteText}>
-              {translate("deleteAccount", language)}
-            </Text>
-          </Pressable>
-        </View>
+          />
+        </Section>
       </ScrollView>
     </Screen>
   );
 }
 
-function MacroRow({
-  color,
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const themeMode = useAppStore((state) => state.themeMode);
+  const theme = getTheme(themeMode);
+
+  return (
+    <View style={[styles.section, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+        {title}
+      </Text>
+      {children}
+    </View>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  const themeMode = useAppStore((state) => state.themeMode);
+  const theme = getTheme(themeMode);
+
+  return (
+    <View style={styles.infoRow}>
+      <Text style={[styles.infoLabel, { color: theme.colors.mutedText }]}>
+        {label}
+      </Text>
+      <Text style={[styles.infoValue, { color: theme.colors.text }]}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function ChoicePill({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const themeMode = useAppStore((state) => state.themeMode);
+  const theme = getTheme(themeMode);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.choicePill,
+        {
+          backgroundColor: selected ? theme.colors.primary : theme.colors.cardSoft,
+          borderColor: selected ? theme.colors.primary : theme.colors.border,
+        },
+      ]}
+    >
+      <Text style={[styles.choiceText, { color: selected ? "#FFFFFF" : theme.colors.text }]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function ActionButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  const themeMode = useAppStore((state) => state.themeMode);
+  const theme = getTheme(themeMode);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.actionButton, { backgroundColor: theme.colors.primarySoft }]}
+    >
+      <Ionicons name={icon} size={18} color={theme.colors.primary} />
+      <Text style={[styles.actionText, { color: theme.colors.primary }]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function DangerButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  const themeMode = useAppStore((state) => state.themeMode);
+  const theme = getTheme(themeMode);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.dangerButton, { backgroundColor: theme.colors.cardSoft }]}
+    >
+      <Ionicons name={icon} size={19} color={theme.colors.danger} />
+      <Text style={[styles.dangerText, { color: theme.colors.danger }]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function StatCard({
+  icon,
   label,
   value,
-  border,
-  theme,
 }: {
-  color: string;
+  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
-  border?: boolean;
-  theme: ReturnType<typeof getTheme>;
 }) {
+  const themeMode = useAppStore((state) => state.themeMode);
+  const theme = getTheme(themeMode);
+
   return (
-    <View style={[styles.macroRow, border && { borderTopColor: theme.colors.border }]}>
-      <View style={styles.macroLeft}>
-        <View style={[styles.macroDot, { backgroundColor: color }]} />
-        <Text style={[styles.macroLabel, { color: theme.colors.text }]}>{label}</Text>
-      </View>
-      <Text style={[styles.macroValue, { color: theme.colors.text }]}>{value}</Text>
+    <View
+      style={[
+        styles.statCard,
+        { backgroundColor: theme.colors.cardSoft, borderColor: theme.colors.border },
+      ]}
+    >
+      <Ionicons name={icon} size={18} color={theme.colors.primary} />
+      <Text style={[styles.statValue, { color: theme.colors.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: theme.colors.mutedText }]}>{label}</Text>
     </View>
   );
 }
@@ -479,303 +411,162 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 120,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+  headerArea: {
     marginTop: 8,
-    marginBottom: 18,
-  },
-  headerLeft: {
-    flexDirection: "row",
+    marginBottom: 24,
     alignItems: "center",
-    gap: 12,
-    flex: 1,
   },
-  avatar: {
-    width: 52,
-    height: 52,
+  avatarBox: {
+    width: 70,
+    height: 70,
     borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 18,
   },
-  avatarText: {
-    fontFamily: "serif",
-    fontWeight: "500",
-    fontSize: 18,
-    color: "#F4F6F1",
+  title: {
+    fontSize: 32,
+    fontWeight: "900",
+    textAlign: "center",
   },
-  headerInfo: {
+  subtitle: {
+    marginTop: 10,
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: "600",
+    textAlign: "center",
+    maxWidth: 315,
+  },
+  statRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+    width: "100%",
+  },
+  statCard: {
     flex: 1,
-  },
-  userName: {
-    fontSize: 22,
-    fontWeight: "500",
-    fontFamily: "serif",
-  },
-  userMeta: {
-    marginTop: 2,
-    fontSize: 12,
-    letterSpacing: 0.02,
-  },
-  settingsBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 0.5,
     alignItems: "center",
     justifyContent: "center",
-  },
-  statsBar: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    marginBottom: 20,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
     paddingVertical: 12,
-    borderRightWidth: 1,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 4,
   },
   statValue: {
-    fontSize: 19,
-    fontWeight: "500",
-    fontVariant: ["tabular-nums"],
+    fontSize: 16,
+    fontWeight: "900",
   },
   statLabel: {
-    marginTop: 2,
-    fontSize: 10,
-    letterSpacing: 0.08,
-    textTransform: "uppercase",
+    fontSize: 11,
+    fontWeight: "700",
   },
-  card: {
-    borderWidth: 0.5,
-    borderRadius: 12,
+  section: {
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 18,
     marginBottom: 16,
-    overflow: "hidden",
   },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 18,
-    paddingTop: 14,
-    paddingBottom: 14,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    marginBottom: 16,
   },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: "500",
-    fontFamily: "serif",
+  infoRow: {
+    paddingVertical: 6,
+    gap: 2,
   },
-  badge: {
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: 20,
+  infoLabel: {
+    fontSize: 12,
+    fontWeight: "700",
   },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  fieldRow: {
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderTopWidth: 0.5,
-  },
-  fieldLabel: {
-    marginBottom: 3,
-    fontSize: 10,
-    textTransform: "uppercase",
-    letterSpacing: 0.06,
-  },
-  fieldValue: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  goalTopBorder: {
-    height: 6,
-  },
-  goalHeader: {
-    paddingHorizontal: 18,
-    paddingTop: 14,
-    paddingBottom: 6,
-  },
-  goalTitle: {
-    fontSize: 19,
-    fontWeight: "600",
-    fontFamily: "serif",
-    letterSpacing: -0.01,
-  },
-  goalBody: {
-    paddingHorizontal: 18,
-    paddingBottom: 12,
-    borderBottomWidth: 5,
-  },
-  calorieRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 6,
-    paddingTop: 8,
-    paddingBottom: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#16241C",
-  },
-  calorieValue: {
-    fontSize: 34,
-    fontWeight: "500",
-    fontVariant: ["tabular-nums"],
-  },
-  calorieUnit: {
-    fontSize: 13,
-  },
-  progressBar: {
-    height: 8,
-    borderRadius: 2,
-    flexDirection: "row",
-    overflow: "hidden",
-    marginVertical: 4,
-    marginBottom: 14,
-  },
-  progressSegment: {
-    height: 8,
-  },
-  macroRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 7,
-    borderTopWidth: 0.5,
-  },
-  macroLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  macroDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 2,
-  },
-  macroLabel: {
-    fontSize: 13,
-  },
-  macroValue: {
-    fontSize: 13,
-    fontVariant: ["tabular-nums"],
-  },
-  goalEditBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 13,
-  },
-  goalEditText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  prefsTitle: {
-    paddingHorizontal: 18,
-    paddingTop: 14,
-    paddingBottom: 14,
-    fontSize: 14,
-    fontWeight: "500",
-    fontFamily: "serif",
-  },
-  prefsLabel: {
-    paddingHorizontal: 18,
-    marginBottom: 6,
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: 0.06,
-  },
-  segmentGrid: {
-    flexDirection: "row",
-    marginHorizontal: 18,
-    marginBottom: 12,
-    borderWidth: 0.5,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  segmentOption: {
-    flex: 1,
-    paddingVertical: 9,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRightWidth: 0.5,
-  },
-  dataRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 13,
-    paddingHorizontal: 18,
-  },
-  dataLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  dataText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  appInfo: {
-    alignItems: "center",
-    paddingVertical: 18,
-  },
-  appInfoIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  appInfoName: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  appInfoDesc: {
-    marginTop: 2,
-    fontSize: 11,
-  },
-  actions: {
-    gap: 8,
-    marginBottom: 20,
-  },
-  logoutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-    borderWidth: 0.5,
-    borderRadius: 10,
-  },
-  logoutText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  deleteBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-    borderWidth: 0.5,
-    borderRadius: 10,
-    backgroundColor: "#FCEBEB",
-    borderColor: "#E7B4AC",
-  },
-  deleteText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#A13B2E",
+  infoValue: {
+    fontSize: 15,
+    fontWeight: "900",
   },
   emptyText: {
     fontSize: 13,
-    fontWeight: "500",
+    lineHeight: 19,
+    fontWeight: "700",
+  },
+  groupLabel: {
+    marginTop: 2,
+    marginBottom: 10,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  segmentRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 16,
+  },
+  choicePill: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  choiceText: {
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  actionButton: {
+    marginTop: 16,
+    minHeight: 48,
+    borderRadius: 17,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  actionText: {
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  dangerButton: {
+    minHeight: 48,
+    borderRadius: 17,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  dangerText: {
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  actionGap: {
+    height: 10,
+  },
+  appInfoContent: {
+    alignItems: "center",
     paddingVertical: 8,
+    gap: 6,
+  },
+  appInfoIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  appInfoEmoji: {
+    fontSize: 28,
+  },
+  appInfoName: {
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  appInfoVersion: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  appInfoDesc: {
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
