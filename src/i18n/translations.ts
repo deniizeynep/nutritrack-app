@@ -622,6 +622,11 @@ export const translations = {
     en: "Snack",
   },
 
+  diarySnacks: {
+    tr: "Atıştırmalıklar",
+    en: "Snacks",
+  },
+
   addMealSubtitle: {
     tr: "Kalori ve makro değerlerini girerek günlük takibini güncelle.",
     en: "Update your daily tracking by entering calories and macros.",

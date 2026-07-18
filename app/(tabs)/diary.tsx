@@ -11,7 +11,10 @@ import {
 } from "react-native";
 import { MealCard } from "../../src/components/MealCard";
 import { Screen } from "../../src/components/Screen";
-import { translate } from "../../src/i18n/translations";
+import {
+  translate,
+  type TranslationKey,
+} from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
 import { useAuthStore } from "../../src/stores/authStore";
 import { useGoalStore } from "../../src/stores/goalStore";
@@ -22,14 +25,12 @@ import {
 } from "../../src/stores/mealStore";
 import { getTheme } from "../../src/theme/theme";
 
-type DaySummary = {
-  dateKey: string;
-  meals: Meal[];
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-};
+const mealSections = [
+  { category: "breakfast", labelKey: "breakfast" },
+  { category: "lunch", labelKey: "lunch" },
+  { category: "dinner", labelKey: "dinner" },
+  { category: "snack", labelKey: "diarySnacks" },
+] satisfies { category: MealCategory; labelKey: TranslationKey }[];
 
 export default function DiaryScreen() {
   const themeMode = useAppStore((state) => state.themeMode);
@@ -115,14 +116,14 @@ export default function DiaryScreen() {
             style={[
               styles.logoBox,
               {
-                backgroundColor: theme.colors.primarySoft,
+                backgroundColor: theme.colors.primary,
               },
             ]}
           >
             <Ionicons
               name="calendar-outline"
-              size={30}
-              color={theme.colors.primary}
+              size={28}
+              color="#FFFFFF"
             />
           </View>
 
@@ -130,7 +131,12 @@ export default function DiaryScreen() {
             {translate("calorieHistory", language)}
           </Text>
 
-          <Text style={[styles.subtitle, { color: theme.colors.mutedText }]}>
+          <Text
+            adjustsFontSizeToFit
+            minimumFontScale={0.78}
+            numberOfLines={1}
+            style={[styles.subtitle, { color: theme.colors.mutedText }]}
+          >
             {translate("diarySubtitle", language)}
           </Text>
         </View>
@@ -169,7 +175,7 @@ export default function DiaryScreen() {
                         },
                       ]}
                     >
-                      {formatShortDate(day.dateKey, language)}
+                      {formatWeekday(day.dateKey, language)}
                     </Text>
 
                     <Text
@@ -182,7 +188,7 @@ export default function DiaryScreen() {
                         },
                       ]}
                     >
-                      {day.meals.length} {translate("entries", language)}
+                      {formatDayNumber(day.dateKey)}
                     </Text>
                   </Pressable>
                 );
@@ -316,26 +322,65 @@ export default function DiaryScreen() {
                   </View>
                 </View>
 
-                <View style={styles.mealList}>
-                  {selectedDay.meals.map((meal) => (
-                    <MealCard
-                      key={meal.id}
-                      icon={getMealIcon(meal.category)}
-                      title={meal.title}
-                      items={
-                        meal.description ||
-                        getMealCategoryLabel(meal.category, language)
-                      }
-                      calories={meal.calories}
-                      protein={meal.protein}
-                      carbs={meal.carbs}
-                      fat={meal.fat}
-                      onPress={() =>
-                        router.push(`/meal-detail?mealId=${meal.id}` as Href)
-                      }
-                      onDelete={() => confirmDeleteMeal(meal.id)}
-                    />
-                  ))}
+                <View style={styles.mealSections}>
+                  {mealSections.map((section) => {
+                    const sectionMeals = selectedDay.meals.filter(
+                      (meal) => meal.category === section.category,
+                    );
+
+                    return (
+                      <View key={section.category} style={styles.mealSection}>
+                        <View style={styles.mealSectionHeader}>
+                          <Text
+                            style={[
+                              styles.mealSectionTitle,
+                              { color: theme.colors.text },
+                            ]}
+                          >
+                            {translate(section.labelKey, language)}
+                          </Text>
+
+                          <View
+                            style={[
+                              styles.mealCount,
+                              { backgroundColor: theme.colors.primarySoft },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.mealCountText,
+                                { color: theme.colors.primary },
+                              ]}
+                            >
+                              {sectionMeals.length}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {sectionMeals.map((meal) => (
+                          <MealCard
+                            key={meal.id}
+                            icon={getMealIcon(meal.category)}
+                            title={meal.title}
+                            items={
+                              meal.description ||
+                              getMealCategoryLabel(meal.category, language)
+                            }
+                            calories={meal.calories}
+                            protein={meal.protein}
+                            carbs={meal.carbs}
+                            fat={meal.fat}
+                            onPress={() =>
+                              router.push(
+                                `/meal-detail?mealId=${meal.id}` as Href,
+                              )
+                            }
+                            onDelete={() => confirmDeleteMeal(meal.id)}
+                          />
+                        ))}
+                      </View>
+                    );
+                  })}
                 </View>
               </>
             ) : null}
@@ -451,19 +496,16 @@ function getMealCategoryLabel(category: MealCategory, language: "tr" | "en") {
   return labels[category][language];
 }
 
-function formatShortDate(dateKey: string, language: "tr" | "en") {
-  const todayKey = new Date().toISOString().slice(0, 10);
-
-  if (dateKey === todayKey) {
-    return language === "tr" ? "Bugün" : "Today";
-  }
-
+function formatWeekday(dateKey: string, language: "tr" | "en") {
   const date = new Date(`${dateKey}T12:00:00`);
 
   return date.toLocaleDateString(language === "tr" ? "tr-TR" : "en-US", {
-    day: "numeric",
-    month: "short",
+    weekday: "short",
   });
+}
+
+function formatDayNumber(dateKey: string) {
+  return new Date(`${dateKey}T12:00:00`).getDate();
 }
 
 function formatLongDate(dateKey: string, language: "tr" | "en") {
@@ -492,17 +534,17 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   headerArea: {
-    marginTop: 8,
-    marginBottom: 24,
+    marginTop: 10,
+    marginBottom: 28,
     alignItems: "center",
   },
   logoBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 23,
+    width: 60,
+    height: 60,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 18,
+    marginBottom: 20,
   },
   title: {
     fontSize: 32,
@@ -511,32 +553,37 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   subtitle: {
-    marginTop: 10,
-    fontSize: 13,
+    alignSelf: "stretch",
+    marginTop: 12,
+    fontSize: 14,
     lineHeight: 20,
-    fontWeight: "600",
+    fontWeight: "500",
     textAlign: "center",
-    maxWidth: 315,
   },
   dayList: {
-    gap: 10,
-    paddingBottom: 16,
+    gap: 8,
+    paddingBottom: 18,
   },
   dayChip: {
-    minWidth: 96,
+    width: 62,
+    minHeight: 70,
     borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: 18,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
   dayChipDate: {
-    fontSize: 14,
-    fontWeight: "900",
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "capitalize",
   },
   dayChipInfo: {
-    marginTop: 4,
-    fontSize: 11,
-    fontWeight: "700",
+    marginTop: 3,
+    fontSize: 22,
+    lineHeight: 26,
+    fontWeight: "900",
   },
   summaryCard: {
     borderWidth: 1,
@@ -619,9 +666,35 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "900",
   },
-  mealList: {
-    marginTop: 18,
+  mealSections: {
+    marginTop: 24,
+    gap: 24,
+  },
+  mealSection: {
     gap: 12,
+  },
+  mealSectionHeader: {
+    minHeight: 28,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  mealSectionTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: -0.3,
+  },
+  mealCount: {
+    minWidth: 24,
+    height: 24,
+    paddingHorizontal: 7,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mealCountText: {
+    fontSize: 11,
+    fontWeight: "900",
   },
   emptyCard: {
     borderWidth: 1,
