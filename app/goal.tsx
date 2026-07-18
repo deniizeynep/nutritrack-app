@@ -49,6 +49,8 @@ export default function GoalScreen() {
       return;
     }
 
+    // Controlled fields must be populated when the persisted goal finishes loading.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAge(String(savedGoal.age));
     setHeightCm(String(savedGoal.heightCm));
     setWeightKg(String(savedGoal.weightKg));
