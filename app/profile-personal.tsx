@@ -120,10 +120,7 @@ export default function PersonalInformationScreen() {
         return;
       }
 
-      Alert.alert(
-        translate("accountInformationSaved", language),
-        translate("accountInformationSavedMessage", language),
-      );
+      router.back();
     } catch (error) {
       Alert.alert(
         translate("error", language),
