@@ -17,6 +17,7 @@ import { Screen } from "../../src/components/Screen";
 import { translate } from "../../src/i18n/translations";
 import { useAppStore } from "../../src/stores/appStore";
 import { useAuthStore } from "../../src/stores/authStore";
+import { activateLocalTestUser } from "../../src/utils/localTestUser";
 import {
   GoogleSignInError,
   isExpoGoBuild,
@@ -144,7 +145,11 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.headerArea}>
-            <View
+            <Pressable
+              onPress={() => {
+                activateLocalTestUser();
+                router.replace("/(tabs)/home" as Href);
+              }}
               style={[
                 styles.logoBox,
                 {
@@ -153,7 +158,7 @@ export default function LoginScreen() {
               ]}
             >
               <Text style={styles.logoIcon}>🌿</Text>
-            </View>
+            </Pressable>
 
             <Text style={[styles.title, { color: theme.colors.text }]}>
               {translate("login", language)}
