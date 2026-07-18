@@ -266,14 +266,39 @@ export const translations = {
     en: "Language, theme and privacy",
   },
 
-  remindersComingSoon: {
-    tr: "Hatırlatıcılar yakında",
-    en: "Reminders are coming soon",
+  everyDay: {
+    tr: "HER GÜN",
+    en: "EVERY DAY",
   },
 
-  remindersComingSoonSubtitle: {
-    tr: "Öğün ve su bildirimlerini sonraki güncellemelerde buradan yönetebileceksiniz.",
-    en: "You'll be able to manage meal and water notifications here in a future update.",
+  reminderTime: {
+    tr: "Hatırlatma Saati",
+    en: "Reminder Time",
+  },
+
+  hour: {
+    tr: "Saat",
+    en: "Hour",
+  },
+
+  minute: {
+    tr: "Dakika",
+    en: "Minute",
+  },
+
+  waterIntake: {
+    tr: "Su Tüketimi",
+    en: "Water Intake",
+  },
+
+  everyTwoHours: {
+    tr: "2 SAAT ARAYLA",
+    en: "EVERY 2 HOURS",
+  },
+
+  startAndEnd: {
+    tr: "Başlangıç - Bitiş",
+    en: "Start - End",
   },
 
   targetCalories: {
