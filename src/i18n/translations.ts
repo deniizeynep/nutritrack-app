@@ -211,6 +211,36 @@ export const translations = {
     en: "Language, theme and privacy",
   },
 
+  languageAndRegion: {
+    tr: "Dil ve Bölge",
+    en: "Language and Region",
+  },
+
+  appLanguage: {
+    tr: "Uygulama Dili",
+    en: "App Language",
+  },
+
+  turkishLocale: {
+    tr: "Türkçe (TR)",
+    en: "Turkish (TR)",
+  },
+
+  englishLocale: {
+    tr: "İngilizce (EN)",
+    en: "English (EN)",
+  },
+
+  unitSystem: {
+    tr: "Birim Sistemi",
+    en: "Unit System",
+  },
+
+  metricUnits: {
+    tr: "Metrik (kg, kcal)",
+    en: "Metric (kg, kcal)",
+  },
+
   everyDay: {
     tr: "HER GÜN",
     en: "EVERY DAY",
