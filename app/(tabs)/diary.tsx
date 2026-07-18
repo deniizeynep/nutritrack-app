@@ -361,27 +361,6 @@ export default function DiaryScreen() {
                               {translate(section.labelKey, language)}
                             </Text>
                           </View>
-
-                          <Pressable
-                            accessibilityLabel={`${translate("addMeal", language)}: ${translate(section.labelKey, language)}`}
-                            accessibilityRole="button"
-                            hitSlop={8}
-                            onPress={() =>
-                              router.push(
-                                `/add-meal?category=${section.category}` as Href,
-                              )
-                            }
-                            style={[
-                              styles.addMealButton,
-                              { backgroundColor: theme.colors.primarySoft },
-                            ]}
-                          >
-                            <Ionicons
-                              name="add"
-                              size={19}
-                              color={theme.colors.primary}
-                            />
-                          </Pressable>
                         </View>
 
                         {sectionMeals.length > 0 ? (
@@ -516,6 +495,21 @@ export default function DiaryScreen() {
           </View>
         )}
       </ScrollView>
+
+      <Pressable
+        accessibilityLabel={translate("addMeal", language)}
+        accessibilityRole="button"
+        onPress={() => router.push("/add-meal" as Href)}
+        style={({ pressed }) => [
+          styles.floatingAddButton,
+          {
+            backgroundColor: theme.colors.primary,
+            opacity: pressed ? 0.84 : 1,
+          },
+        ]}
+      >
+        <Ionicons name="add" size={30} color="#FFFFFF" />
+      </Pressable>
     </Screen>
   );
 }
@@ -770,8 +764,6 @@ const styles = StyleSheet.create({
     minHeight: 30,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
   },
   mealSectionHeading: {
     flex: 1,
@@ -783,13 +775,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
     letterSpacing: -0.3,
-  },
-  addMealButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
   },
   mealRow: {
     minHeight: 48,
@@ -836,6 +821,21 @@ const styles = StyleSheet.create({
   emptyMealSectionText: {
     fontSize: 11,
     fontWeight: "600",
+  },
+  floatingAddButton: {
+    position: "absolute",
+    right: 20,
+    bottom: 14,
+    width: 56,
+    height: 56,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 8,
   },
   emptyCard: {
     borderWidth: 1,
