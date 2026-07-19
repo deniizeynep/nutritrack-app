@@ -35,7 +35,7 @@ export default function ProfileScreen() {
             clearMeals();
             clearGoal();
             logout();
-            router.replace("/");
+            router.dismissAll();
           },
         },
       ],
