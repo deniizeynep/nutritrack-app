@@ -641,7 +641,7 @@ export default function WelcomeScreen() {
             ]}
           >
             <Button
-              onPress={() => router.push("/(auth)/register" as Href)}
+              onPress={() => router.push("/onboarding/step1" as Href)}
               accessibilityLabel={translate("startJourney", language)}
               accessibilityRole="button"
             >
