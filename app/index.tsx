@@ -679,32 +679,17 @@ export default function WelcomeScreen() {
               ]}
             >
               {translate("termsText", language).split("{termsLink}")[0]}
-            </Text>
-            <Pressable
-              onPress={() => router.push("/terms" as Href)}
-              hitSlop={12}
-              accessibilityLabel={translate("termsLink", language)}
-              accessibilityRole="link"
-              style={styles.termsLinkWrapper}
-            >
               <Text
+                onPress={() => router.push("/terms" as Href)}
                 style={[
                   styles.termsLink,
                   { color: theme.colors.primary },
                 ]}
+                accessibilityRole="link"
+                accessibilityLabel={translate("termsLink", language)}
               >
                 {translate("termsLink", language)}
               </Text>
-            </Pressable>
-            <Text
-              style={[
-                styles.termsText,
-                {
-                  color: theme.colors.mutedText,
-                  fontFamily: theme.typography.bodyMd.fontFamily,
-                },
-              ]}
-            >
               {translate("termsText", language)
                 .split("{termsLink}")[1] ?? ""}
             </Text>
@@ -843,9 +828,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   termsFooter: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
+    alignItems: "center",
     marginTop: 24,
     paddingHorizontal: 20,
   },
@@ -853,10 +836,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     textAlign: "center",
-  },
-  termsLinkWrapper: {
-    minHeight: 24,
-    justifyContent: "center",
   },
   termsLink: {
     fontSize: 12,
