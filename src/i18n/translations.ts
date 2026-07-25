@@ -1925,14 +1925,6 @@ export const translations = {
     tr: "NutriTrack, uygulamanın kullanımından doğabilecek doğrudan veya dolaylı zararlardan sorumlu tutulamaz. Uygulamanın sürekli ve hatasız çalışacağını garanti etmiyoruz. Beslenme hesaplamaları tahmini değerlerdir ve kesin sonuçlar olarak değerlendirilmemelidir.",
     en: "NutriTrack shall not be liable for any direct or indirect damages arising from the use of the application. We do not guarantee that the application will operate continuously or error-free. Nutritional calculations are estimated values and should not be considered as exact results.",
   },
-  termsContactTitle: {
-    tr: "İletişim",
-    en: "Contact",
-  },
-  termsContactBody: {
-    tr: "Bu Kullanım Koşulları hakkında sorularınız için bizimle iletişime geçin:\nE-posta: support@nutritrack.app\nSon güncelleme: Temmuz 2025",
-    en: "For questions regarding these Terms of Use, please contact us:\nEmail: support@nutritrack.app\nLast updated: July 2025",
-  },
   termsIntroductionShort: {
     tr: "Bu sözleşme hakkında genel bilgiler",
     en: "General information about this agreement",
@@ -1960,10 +1952,6 @@ export const translations = {
   termsLiabilityShort: {
     tr: "Uygulamanın sorumlulukları ve sınırlamaları",
     en: "Application responsibilities and limitations",
-  },
-  termsContactShort: {
-    tr: "Bizimle nasıl iletişime geçebilirsiniz",
-    en: "How you can contact us",
   },
 } as const;
 

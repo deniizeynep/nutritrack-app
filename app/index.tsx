@@ -285,7 +285,7 @@ export default function WelcomeScreen() {
 
   const isSmallScreen = screenHeight < 700;
   const topBreathing = useMemo(
-    () => Math.round(Math.max(12, Math.min(20, screenHeight * 0.018))),
+    () => Math.round(Math.max(16, Math.min(24, screenHeight * 0.022))),
     [screenHeight],
   );
 
