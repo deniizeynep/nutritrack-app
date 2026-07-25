@@ -188,6 +188,18 @@ function AgePicker({
     [onSelectAge],
   );
 
+  const handleItemPress = useCallback(
+    (ageValue: number) => {
+      const index = ageValue - AGE_MIN;
+      scrollRef.current?.scrollTo({
+        y: index * AGE_ITEM_HEIGHT,
+        animated: true,
+      });
+      onSelectAge(ageValue);
+    },
+    [onSelectAge],
+  );
+
   return (
     <View
       style={[
@@ -240,7 +252,13 @@ function AgePicker({
         {ages.map((ageValue) => {
           const isActive = selectedAge === ageValue;
           return (
-            <View key={ageValue} style={styles.ageItem}>
+            <Pressable
+              key={ageValue}
+              onPress={() => handleItemPress(ageValue)}
+              style={styles.ageItem}
+              accessibilityLabel={`${ageValue}`}
+              accessibilityRole="button"
+            >
               <Text
                 style={[
                   styles.ageItemText,
@@ -256,7 +274,7 @@ function AgePicker({
               >
                 {ageValue}
               </Text>
-            </View>
+            </Pressable>
           );
         })}
       </ScrollView>
@@ -387,33 +405,84 @@ export default function OnboardingStep2() {
               visibleCount={ageVisibleCount}
               theme={theme}
             />
-            <Text
-              style={[
-                styles.ageDisplay,
-                {
-                  color: age ? theme.colors.text : theme.colors.mutedText,
-                  fontFamily: theme.typography.headlineMd.fontFamily,
-                },
-              ]}
-              accessibilityLabel={
-                age
-                  ? `${age} ${translate("ageYears", language)}`
-                  : translate("ageYears", language)
-              }
-            >
-              <Text
+            <View style={styles.ageStepperRow}>
+              <Pressable
+                onPress={() => {
+                  const current = age ?? 25;
+                  const newAge = Math.max(AGE_MIN, current - 1);
+                  setAge(newAge);
+                  impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+                }}
                 style={[
-                  styles.ageNumber,
+                  styles.ageStepperButton,
                   {
-                    color: age ? theme.colors.text : theme.colors.mutedText,
+                    backgroundColor: theme.colors.cardSoft,
+                    borderRadius: theme.radius.full,
                   },
                 ]}
+                accessibilityLabel={translate("decrease", language)}
+                accessibilityRole="button"
+                hitSlop={8}
               >
-                {age ?? "—"}
-              </Text>
-              {" "}
-              {translate("ageYears", language)}
-            </Text>
+                <Ionicons
+                  name="remove"
+                  size={20}
+                  color={theme.colors.primary}
+                />
+              </Pressable>
+
+              <View style={styles.ageStepperValue}>
+                <Text
+                  style={[
+                    styles.ageStepperNumber,
+                    {
+                      color: age
+                        ? theme.colors.text
+                        : theme.colors.mutedText,
+                      fontFamily: theme.typography.headlineMd.fontFamily,
+                    },
+                  ]}
+                >
+                  {age ?? "—"}
+                </Text>
+                <Text
+                  style={[
+                    styles.ageStepperLabel,
+                    {
+                      color: theme.colors.mutedText,
+                      fontFamily: theme.typography.bodyMd.fontFamily,
+                    },
+                  ]}
+                >
+                  {translate("ageYears", language)}
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={() => {
+                  const current = age ?? 25;
+                  const newAge = Math.min(AGE_MAX, current + 1);
+                  setAge(newAge);
+                  impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+                }}
+                style={[
+                  styles.ageStepperButton,
+                  {
+                    backgroundColor: theme.colors.cardSoft,
+                    borderRadius: theme.radius.full,
+                  },
+                ]}
+                accessibilityLabel={translate("increase", language)}
+                accessibilityRole="button"
+                hitSlop={8}
+              >
+                <Ionicons
+                  name="add"
+                  size={20}
+                  color={theme.colors.primary}
+                />
+              </Pressable>
+            </View>
           </View>
         </Animated.View>
 
@@ -550,6 +619,32 @@ const styles = StyleSheet.create({
   ageNumber: {
     fontSize: 24,
     fontWeight: "800",
+  },
+  ageStepperRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 14,
+    gap: 20,
+  },
+  ageStepperButton: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ageStepperValue: {
+    alignItems: "center",
+    minWidth: 90,
+  },
+  ageStepperNumber: {
+    fontSize: 28,
+    fontWeight: "800",
+    lineHeight: 34,
+  },
+  ageStepperLabel: {
+    fontSize: 13,
+    marginTop: 2,
   },
   footer: {
     paddingTop: 8,

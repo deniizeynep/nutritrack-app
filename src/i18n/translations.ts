@@ -2047,6 +2047,16 @@ export const translations = {
     tr: "Yaşında",
     en: "years old",
   },
+
+  decrease: {
+    tr: "Azalt",
+    en: "Decrease",
+  },
+
+  increase: {
+    tr: "Artır",
+    en: "Increase",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
