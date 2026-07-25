@@ -721,7 +721,7 @@ export default function OnboardingStep2() {
           style={[
             styles.footer,
             {
-              paddingBottom: isSmallScreen ? 16 : 24,
+              paddingBottom: isSmallScreen ? 24 : 32,
             },
           ]}
           entering={FadeInUp.duration(400).delay(200)}
@@ -825,7 +825,7 @@ const styles = StyleSheet.create({
   },
   ageDisplayCenter: {
     alignItems: "center",
-    flex: 1,
+    minWidth: 80,
   },
   ageNumber: {
     fontSize: 32,

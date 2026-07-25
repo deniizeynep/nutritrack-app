@@ -23,7 +23,7 @@ const initialState = {
   currentStep: 1,
   selectedGoal: null as GoalType | null,
   gender: null as OnboardingGender | null,
-  age: null as number | null,
+  age: 18 as number | null,
   height: null as number | null,
   weight: null as number | null,
 };
