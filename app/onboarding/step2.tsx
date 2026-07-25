@@ -165,6 +165,7 @@ function AgePicker({
 }) {
   const scrollRef = useRef<ScrollView>(null);
   const didInitialScroll = useRef(false);
+  const isInternalChange = useRef(false);
   const containerHeight = AGE_ITEM_HEIGHT * visibleCount;
 
   const handleLayout = useCallback(() => {
@@ -175,17 +176,44 @@ function AgePicker({
     }
   }, []);
 
-  const handleMomentumEnd = useCallback(
-    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
-      const index = Math.round(
-        e.nativeEvent.contentOffset.y / AGE_ITEM_HEIGHT,
-      );
+  useEffect(() => {
+    if (isInternalChange.current) {
+      isInternalChange.current = false;
+      return;
+    }
+    if (selectedAge !== null && scrollRef.current) {
+      const index = selectedAge - AGE_MIN;
+      scrollRef.current.scrollTo({
+        y: index * AGE_ITEM_HEIGHT,
+        animated: true,
+      });
+    }
+  }, [selectedAge]);
+
+  const snapToNearest = useCallback(
+    (offsetY: number) => {
+      const index = Math.round(offsetY / AGE_ITEM_HEIGHT);
       const clampedIndex = Math.max(0, Math.min(index, ages.length - 1));
       const age = ages[clampedIndex];
       impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+      isInternalChange.current = true;
       onSelectAge(age);
     },
     [onSelectAge],
+  );
+
+  const handleScrollEndDrag = useCallback(
+    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+      snapToNearest(e.nativeEvent.contentOffset.y);
+    },
+    [snapToNearest],
+  );
+
+  const handleMomentumEnd = useCallback(
+    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+      snapToNearest(e.nativeEvent.contentOffset.y);
+    },
+    [snapToNearest],
   );
 
   const handleItemPress = useCallback(
@@ -195,6 +223,7 @@ function AgePicker({
         y: index * AGE_ITEM_HEIGHT,
         animated: true,
       });
+      isInternalChange.current = true;
       onSelectAge(ageValue);
     },
     [onSelectAge],
@@ -241,7 +270,8 @@ function AgePicker({
         showsVerticalScrollIndicator={false}
         snapToInterval={AGE_ITEM_HEIGHT}
         snapToAlignment="center"
-        decelerationRate="fast"
+        decelerationRate={0.92}
+        onScrollEndDrag={handleScrollEndDrag}
         onMomentumScrollEnd={handleMomentumEnd}
         onLayout={handleLayout}
         contentContainerStyle={{
