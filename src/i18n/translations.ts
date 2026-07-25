@@ -2062,6 +2062,101 @@ export const translations = {
     tr: "Düzenlemek için dokun",
     en: "Tap to edit",
   },
+
+  onboardingFinalTitle: {
+    tr: "Son Dokunuşlar",
+    en: "Final Touches",
+  },
+
+  onboardingFinalSubtitle: {
+    tr: "Günlük yaşamını öğrenelim. Böylece sana en doğru kalori ve makro hedeflerini oluşturabiliriz.",
+    en: "Let us learn about your daily life so we can create the most accurate calorie and macro targets for you.",
+  },
+
+  activityLevelLabel: {
+    tr: "AKTİVİTE SEVİYESİ",
+    en: "ACTIVITY LEVEL",
+  },
+
+  sedentaryTitle: {
+    tr: "Hareketsiz",
+    en: "Sedentary",
+  },
+
+  sedentaryDesc: {
+    tr: "Çoğunlukla masa başında vakit geçiriyorum.",
+    en: "I spend most of my time at a desk.",
+  },
+
+  lightTitle: {
+    tr: "Hafif Aktif",
+    en: "Lightly Active",
+  },
+
+  lightDesc: {
+    tr: "Haftada birkaç gün yürüyüş veya hafif egzersiz yapıyorum.",
+    en: "I walk or do light exercise a few days a week.",
+  },
+
+  activeTitle: {
+    tr: "Aktif",
+    en: "Active",
+  },
+
+  activeDesc: {
+    tr: "Haftada düzenli spor yapıyorum.",
+    en: "I exercise regularly during the week.",
+  },
+
+  veryActiveTitle: {
+    tr: "Çok Aktif",
+    en: "Very Active",
+  },
+
+  veryActiveDesc: {
+    tr: "Yoğun fiziksel aktivite veya profesyonel antrenman yapıyorum.",
+    en: "I do intense physical activity or professional training.",
+  },
+
+  summaryGoal: {
+    tr: "Hedef",
+    en: "Goal",
+  },
+
+  summaryGender: {
+    tr: "Cinsiyet",
+    en: "Gender",
+  },
+
+  summaryAge: {
+    tr: "Yaş",
+    en: "Age",
+  },
+
+  summaryHeight: {
+    tr: "Boy",
+    en: "Height",
+  },
+
+  summaryWeight: {
+    tr: "Kilo",
+    en: "Weight",
+  },
+
+  summaryActivity: {
+    tr: "Aktivite",
+    en: "Activity",
+  },
+
+  onboardingAiInfoStep3: {
+    tr: "Yapay zekâ, verdiğin bilgilere göre günlük kalori hedefini ve makro besin dağılımını oluşturacak.",
+    en: "AI will create your daily calorie target and macro nutrient distribution based on the information you provided.",
+  },
+
+  createPlanButton: {
+    tr: "Planımı Oluştur",
+    en: "Create My Plan",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

@@ -11,6 +11,7 @@ type AppState = {
   dataSharingEnabled: boolean;
   mealRemindersEnabled: boolean;
   waterTrackingEnabled: boolean;
+  onboardingCompleted: boolean;
   setThemeMode: (themeMode: ThemeMode) => void;
   toggleTheme: () => void;
   setLanguage: (language: Language) => void;
@@ -18,6 +19,7 @@ type AppState = {
   setDataSharingEnabled: (enabled: boolean) => void;
   setMealRemindersEnabled: (enabled: boolean) => void;
   setWaterTrackingEnabled: (enabled: boolean) => void;
+  setOnboardingCompleted: (completed: boolean) => void;
 };
 
 export const useAppStore = create<AppState>()(
@@ -29,6 +31,7 @@ export const useAppStore = create<AppState>()(
       dataSharingEnabled: false,
       mealRemindersEnabled: true,
       waterTrackingEnabled: true,
+      onboardingCompleted: false,
 
       setThemeMode: (themeMode) => set({ themeMode }),
 
@@ -46,6 +49,8 @@ export const useAppStore = create<AppState>()(
       setMealRemindersEnabled: (mealRemindersEnabled) => set({ mealRemindersEnabled }),
 
       setWaterTrackingEnabled: (waterTrackingEnabled) => set({ waterTrackingEnabled }),
+
+      setOnboardingCompleted: (onboardingCompleted) => set({ onboardingCompleted }),
     }),
     {
       name: "nutritrack-app-storage",
