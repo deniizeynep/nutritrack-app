@@ -33,7 +33,6 @@ const TOTAL_STEPS = 3;
 const AGE_MIN = 13;
 const AGE_MAX = 100;
 const AGE_ITEM_HEIGHT = 44;
-const AGE_VISIBLE_COUNT = 7;
 
 const ages: number[] = Array.from(
   { length: AGE_MAX - AGE_MIN + 1 },
@@ -156,15 +155,17 @@ function GenderCard({
 function AgePicker({
   selectedAge,
   onSelectAge,
+  visibleCount,
   theme,
 }: {
   selectedAge: number | null;
   onSelectAge: (age: number) => void;
+  visibleCount: number;
   theme: ReturnType<typeof getTheme>;
 }) {
   const scrollRef = useRef<ScrollView>(null);
   const didInitialScroll = useRef(false);
-  const containerHeight = AGE_ITEM_HEIGHT * AGE_VISIBLE_COUNT;
+  const containerHeight = AGE_ITEM_HEIGHT * visibleCount;
 
   const handleLayout = useCallback(() => {
     if (!didInitialScroll.current && scrollRef.current) {
@@ -275,6 +276,7 @@ export default function OnboardingStep2() {
 
   const { height: screenHeight } = useWindowDimensions();
   const isSmallScreen = screenHeight < 700;
+  const ageVisibleCount = isSmallScreen ? 5 : 7;
 
   const canContinue = gender !== null && age !== null;
 
@@ -289,16 +291,9 @@ export default function OnboardingStep2() {
 
   return (
     <Screen>
-      <ScrollView
-        contentContainerStyle={[
-          styles.scroll,
-          { paddingBottom: isSmallScreen ? 24 : 40 },
-        ]}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-      >
+      <View style={styles.root}>
         <Animated.View
-          style={styles.content}
+          style={styles.body}
           entering={FadeInUp.duration(400).springify()}
         >
           <ProgressIndicator
@@ -307,7 +302,12 @@ export default function OnboardingStep2() {
             stepLabel={translate("onboardingSteps", language)}
           />
 
-          <View style={styles.titleSection}>
+          <View
+            style={[
+              styles.titleSection,
+              isSmallScreen && styles.titleSectionSmall,
+            ]}
+          >
             <Text
               style={[
                 styles.title,
@@ -339,7 +339,9 @@ export default function OnboardingStep2() {
             </Text>
           </View>
 
-          <View style={styles.section}>
+          <View
+            style={[styles.section, isSmallScreen && styles.sectionSmall]}
+          >
             <Text
               style={[
                 styles.sectionLabel,
@@ -365,7 +367,9 @@ export default function OnboardingStep2() {
             </View>
           </View>
 
-          <View style={styles.section}>
+          <View
+            style={[styles.section, isSmallScreen && styles.sectionSmall]}
+          >
             <Text
               style={[
                 styles.sectionLabel,
@@ -380,6 +384,7 @@ export default function OnboardingStep2() {
             <AgePicker
               selectedAge={age}
               onSelectAge={setAge}
+              visibleCount={ageVisibleCount}
               theme={theme}
             />
             <Text
@@ -410,41 +415,49 @@ export default function OnboardingStep2() {
               {translate("ageYears", language)}
             </Text>
           </View>
-
-          <Animated.View
-            style={styles.continueSection}
-            entering={FadeInUp.duration(400).delay(200)}
-          >
-            <Button
-              onPress={handleContinue}
-              disabled={!canContinue}
-              accessibilityLabel={translate("continueButton", language)}
-              accessibilityRole="button"
-            >
-              <View style={styles.continueButtonContent}>
-                <Text style={styles.continueButtonText}>
-                  {translate("continueButton", language)}
-                </Text>
-                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-              </View>
-            </Button>
-          </Animated.View>
         </Animated.View>
-      </ScrollView>
+
+        <Animated.View
+          style={[
+            styles.footer,
+            {
+              paddingBottom: isSmallScreen ? 16 : 24,
+            },
+          ]}
+          entering={FadeInUp.duration(400).delay(200)}
+        >
+          <Button
+            onPress={handleContinue}
+            disabled={!canContinue}
+            accessibilityLabel={translate("continueButton", language)}
+            accessibilityRole="button"
+          >
+            <View style={styles.continueButtonContent}>
+              <Text style={styles.continueButtonText}>
+                {translate("continueButton", language)}
+              </Text>
+              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+            </View>
+          </Button>
+        </Animated.View>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flexGrow: 1,
-  },
-  content: {
+  root: {
     flex: 1,
     paddingHorizontal: 20,
   },
+  body: {
+    flex: 1,
+  },
   titleSection: {
     marginTop: 28,
+  },
+  titleSectionSmall: {
+    marginTop: 18,
   },
   title: {
     fontWeight: "800",
@@ -460,6 +473,9 @@ const styles = StyleSheet.create({
   section: {
     marginTop: 28,
   },
+  sectionSmall: {
+    marginTop: 16,
+  },
   sectionLabel: {
     fontSize: 11,
     fontWeight: "600",
@@ -471,18 +487,18 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   genderCard: {
-    paddingVertical: 18,
-    paddingHorizontal: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 10,
     alignItems: "center",
-    minHeight: 120,
+    minHeight: 108,
     justifyContent: "center",
   },
   genderIconContainer: {
-    width: 52,
-    height: 52,
+    width: 48,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   genderLabel: {
     fontSize: 12,
@@ -535,8 +551,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "800",
   },
-  continueSection: {
-    marginTop: 28,
+  footer: {
+    paddingTop: 8,
   },
   continueButtonContent: {
     flexDirection: "row",
