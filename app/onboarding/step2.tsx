@@ -2,15 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { ImpactFeedbackStyle, impactAsync } from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, type Href } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-} from "react";
-import {
-  FlatList,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -42,10 +35,12 @@ const AGE_MAX = 100;
 const AGE_ITEM_HEIGHT = 44;
 const AGE_VISIBLE_COUNT = 7;
 
-const ages = Array.from(
+const ages: number[] = Array.from(
   { length: AGE_MAX - AGE_MIN + 1 },
   (_, i) => AGE_MIN + i,
 );
+
+const DEFAULT_AGE_INDEX = 12;
 
 type GenderOption = {
   value: OnboardingGender;
@@ -75,7 +70,9 @@ function GenderCard({
   const backgroundProgress = useSharedValue(isSelected ? 1 : 0);
 
   useEffect(() => {
-    backgroundProgress.value = withTiming(isSelected ? 1 : 0, { duration: 250 });
+    backgroundProgress.value = withTiming(isSelected ? 1 : 0, {
+      duration: 250,
+    });
   }, [isSelected, backgroundProgress]);
 
   const animatedCardStyle = useAnimatedStyle(() => ({
@@ -156,8 +153,6 @@ function GenderCard({
   );
 }
 
-const DEFAULT_AGE_INDEX = 12;
-
 function AgePicker({
   selectedAge,
   onSelectAge,
@@ -167,38 +162,17 @@ function AgePicker({
   onSelectAge: (age: number) => void;
   theme: ReturnType<typeof getTheme>;
 }) {
-  const flatListRef = useRef<FlatList<number>>(null);
-  const selectedAgeRef = useRef(selectedAge);
-
-  useEffect(() => {
-    selectedAgeRef.current = selectedAge;
-  });
-
+  const scrollRef = useRef<ScrollView>(null);
+  const didInitialScroll = useRef(false);
   const containerHeight = AGE_ITEM_HEIGHT * AGE_VISIBLE_COUNT;
 
-  const renderAgeItem = useCallback(
-    ({ item }: { item: number }) => {
-      const isActive = selectedAgeRef.current === item;
-      return (
-        <View style={styles.ageItem}>
-          <Text
-            style={[
-              styles.ageItemText,
-              {
-                color: isActive ? theme.colors.text : theme.colors.mutedText,
-                fontFamily: theme.typography.bodyMd.fontFamily,
-                fontSize: isActive ? 24 : 16,
-                fontWeight: isActive ? "700" : "400",
-              },
-            ]}
-          >
-            {item}
-          </Text>
-        </View>
-      );
-    },
-    [theme],
-  );
+  const handleLayout = useCallback(() => {
+    if (!didInitialScroll.current && scrollRef.current) {
+      didInitialScroll.current = true;
+      const offset = DEFAULT_AGE_INDEX * AGE_ITEM_HEIGHT;
+      scrollRef.current.scrollTo({ y: offset, animated: false });
+    }
+  }, []);
 
   const handleMomentumEnd = useCallback(
     (e: { nativeEvent: { contentOffset: { y: number } } }) => {
@@ -207,21 +181,10 @@ function AgePicker({
       );
       const clampedIndex = Math.max(0, Math.min(index, ages.length - 1));
       const age = ages[clampedIndex];
-      if (age !== selectedAgeRef.current) {
-        impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-        onSelectAge(age);
-      }
+      impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+      onSelectAge(age);
     },
     [onSelectAge],
-  );
-
-  const getItemLayout = useCallback(
-    (_: unknown, index: number) => ({
-      length: AGE_ITEM_HEIGHT,
-      offset: AGE_ITEM_HEIGHT * index,
-      index,
-    }),
-    [],
   );
 
   return (
@@ -260,26 +223,42 @@ function AgePicker({
         pointerEvents="none"
       />
 
-      <FlatList
-        ref={flatListRef}
-        data={ages}
-        keyExtractor={(item) => item.toString()}
-        renderItem={renderAgeItem}
-        extraData={selectedAge}
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={AGE_ITEM_HEIGHT}
+        snapToAlignment="center"
+        decelerationRate="fast"
+        onMomentumScrollEnd={handleMomentumEnd}
+        onLayout={handleLayout}
         contentContainerStyle={{
           paddingVertical: (containerHeight - AGE_ITEM_HEIGHT) / 2,
         }}
-        snapToInterval={AGE_ITEM_HEIGHT}
-        decelerationRate="fast"
-        showsVerticalScrollIndicator={false}
-        onMomentumScrollEnd={handleMomentumEnd}
-        getItemLayout={getItemLayout}
-        initialScrollIndex={DEFAULT_AGE_INDEX}
-        initialNumToRender={20}
-        maxToRenderPerBatch={30}
-        windowSize={5}
         removeClippedSubviews={true}
-      />
+      >
+        {ages.map((ageValue) => {
+          const isActive = selectedAge === ageValue;
+          return (
+            <View key={ageValue} style={styles.ageItem}>
+              <Text
+                style={[
+                  styles.ageItemText,
+                  {
+                    color: isActive
+                      ? theme.colors.text
+                      : theme.colors.mutedText,
+                    fontFamily: theme.typography.bodyMd.fontFamily,
+                    fontSize: isActive ? 24 : 16,
+                    fontWeight: isActive ? "700" : "400",
+                  },
+                ]}
+              >
+                {ageValue}
+              </Text>
+            </View>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }
@@ -432,14 +411,6 @@ export default function OnboardingStep2() {
             </Text>
           </View>
 
-          <View style={styles.illustrationSection}>
-            <Image
-              source={require("../../assets/images/logo-glow.png")}
-              style={styles.illustration}
-              resizeMode="contain"
-            />
-          </View>
-
           <Animated.View
             style={styles.continueSection}
             entering={FadeInUp.duration(400).delay(200)}
@@ -563,16 +534,6 @@ const styles = StyleSheet.create({
   ageNumber: {
     fontSize: 24,
     fontWeight: "800",
-  },
-  illustrationSection: {
-    marginTop: 32,
-    alignItems: "center",
-  },
-  illustration: {
-    width: 180,
-    height: 180,
-    borderRadius: 24,
-    opacity: 0.85,
   },
   continueSection: {
     marginTop: 28,
