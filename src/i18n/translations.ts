@@ -1933,6 +1933,38 @@ export const translations = {
     tr: "Bu Kullanım Koşulları hakkında sorularınız için bizimle iletişime geçin:\nE-posta: support@nutritrack.app\nSon güncelleme: Temmuz 2025",
     en: "For questions regarding these Terms of Use, please contact us:\nEmail: support@nutritrack.app\nLast updated: July 2025",
   },
+  termsIntroductionShort: {
+    tr: "Bu sözleşme hakkında genel bilgiler",
+    en: "General information about this agreement",
+  },
+  termsAcceptanceShort: {
+    tr: "NutriTrack'i kullanarak bu koşulları kabul etmiş olursunuz",
+    en: "By using NutriTrack you accept these conditions",
+  },
+  termsUserResponsibilitiesShort: {
+    tr: "Kullanıcıların uyması gereken kurallar",
+    en: "Rules that users must follow",
+  },
+  termsPrivacyShort: {
+    tr: "Kullanıcı bilgilerinin nasıl korunduğu",
+    en: "How user information is protected",
+  },
+  termsDataCollectionShort: {
+    tr: "Hangi bilgilerin toplandığı ve nedenleri",
+    en: "Which information is collected and why",
+  },
+  termsHealthDisclaimerShort: {
+    tr: "NutriTrack bir tıbbi teşhis aracı değildir",
+    en: "NutriTrack is not a medical diagnosis tool",
+  },
+  termsLiabilityShort: {
+    tr: "Uygulamanın sorumlulukları ve sınırlamaları",
+    en: "Application responsibilities and limitations",
+  },
+  termsContactShort: {
+    tr: "Bizimle nasıl iletişime geçebilirsiniz",
+    en: "How you can contact us",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
