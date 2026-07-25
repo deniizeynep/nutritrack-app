@@ -3,6 +3,8 @@ import { ImpactFeedbackStyle, impactAsync } from "expo-haptics";
 import { router, type Href } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -36,6 +38,7 @@ const HEIGHT_MIN = 100;
 const HEIGHT_MAX = 250;
 const WEIGHT_MIN = 30;
 const WEIGHT_MAX = 300;
+const HOLD_DELAY_MS = 500;
 const HOLD_INTERVAL_MS = 120;
 
 type GenderOption = {
@@ -267,7 +270,7 @@ function MetricInput({
   label,
   value,
   onChangeText,
-  onBlur,
+  onFocus,
   placeholder,
   unit,
   theme,
@@ -276,7 +279,7 @@ function MetricInput({
   label: string;
   value: string;
   onChangeText: (text: string) => void;
-  onBlur: () => void;
+  onFocus?: () => void;
   placeholder: string;
   unit: string;
   theme: ReturnType<typeof getTheme>;
@@ -317,11 +320,11 @@ function MetricInput({
           ]}
           value={value}
           onChangeText={onChangeText}
-          onBlur={() => {
-            setIsFocused(false);
-            onBlur();
+          onFocus={() => {
+            setIsFocused(true);
+            onFocus?.();
           }}
-          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           placeholder={placeholder}
           placeholderTextColor={theme.colors.mutedText}
           keyboardType={keyboardType}
@@ -370,6 +373,13 @@ export default function OnboardingStep2() {
     ageRef.current = age;
   });
 
+  useEffect(() => {
+    return () => {
+      if (holdTimeout.current !== null) clearTimeout(holdTimeout.current);
+      if (holdInterval.current !== null) clearInterval(holdInterval.current);
+    };
+  }, []);
+
   const [isEditingAge, setIsEditingAge] = useState(false);
   const [ageEditText, setAgeEditText] = useState("");
   const ageInputRef = useRef<TextInput>(null);
@@ -387,32 +397,7 @@ export default function OnboardingStep2() {
     height !== null &&
     weight !== null;
 
-  const changeAgeBy = useCallback(
-    (delta: number) => {
-      const current = ageRef.current ?? 25;
-      const next = Math.max(AGE_MIN, Math.min(AGE_MAX, current + delta));
-      setAge(next);
-    },
-    [setAge],
-  );
-
-  const startHold = useCallback(
-    (delta: number) => {
-      didHold.current = false;
-      holdTimeout.current = setTimeout(() => {
-        didHold.current = true;
-        changeAgeBy(delta);
-        impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-        holdInterval.current = setInterval(() => {
-          changeAgeBy(delta);
-          impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-        }, HOLD_INTERVAL_MS);
-      }, 400);
-    },
-    [changeAgeBy],
-  );
-
-  const stopHold = useCallback(() => {
+  const clearAllTimers = useCallback(() => {
     if (holdTimeout.current !== null) {
       clearTimeout(holdTimeout.current);
       holdTimeout.current = null;
@@ -422,6 +407,36 @@ export default function OnboardingStep2() {
       holdInterval.current = null;
     }
   }, []);
+
+  const changeAgeBy = useCallback(
+    (delta: number) => {
+      const current = ageRef.current ?? 18;
+      const next = Math.max(AGE_MIN, Math.min(AGE_MAX, current + delta));
+      setAge(next);
+    },
+    [setAge],
+  );
+
+  const startHold = useCallback(
+    (delta: number) => {
+      clearAllTimers();
+      didHold.current = false;
+      holdTimeout.current = setTimeout(() => {
+        didHold.current = true;
+        changeAgeBy(delta);
+        impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+        holdInterval.current = setInterval(() => {
+          changeAgeBy(delta);
+          impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+        }, HOLD_INTERVAL_MS);
+      }, HOLD_DELAY_MS);
+    },
+    [changeAgeBy, clearAllTimers],
+  );
+
+  const stopHold = useCallback(() => {
+    clearAllTimers();
+  }, [clearAllTimers]);
 
   const handleGenderSelect = useCallback(
     (value: OnboardingGender) => {
@@ -439,57 +454,83 @@ export default function OnboardingStep2() {
 
   const commitAge = useCallback(() => {
     const trimmed = ageEditText.trim();
-    if (trimmed === "") {
-      setIsEditingAge(false);
-      return;
-    }
+    setIsEditingAge(false);
+    if (trimmed === "") return;
     const parsed = parseInt(trimmed, 10);
     if (!isNaN(parsed) && parsed >= AGE_MIN && parsed <= AGE_MAX) {
       setAge(parsed);
     }
-    setIsEditingAge(false);
   }, [ageEditText, setAge]);
 
-  const commitHeight = useCallback(() => {
-    const trimmed = heightText.trim();
-    if (trimmed === "") {
-      setHeight(null);
-      setHeightText("");
-      return;
-    }
-    const parsed = parseInt(trimmed, 10);
-    if (!isNaN(parsed) && parsed >= HEIGHT_MIN && parsed <= HEIGHT_MAX) {
-      setHeight(parsed);
-      setHeightText(String(parsed));
-    } else if (height !== null) {
-      setHeightText(String(height));
-    } else {
-      setHeightText("");
-    }
-  }, [heightText, height, setHeight]);
+  const handleHeightChange = useCallback(
+    (text: string) => {
+      setHeightText(text);
+      const trimmed = text.trim();
+      if (trimmed === "") {
+        setHeight(null);
+        return;
+      }
+      const parsed = parseInt(trimmed, 10);
+      if (!isNaN(parsed) && parsed >= HEIGHT_MIN && parsed <= HEIGHT_MAX) {
+        setHeight(parsed);
+      }
+    },
+    [setHeight],
+  );
 
-  const commitWeight = useCallback(() => {
+  const handleWeightChange = useCallback(
+    (text: string) => {
+      setWeightText(text);
+      const trimmed = text.trim();
+      if (trimmed === "") {
+        setWeight(null);
+        return;
+      }
+      const normalized = trimmed.replace(",", ".");
+      const parsed = parseFloat(normalized);
+      if (
+        !isNaN(parsed) &&
+        parsed >= WEIGHT_MIN &&
+        parsed <= WEIGHT_MAX
+      ) {
+        setWeight(parsed);
+      }
+    },
+    [setWeight],
+  );
+
+  const handleHeightBlur = useCallback(() => {
+    const trimmed = heightText.trim();
+    if (trimmed !== "") {
+      const parsed = parseInt(trimmed, 10);
+      if (!isNaN(parsed) && parsed >= HEIGHT_MIN && parsed <= HEIGHT_MAX) {
+        setHeightText(String(parsed));
+      } else if (height !== null) {
+        setHeightText(String(height));
+      } else {
+        setHeightText("");
+      }
+    }
+  }, [heightText, height]);
+
+  const handleWeightBlur = useCallback(() => {
     const trimmed = weightText.trim();
-    if (trimmed === "") {
-      setWeight(null);
-      setWeightText("");
-      return;
+    if (trimmed !== "") {
+      const normalized = trimmed.replace(",", ".");
+      const parsed = parseFloat(normalized);
+      if (
+        !isNaN(parsed) &&
+        parsed >= WEIGHT_MIN &&
+        parsed <= WEIGHT_MAX
+      ) {
+        setWeightText(formatWeightText(parsed));
+      } else if (weight !== null) {
+        setWeightText(formatWeightText(weight));
+      } else {
+        setWeightText("");
+      }
     }
-    const normalized = trimmed.replace(",", ".");
-    const parsed = parseFloat(normalized);
-    if (
-      !isNaN(parsed) &&
-      parsed >= WEIGHT_MIN &&
-      parsed <= WEIGHT_MAX
-    ) {
-      setWeight(parsed);
-      setWeightText(formatWeightText(parsed));
-    } else if (weight !== null) {
-      setWeightText(formatWeightText(weight));
-    } else {
-      setWeightText("");
-    }
-  }, [weightText, weight, setWeight]);
+  }, [weightText, weight]);
 
   const handleContinue = () => {
     router.push("/onboarding/step3" as Href);
@@ -500,247 +541,261 @@ export default function OnboardingStep2() {
 
   return (
     <Screen>
-      <View style={styles.root}>
-        <Animated.View
-          style={styles.body}
-          entering={FadeInUp.duration(400).springify()}
-        >
-          <ProgressIndicator
-            currentStep={2}
-            totalSteps={TOTAL_STEPS}
-            stepLabel={translate("onboardingSteps", language)}
-          />
-
-          <View
-            style={[
-              styles.titleSection,
-              isSmallScreen && styles.titleSectionSmall,
-            ]}
+      <KeyboardAvoidingView
+        style={styles.keyboardRoot}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <View style={styles.root}>
+          <Animated.View
+            style={styles.body}
+            entering={FadeInUp.duration(400).springify()}
           >
-            <Text
-              style={[
-                styles.title,
-                {
-                  color: theme.colors.text,
-                  fontFamily: theme.typography.displayLg.fontFamily,
-                  fontSize: isSmallScreen
-                    ? 26
-                    : theme.typography.displayLg.fontSize,
-                  lineHeight: isSmallScreen
-                    ? 32
-                    : theme.typography.displayLg.lineHeight,
-                },
-              ]}
-              accessibilityRole="header"
-            >
-              {translate("onboardingPersonalTitle", language)}
-            </Text>
-            <Text
-              style={[
-                styles.subtitle,
-                {
-                  color: theme.colors.mutedText,
-                  fontFamily: theme.typography.bodyMd.fontFamily,
-                },
-              ]}
-            >
-              {translate("onboardingPersonalSubtitle", language)}
-            </Text>
-          </View>
-
-          <View
-            style={[styles.section, isSmallScreen && styles.sectionSmall]}
-          >
-            <Text
-              style={[
-                styles.sectionLabel,
-                {
-                  color: theme.colors.mutedText,
-                  fontFamily: theme.typography.labelMd.fontFamily,
-                },
-              ]}
-            >
-              {translate("genderLabel", language)}
-            </Text>
-            <View style={styles.genderRow}>
-              {genderOptions.map((option) => (
-                <GenderCard
-                  key={option.value}
-                  option={option}
-                  isSelected={gender === option.value}
-                  onSelect={() => handleGenderSelect(option.value)}
-                  theme={theme}
-                  language={language}
-                />
-              ))}
-            </View>
-          </View>
-
-          <View
-            style={[styles.section, isSmallScreen && styles.sectionSmall]}
-          >
-            <Text
-              style={[
-                styles.sectionLabel,
-                {
-                  color: theme.colors.mutedText,
-                  fontFamily: theme.typography.labelMd.fontFamily,
-                },
-              ]}
-            >
-              {translate("ageLabel", language)}
-            </Text>
+            <ProgressIndicator
+              currentStep={2}
+              totalSteps={TOTAL_STEPS}
+              stepLabel={translate("onboardingSteps", language)}
+            />
 
             <View
               style={[
-                styles.ageCard,
-                {
-                  backgroundColor: theme.colors.card,
-                  borderRadius: theme.radius.lg,
-                  borderColor: theme.colors.border,
-                },
+                styles.titleSection,
+                isSmallScreen && styles.titleSectionSmall,
               ]}
             >
-              <View style={styles.ageRow}>
-                <AgeButton
-                  icon="remove"
-                  onPress={() => {
-                    if (!didHold.current) {
-                      changeAgeBy(-1);
-                      impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-                    }
-                  }}
-                  onPressIn={() => startHold(-1)}
-                  onPressOut={stopHold}
-                  disabled={isMin}
-                  theme={theme}
-                  accessibilityLabel={translate("decrease", language)}
-                />
+              <Text
+                style={[
+                  styles.title,
+                  {
+                    color: theme.colors.text,
+                    fontFamily: theme.typography.displayLg.fontFamily,
+                    fontSize: isSmallScreen
+                      ? 26
+                      : theme.typography.displayLg.fontSize,
+                    lineHeight: isSmallScreen
+                      ? 32
+                      : theme.typography.displayLg.lineHeight,
+                  },
+                ]}
+                accessibilityRole="header"
+              >
+                {translate("onboardingPersonalTitle", language)}
+              </Text>
+              <Text
+                style={[
+                  styles.subtitle,
+                  {
+                    color: theme.colors.mutedText,
+                    fontFamily: theme.typography.bodyMd.fontFamily,
+                  },
+                ]}
+              >
+                {translate("onboardingPersonalSubtitle", language)}
+              </Text>
+            </View>
 
-                {isEditingAge ? (
-                  <View style={styles.ageDisplayCenter}>
-                    <TextInput
-                      ref={ageInputRef}
-                      style={[
-                        styles.ageEditInput,
-                        {
-                          color: theme.colors.text,
-                          fontFamily: theme.typography.headlineMd.fontFamily,
-                        },
-                      ]}
-                      value={ageEditText}
-                      onChangeText={setAgeEditText}
-                      onBlur={commitAge}
-                      onSubmitEditing={commitAge}
-                      keyboardType="numeric"
-                      maxLength={3}
-                      textAlign="center"
-                      selectTextOnFocus
-                      returnKeyType="done"
-                    />
-                    <Text
-                      style={[
-                        styles.ageUnitText,
-                        {
-                          color: theme.colors.mutedText,
-                          fontFamily: theme.typography.bodyMd.fontFamily,
-                        },
-                      ]}
-                    >
-                      {translate("ageYears", language)}
-                    </Text>
-                  </View>
-                ) : (
-                  <Pressable
-                    onPress={startEditingAge}
-                    style={styles.ageDisplayCenter}
-                    accessibilityLabel={`${translate("ageLabel", language)}: ${age ?? "—"}`}
-                    accessibilityRole="button"
-                    accessibilityHint={translate("editField", language)}
-                  >
-                    <AgeNumberDisplay age={age} theme={theme} />
-                    <Text
-                      style={[
-                        styles.ageUnitText,
-                        {
-                          color: theme.colors.mutedText,
-                          fontFamily: theme.typography.bodyMd.fontFamily,
-                        },
-                      ]}
-                    >
-                      {translate("ageYears", language)}
-                    </Text>
-                  </Pressable>
-                )}
-
-                <AgeButton
-                  icon="add"
-                  onPress={() => {
-                    if (!didHold.current) {
-                      changeAgeBy(1);
-                      impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-                    }
-                  }}
-                  onPressIn={() => startHold(1)}
-                  onPressOut={stopHold}
-                  disabled={isMax}
-                  theme={theme}
-                  accessibilityLabel={translate("increase", language)}
-                />
+            <View
+              style={[styles.section, isSmallScreen && styles.sectionSmall]}
+            >
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  {
+                    color: theme.colors.mutedText,
+                    fontFamily: theme.typography.labelMd.fontFamily,
+                  },
+                ]}
+              >
+                {translate("genderLabel", language)}
+              </Text>
+              <View style={styles.genderRow}>
+                {genderOptions.map((option) => (
+                  <GenderCard
+                    key={option.value}
+                    option={option}
+                    isSelected={gender === option.value}
+                    onSelect={() => handleGenderSelect(option.value)}
+                    theme={theme}
+                    language={language}
+                  />
+                ))}
               </View>
             </View>
-          </View>
 
-          <View
-            style={[styles.metricsRow, isSmallScreen && styles.metricsRowSmall]}
-          >
-            <MetricInput
-              label={translate("height", language)}
-              value={heightText}
-              onChangeText={setHeightText}
-              onBlur={commitHeight}
-              placeholder={translate("heightPlaceholder", language)}
-              unit="cm"
-              theme={theme}
-            />
-
-            <MetricInput
-              label={translate("weight", language)}
-              value={weightText}
-              onChangeText={setWeightText}
-              onBlur={commitWeight}
-              placeholder={translate("weightPlaceholder", language)}
-              unit="kg"
-              theme={theme}
-              keyboardType="decimal-pad"
-            />
-          </View>
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.footer,
-            {
-              paddingBottom: isSmallScreen ? 24 : 32,
-            },
-          ]}
-          entering={FadeInUp.duration(400).delay(200)}
-        >
-          <Button
-            onPress={handleContinue}
-            disabled={!canContinue}
-            accessibilityLabel={translate("continueButton", language)}
-            accessibilityRole="button"
-          >
-            <View style={styles.continueButtonContent}>
-              <Text style={styles.continueButtonText}>
-                {translate("continueButton", language)}
+            <View
+              style={[styles.section, isSmallScreen && styles.sectionSmall]}
+            >
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  {
+                    color: theme.colors.mutedText,
+                    fontFamily: theme.typography.labelMd.fontFamily,
+                  },
+                ]}
+              >
+                {translate("ageLabel", language)}
               </Text>
-              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+
+              <View
+                style={[
+                  styles.ageCard,
+                  {
+                    backgroundColor: theme.colors.card,
+                    borderRadius: theme.radius.lg,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
+                <View style={styles.ageRow}>
+                  <AgeButton
+                    icon="remove"
+                    onPress={() => {
+                      if (!didHold.current) {
+                        changeAgeBy(-1);
+                        impactAsync(ImpactFeedbackStyle.Light).catch(
+                          () => {},
+                        );
+                      }
+                    }}
+                    onPressIn={() => startHold(-1)}
+                    onPressOut={stopHold}
+                    disabled={isMin}
+                    theme={theme}
+                    accessibilityLabel={translate("decrease", language)}
+                  />
+
+                  {isEditingAge ? (
+                    <View style={styles.ageDisplayCenter}>
+                      <TextInput
+                        ref={ageInputRef}
+                        style={[
+                          styles.ageEditInput,
+                          {
+                            color: theme.colors.text,
+                            fontFamily:
+                              theme.typography.headlineMd.fontFamily,
+                          },
+                        ]}
+                        value={ageEditText}
+                        onChangeText={setAgeEditText}
+                        onBlur={commitAge}
+                        onSubmitEditing={commitAge}
+                        keyboardType="numeric"
+                        maxLength={3}
+                        textAlign="center"
+                        selectTextOnFocus
+                        returnKeyType="done"
+                      />
+                      <Text
+                        style={[
+                          styles.ageUnitText,
+                          {
+                            color: theme.colors.mutedText,
+                            fontFamily: theme.typography.bodyMd.fontFamily,
+                          },
+                        ]}
+                      >
+                        {translate("ageYears", language)}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Pressable
+                      onPress={startEditingAge}
+                      style={styles.ageDisplayCenter}
+                      accessibilityLabel={`${translate("ageLabel", language)}: ${age ?? "—"}`}
+                      accessibilityRole="button"
+                      accessibilityHint={translate("editField", language)}
+                    >
+                      <AgeNumberDisplay age={age} theme={theme} />
+                      <Text
+                        style={[
+                          styles.ageUnitText,
+                          {
+                            color: theme.colors.mutedText,
+                            fontFamily: theme.typography.bodyMd.fontFamily,
+                          },
+                        ]}
+                      >
+                        {translate("ageYears", language)}
+                      </Text>
+                    </Pressable>
+                  )}
+
+                  <AgeButton
+                    icon="add"
+                    onPress={() => {
+                      if (!didHold.current) {
+                        changeAgeBy(1);
+                        impactAsync(ImpactFeedbackStyle.Light).catch(
+                          () => {},
+                        );
+                      }
+                    }}
+                    onPressIn={() => startHold(1)}
+                    onPressOut={stopHold}
+                    disabled={isMax}
+                    theme={theme}
+                    accessibilityLabel={translate("increase", language)}
+                  />
+                </View>
+              </View>
             </View>
-          </Button>
-        </Animated.View>
-      </View>
+
+            <View
+              style={[
+                styles.metricsRow,
+                isSmallScreen && styles.metricsRowSmall,
+              ]}
+            >
+              <MetricInput
+                label={translate("height", language)}
+                value={heightText}
+                onChangeText={handleHeightChange}
+                onFocus={handleHeightBlur}
+                placeholder={translate("heightPlaceholder", language)}
+                unit="cm"
+                theme={theme}
+              />
+
+              <MetricInput
+                label={translate("weight", language)}
+                value={weightText}
+                onChangeText={handleWeightChange}
+                onFocus={handleWeightBlur}
+                placeholder={translate("weightPlaceholder", language)}
+                unit="kg"
+                theme={theme}
+                keyboardType="decimal-pad"
+              />
+            </View>
+          </Animated.View>
+
+          <Animated.View
+            style={[
+              styles.footer,
+              {
+                paddingBottom: isSmallScreen ? 24 : 32,
+              },
+            ]}
+            entering={FadeInUp.duration(400).delay(200)}
+          >
+            <Button
+              onPress={handleContinue}
+              disabled={!canContinue}
+              accessibilityLabel={translate("continueButton", language)}
+              accessibilityRole="button"
+            >
+              <View style={styles.continueButtonContent}>
+                <Text style={styles.continueButtonText}>
+                  {translate("continueButton", language)}
+                </Text>
+                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+              </View>
+            </Button>
+          </Animated.View>
+        </View>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
@@ -751,6 +806,9 @@ function formatWeightText(value: number): string {
 }
 
 const styles = StyleSheet.create({
+  keyboardRoot: {
+    flex: 1,
+  },
   root: {
     flex: 1,
     paddingHorizontal: 20,
