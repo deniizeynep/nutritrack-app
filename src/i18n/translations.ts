@@ -1865,6 +1865,74 @@ export const translations = {
     tr: "Core Health",
     en: "Core Health",
   },
+  termsOfUse: {
+    tr: "Kullanım Koşulları",
+    en: "Terms of Use",
+  },
+  termsIntroductionTitle: {
+    tr: "Giriş",
+    en: "Introduction",
+  },
+  termsIntroductionBody: {
+    tr: "NutriTrack uygulamasına hoş geldiniz. Bu Kullanım Koşulları, NutriTrack mobil uygulamasını kullanımınızı düzenleyen kuralları ve yönergeleri belirler. Uygulamayı kullanarak bu koşulları kabul etmiş sayılırsınız.",
+    en: "Welcome to the NutriTrack app. These Terms of Use set out the rules and guidelines governing your use of the NutriTrack mobile application. By using the application, you agree to these terms.",
+  },
+  termsAcceptanceTitle: {
+    tr: "Koşulların Kabulü",
+    en: "Acceptance of Terms",
+  },
+  termsAcceptanceBody: {
+    tr: "Bu uygulamayı indirerek, yükleyerek veya kullanarak işbu Kullanım Koşullarını okuduğunuzu, anladığınızı ve bunlara uymayı kabul ettiğinizi beyan etmiş olursunuz. Bu koşulları kabul etmiyorsanız uygulamayı kullanmamalısınız.",
+    en: "By downloading, installing, or using this application, you acknowledge that you have read, understood, and agree to be bound by these Terms of Use. If you do not agree to these terms, you should not use the application.",
+  },
+  termsUserResponsibilitiesTitle: {
+    tr: "Kullanıcı Sorumlulukları",
+    en: "User Responsibilities",
+  },
+  termsUserResponsibilitiesBody: {
+    tr: "Uygulamayı kullanırken doğru ve güncel bilgiler sağlamakla yükümlüsünüz. Hesap bilgilerinizin gizliliğinden siz sorumlusunuz. Uygulamayı yasa dışı veya yetkisiz amaçlarla kullanmamayı kabul edersiniz.",
+    en: "You are responsible for providing accurate and up-to-date information while using the application. You are responsible for maintaining the confidentiality of your account information. You agree not to use the application for any unlawful or unauthorized purposes.",
+  },
+  termsPrivacyTitle: {
+    tr: "Gizlilik Politikası",
+    en: "Privacy Policy",
+  },
+  termsPrivacyBody: {
+    tr: "Kişisel verilerinizin nasıl toplandığı, kullanıldığı ve korunduğu hakkında detaylı bilgi için Gizlilik Politikamızı inceleyin. Verileriniz GDPR ve KVKK dahil olmak üzere geçerli veri koruma yasalarına uygun olarak işlenir.",
+    en: "Please review our Privacy Policy for detailed information on how your personal data is collected, used, and protected. Your data is processed in accordance with applicable data protection laws including GDPR and KVKK.",
+  },
+  termsHealthDisclaimerTitle: {
+    tr: "Sağlık Sorumluluk Reddi",
+    en: "Health Disclaimer",
+  },
+  termsHealthDisclaimerBody: {
+    tr: "NutriTrack bir sağlık danışmanlığı hizmeti değildir. Uygulama tarafından sağlanan beslenme bilgileri ve kalori hesaplamaları yalnızca bilgilendirme amaçlıdır. Herhangi bir diyet veya egzersiz programına başlamadan önce mutlaka bir sağlık uzmanına danışın.",
+    en: "NutriTrack is not a health advisory service. The nutritional information and calorie calculations provided by the application are for informational purposes only. Always consult a healthcare professional before starting any diet or exercise program.",
+  },
+  termsDataUsageTitle: {
+    tr: "Veri Kullanımı",
+    en: "Data Usage",
+  },
+  termsDataUsageBody: {
+    tr: "Beslenme alışkanlıklarınızı analiz etmek ve size kişiselleştirilmiş öneriler sunmak için yemek kayıtlarınızı ve sağlık verilerinizi işliyoruz. Verileriniz üçüncü taraflarla açık rızanız olmadan paylaşılmaz. Hizmet kalitesini artırmak için anonimleştirilmiş verileri kullanabiliriz.",
+    en: "We process your meal records and health data to analyze your nutritional habits and provide personalized recommendations. Your data is not shared with third parties without your explicit consent. We may use anonymized data to improve service quality.",
+  },
+  termsLiabilityTitle: {
+    tr: "Sorumluluk Sınırlaması",
+    en: "Limitation of Liability",
+  },
+  termsLiabilityBody: {
+    tr: "NutriTrack, uygulamanın kullanımından doğabilecek doğrudan veya dolaylı zararlardan sorumlu tutulamaz. Uygulamanın sürekli ve hatasız çalışacağını garanti etmiyoruz. Beslenme hesaplamaları tahmini değerlerdir ve kesin sonuçlar olarak değerlendirilmemelidir.",
+    en: "NutriTrack shall not be liable for any direct or indirect damages arising from the use of the application. We do not guarantee that the application will operate continuously or error-free. Nutritional calculations are estimated values and should not be considered as exact results.",
+  },
+  termsContactTitle: {
+    tr: "İletişim",
+    en: "Contact",
+  },
+  termsContactBody: {
+    tr: "Bu Kullanım Koşulları hakkında sorularınız için bizimle iletişime geçin:\nE-posta: support@nutritrack.app\nSon güncelleme: Temmuz 2025",
+    en: "For questions regarding these Terms of Use, please contact us:\nEmail: support@nutritrack.app\nLast updated: July 2025",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

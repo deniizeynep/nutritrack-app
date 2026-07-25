@@ -351,7 +351,6 @@ export default function WelcomeScreen() {
         contentContainerStyle={[
           styles.scroll,
           {
-            paddingTop: isSmallScreen ? 4 : 12,
             paddingBottom: 32,
           },
         ]}
@@ -499,7 +498,7 @@ export default function WelcomeScreen() {
               styles.heroSection,
               {
                 height: isSmallScreen ? screenWidth * 0.68 : screenWidth * 0.75,
-                marginTop: isSmallScreen ? 12 : 20,
+                marginTop: isSmallScreen ? 8 : 14,
               },
             ]}
           >
@@ -675,15 +674,32 @@ export default function WelcomeScreen() {
               ]}
             >
               {translate("termsText", language).split("{termsLink}")[0]}
+            </Text>
+            <Pressable
+              onPress={() => router.push("/terms" as Href)}
+              hitSlop={12}
+              accessibilityLabel={translate("termsLink", language)}
+              accessibilityRole="link"
+              style={styles.termsLinkWrapper}
+            >
               <Text
                 style={[
                   styles.termsLink,
                   { color: theme.colors.primary },
                 ]}
-                accessibilityRole="link"
               >
                 {translate("termsLink", language)}
               </Text>
+            </Pressable>
+            <Text
+              style={[
+                styles.termsText,
+                {
+                  color: theme.colors.mutedText,
+                  fontFamily: theme.typography.bodyMd.fontFamily,
+                },
+              ]}
+            >
               {translate("termsText", language)
                 .split("{termsLink}")[1] ?? ""}
             </Text>
@@ -728,7 +744,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 4,
   },
   brandingLeft: {
     flexDirection: "row",
@@ -823,7 +838,9 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   termsFooter: {
-    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     marginTop: 24,
     paddingHorizontal: 20,
   },
@@ -831,6 +848,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     textAlign: "center",
+  },
+  termsLinkWrapper: {
+    minHeight: 24,
+    justifyContent: "center",
   },
   termsLink: {
     fontSize: 12,
