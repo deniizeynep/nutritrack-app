@@ -1,13 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ImpactFeedbackStyle, impactAsync } from "expo-haptics";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, type Href } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -32,14 +31,6 @@ import { getTheme } from "../../src/theme/theme";
 const TOTAL_STEPS = 3;
 const AGE_MIN = 13;
 const AGE_MAX = 100;
-const AGE_ITEM_HEIGHT = 44;
-
-const ages: number[] = Array.from(
-  { length: AGE_MAX - AGE_MIN + 1 },
-  (_, i) => AGE_MIN + i,
-);
-
-const DEFAULT_AGE_INDEX = 12;
 
 type GenderOption = {
   value: OnboardingGender;
@@ -152,166 +143,6 @@ function GenderCard({
   );
 }
 
-function AgePicker({
-  selectedAge,
-  onSelectAge,
-  visibleCount,
-  theme,
-}: {
-  selectedAge: number | null;
-  onSelectAge: (age: number) => void;
-  visibleCount: number;
-  theme: ReturnType<typeof getTheme>;
-}) {
-  const scrollRef = useRef<ScrollView>(null);
-  const didInitialScroll = useRef(false);
-  const isInternalChange = useRef(false);
-  const containerHeight = AGE_ITEM_HEIGHT * visibleCount;
-
-  const handleLayout = useCallback(() => {
-    if (!didInitialScroll.current && scrollRef.current) {
-      didInitialScroll.current = true;
-      const offset = DEFAULT_AGE_INDEX * AGE_ITEM_HEIGHT;
-      scrollRef.current.scrollTo({ y: offset, animated: false });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isInternalChange.current) {
-      isInternalChange.current = false;
-      return;
-    }
-    if (selectedAge !== null && scrollRef.current) {
-      const index = selectedAge - AGE_MIN;
-      scrollRef.current.scrollTo({
-        y: index * AGE_ITEM_HEIGHT,
-        animated: true,
-      });
-    }
-  }, [selectedAge]);
-
-  const snapToNearest = useCallback(
-    (offsetY: number) => {
-      const index = Math.round(offsetY / AGE_ITEM_HEIGHT);
-      const clampedIndex = Math.max(0, Math.min(index, ages.length - 1));
-      const age = ages[clampedIndex];
-      impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-      isInternalChange.current = true;
-      onSelectAge(age);
-    },
-    [onSelectAge],
-  );
-
-  const handleScrollEndDrag = useCallback(
-    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
-      snapToNearest(e.nativeEvent.contentOffset.y);
-    },
-    [snapToNearest],
-  );
-
-  const handleMomentumEnd = useCallback(
-    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
-      snapToNearest(e.nativeEvent.contentOffset.y);
-    },
-    [snapToNearest],
-  );
-
-  const handleItemPress = useCallback(
-    (ageValue: number) => {
-      const index = ageValue - AGE_MIN;
-      scrollRef.current?.scrollTo({
-        y: index * AGE_ITEM_HEIGHT,
-        animated: true,
-      });
-      isInternalChange.current = true;
-      onSelectAge(ageValue);
-    },
-    [onSelectAge],
-  );
-
-  return (
-    <View
-      style={[
-        styles.agePickerContainer,
-        {
-          height: containerHeight,
-          borderRadius: theme.radius.lg,
-          backgroundColor: theme.colors.card,
-          borderWidth: 1,
-          borderColor: theme.colors.border,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.ageHighlightBar,
-          {
-            backgroundColor: theme.colors.primarySoft,
-            borderRadius: theme.radius.md,
-            top: (containerHeight - AGE_ITEM_HEIGHT) / 2,
-          },
-        ]}
-        pointerEvents="none"
-      />
-
-      <LinearGradient
-        colors={[theme.colors.card, "transparent"]}
-        style={[styles.ageGradientTop, { height: AGE_ITEM_HEIGHT * 2 }]}
-        pointerEvents="none"
-      />
-      <LinearGradient
-        colors={["transparent", theme.colors.card]}
-        style={[styles.ageGradientBottom, { height: AGE_ITEM_HEIGHT * 2 }]}
-        pointerEvents="none"
-      />
-
-      <ScrollView
-        ref={scrollRef}
-        showsVerticalScrollIndicator={false}
-        snapToInterval={AGE_ITEM_HEIGHT}
-        snapToAlignment="center"
-        decelerationRate={0.92}
-        onScrollEndDrag={handleScrollEndDrag}
-        onMomentumScrollEnd={handleMomentumEnd}
-        onLayout={handleLayout}
-        contentContainerStyle={{
-          paddingVertical: (containerHeight - AGE_ITEM_HEIGHT) / 2,
-        }}
-        removeClippedSubviews={true}
-      >
-        {ages.map((ageValue) => {
-          const isActive = selectedAge === ageValue;
-          return (
-            <Pressable
-              key={ageValue}
-              onPress={() => handleItemPress(ageValue)}
-              style={styles.ageItem}
-              accessibilityLabel={`${ageValue}`}
-              accessibilityRole="button"
-            >
-              <Text
-                style={[
-                  styles.ageItemText,
-                  {
-                    color: isActive
-                      ? theme.colors.text
-                      : theme.colors.mutedText,
-                    fontFamily: theme.typography.bodyMd.fontFamily,
-                    fontSize: isActive ? 24 : 16,
-                    fontWeight: isActive ? "700" : "400",
-                  },
-                ]}
-              >
-                {ageValue}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-    </View>
-  );
-}
-
 export default function OnboardingStep2() {
   const themeMode = useAppStore((s) => s.themeMode);
   const language = useAppStore((s) => s.language);
@@ -324,14 +155,56 @@ export default function OnboardingStep2() {
 
   const { height: screenHeight } = useWindowDimensions();
   const isSmallScreen = screenHeight < 700;
-  const ageVisibleCount = isSmallScreen ? 5 : 7;
 
   const canContinue = gender !== null && age !== null;
 
-  const handleGenderSelect = (value: OnboardingGender) => {
-    setGender(value);
-    impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-  };
+  const [ageText, setAgeText] = useState(age !== null ? String(age) : "");
+
+  const commitAgeFromText = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (trimmed === "") {
+        setAgeText("");
+        return;
+      }
+      const parsed = parseInt(trimmed, 10);
+      if (!isNaN(parsed) && parsed >= AGE_MIN && parsed <= AGE_MAX) {
+        setAge(parsed);
+        setAgeText(String(parsed));
+        impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+      } else {
+        setAgeText(age !== null ? String(age) : "");
+      }
+    },
+    [age, setAge],
+  );
+
+  const handleAgeBlur = useCallback(() => {
+    commitAgeFromText(ageText);
+  }, [ageText, commitAgeFromText]);
+
+  const handleAgeSubmit = useCallback(() => {
+    commitAgeFromText(ageText);
+  }, [ageText, commitAgeFromText]);
+
+  const handleGenderSelect = useCallback(
+    (value: OnboardingGender) => {
+      setGender(value);
+      impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+    },
+    [setGender],
+  );
+
+  const changeAgeBy = useCallback(
+    (delta: number) => {
+      const current = age ?? 25;
+      const newAge = Math.max(AGE_MIN, Math.min(AGE_MAX, current + delta));
+      setAge(newAge);
+      setAgeText(String(newAge));
+      impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+    },
+    [age, setAge],
+  );
 
   const handleContinue = () => {
     router.push("/onboarding/step3" as Href);
@@ -429,89 +302,93 @@ export default function OnboardingStep2() {
             >
               {translate("ageLabel", language)}
             </Text>
-            <AgePicker
-              selectedAge={age}
-              onSelectAge={setAge}
-              visibleCount={ageVisibleCount}
-              theme={theme}
-            />
-            <View style={styles.ageStepperRow}>
-              <Pressable
-                onPress={() => {
-                  const current = age ?? 25;
-                  const newAge = Math.max(AGE_MIN, current - 1);
-                  setAge(newAge);
-                  impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-                }}
+
+            <View style={styles.ageInputCard}>
+              <View
                 style={[
-                  styles.ageStepperButton,
+                  styles.ageInputCardInner,
                   {
-                    backgroundColor: theme.colors.cardSoft,
-                    borderRadius: theme.radius.full,
+                    backgroundColor: theme.colors.card,
+                    borderRadius: theme.radius.lg,
+                    borderColor: theme.colors.border,
                   },
                 ]}
-                accessibilityLabel={translate("decrease", language)}
-                accessibilityRole="button"
-                hitSlop={8}
               >
-                <Ionicons
-                  name="remove"
-                  size={20}
-                  color={theme.colors.primary}
-                />
-              </Pressable>
+                <Pressable
+                  onPress={() => changeAgeBy(-1)}
+                  style={[
+                    styles.ageStepperButton,
+                    {
+                      backgroundColor: theme.colors.cardSoft,
+                      borderRadius: theme.radius.full,
+                    },
+                  ]}
+                  accessibilityLabel={translate("decrease", language)}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                >
+                  <Ionicons
+                    name="remove"
+                    size={22}
+                    color={theme.colors.primary}
+                  />
+                </Pressable>
 
-              <View style={styles.ageStepperValue}>
-                <Text
+                <TextInput
                   style={[
-                    styles.ageStepperNumber,
+                    styles.ageTextInput,
                     {
-                      color: age
-                        ? theme.colors.text
-                        : theme.colors.mutedText,
+                      color: theme.colors.text,
                       fontFamily: theme.typography.headlineMd.fontFamily,
+                      backgroundColor: theme.colors.card,
                     },
                   ]}
-                >
-                  {age ?? "—"}
-                </Text>
-                <Text
+                  value={ageText}
+                  onChangeText={setAgeText}
+                  onBlur={handleAgeBlur}
+                  onSubmitEditing={handleAgeSubmit}
+                  keyboardType="numeric"
+                  maxLength={3}
+                  placeholder="—"
+                  placeholderTextColor={theme.colors.mutedText}
+                  textAlign="center"
+                  selectTextOnFocus
+                  accessibilityLabel={translate("ageLabel", language)}
+                  returnKeyType="done"
+                />
+
+                <Pressable
+                  onPress={() => changeAgeBy(1)}
                   style={[
-                    styles.ageStepperLabel,
+                    styles.ageStepperButton,
                     {
-                      color: theme.colors.mutedText,
-                      fontFamily: theme.typography.bodyMd.fontFamily,
+                      backgroundColor: theme.colors.cardSoft,
+                      borderRadius: theme.radius.full,
                     },
                   ]}
+                  accessibilityLabel={translate("increase", language)}
+                  accessibilityRole="button"
+                  hitSlop={8}
                 >
-                  {translate("ageYears", language)}
-                </Text>
+                  <Ionicons
+                    name="add"
+                    size={22}
+                    color={theme.colors.primary}
+                  />
+                </Pressable>
               </View>
 
-              <Pressable
-                onPress={() => {
-                  const current = age ?? 25;
-                  const newAge = Math.min(AGE_MAX, current + 1);
-                  setAge(newAge);
-                  impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-                }}
+              <Text
                 style={[
-                  styles.ageStepperButton,
+                  styles.ageUnitLabel,
                   {
-                    backgroundColor: theme.colors.cardSoft,
-                    borderRadius: theme.radius.full,
+                    color: theme.colors.mutedText,
+                    fontFamily: theme.typography.bodyMd.fontFamily,
                   },
                 ]}
-                accessibilityLabel={translate("increase", language)}
-                accessibilityRole="button"
-                hitSlop={8}
               >
-                <Ionicons
-                  name="add"
-                  size={20}
-                  color={theme.colors.primary}
-                />
-              </Pressable>
+                {translate("ageYears", language)}
+              </Text>
             </View>
           </View>
         </Animated.View>
@@ -609,72 +486,35 @@ const styles = StyleSheet.create({
     top: 6,
     right: 6,
   },
-  agePickerContainer: {
-    overflow: "hidden",
-    position: "relative",
-  },
-  ageHighlightBar: {
-    position: "absolute",
-    left: 20,
-    right: 20,
-    height: AGE_ITEM_HEIGHT,
-  },
-  ageGradientTop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1,
-  },
-  ageGradientBottom: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1,
-  },
-  ageItem: {
-    height: AGE_ITEM_HEIGHT,
+  ageInputCard: {
     alignItems: "center",
-    justifyContent: "center",
   },
-  ageItemText: {
-    textAlign: "center",
-  },
-  ageDisplay: {
-    textAlign: "center",
-    marginTop: 12,
-    fontWeight: "700",
-  },
-  ageNumber: {
-    fontSize: 24,
-    fontWeight: "800",
-  },
-  ageStepperRow: {
+  ageInputCardInner: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginTop: 14,
-    gap: 20,
+    borderWidth: 1.5,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    gap: 16,
+    width: "100%",
+  },
+  ageTextInput: {
+    flex: 1,
+    fontSize: 36,
+    fontWeight: "800",
+    height: 52,
+    padding: 0,
+    textAlign: "center",
   },
   ageStepperButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
   },
-  ageStepperValue: {
-    alignItems: "center",
-    minWidth: 90,
-  },
-  ageStepperNumber: {
-    fontSize: 28,
-    fontWeight: "800",
-    lineHeight: 34,
-  },
-  ageStepperLabel: {
+  ageUnitLabel: {
     fontSize: 13,
-    marginTop: 2,
+    marginTop: 10,
   },
   footer: {
     paddingTop: 8,
