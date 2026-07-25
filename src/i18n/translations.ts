@@ -1953,6 +1953,60 @@ export const translations = {
     tr: "Uygulamanın sorumlulukları ve sınırlamaları",
     en: "Application responsibilities and limitations",
   },
+  onboardingSteps: {
+    tr: "ADIM",
+    en: "STEP",
+  },
+
+  onboardingGoalTitle: {
+    tr: "Odak Noktanı Seç",
+    en: "Choose Your Focus",
+  },
+
+  onboardingGoalSubtitle: {
+    tr: "Sana özel beslenme planını oluşturabilmemiz için temel hedefini belirlemelisin.",
+    en: "To create your personalized nutrition plan, you need to determine your primary goal.",
+  },
+
+  onboardingLoseWeightTitle: {
+    tr: "Kilo Vermek",
+    en: "Lose Weight",
+  },
+
+  onboardingLoseWeightSubtitle: {
+    tr: "Yağ yakımı ve hafifleme odağı",
+    en: "Fat burning and weight loss focus",
+  },
+
+  onboardingMaintainWeightTitle: {
+    tr: "Korumak",
+    en: "Maintain",
+  },
+
+  onboardingMaintainWeightSubtitle: {
+    tr: "Formunu koruma ve sağlıklı yaşam",
+    en: "Maintain your form and healthy living",
+  },
+
+  onboardingGainWeightTitle: {
+    tr: "Kas Kazanmak",
+    en: "Build Muscle",
+  },
+
+  onboardingGainWeightSubtitle: {
+    tr: "Kas gelişimi ve güç kazanımı odağı",
+    en: "Muscle development and strength gain focus",
+  },
+
+  onboardingAiInfo: {
+    tr: "Seçiminize göre günlük kalori hedefiniz, makro besin dağılımınız ve önerileriniz yapay zeka tarafından kişiselleştirilir.",
+    en: "Your daily calorie target, macro nutrient distribution, and recommendations will be personalized by artificial intelligence based on your selection.",
+  },
+
+  continueButton: {
+    tr: "Devam Et",
+    en: "Continue",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
