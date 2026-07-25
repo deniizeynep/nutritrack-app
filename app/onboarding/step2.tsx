@@ -288,7 +288,9 @@ export default function OnboardingStep2() {
 
   const canContinue = gender !== null && age !== null;
 
-  const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const holdTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const didHold = useRef(false);
   const ageRef = useRef(age);
 
   useEffect(() => {
@@ -304,22 +306,28 @@ export default function OnboardingStep2() {
     [setAge],
   );
 
-  const startHold = useCallback(
-    (delta: number) => {
+  const startHold = useCallback((delta: number) => {
+    didHold.current = false;
+    holdTimeout.current = setTimeout(() => {
+      didHold.current = true;
       changeAgeBy(delta);
       impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-      holdTimer.current = setInterval(() => {
+      holdInterval.current = setInterval(() => {
         changeAgeBy(delta);
         impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
       }, HOLD_INTERVAL_MS);
-    },
-    [changeAgeBy],
-  );
+    }, 400);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stopHold = useCallback(() => {
-    if (holdTimer.current !== null) {
-      clearInterval(holdTimer.current);
-      holdTimer.current = null;
+    if (holdTimeout.current !== null) {
+      clearTimeout(holdTimeout.current);
+      holdTimeout.current = null;
+    }
+    if (holdInterval.current !== null) {
+      clearInterval(holdInterval.current);
+      holdInterval.current = null;
     }
   }, []);
 
@@ -444,7 +452,12 @@ export default function OnboardingStep2() {
               <View style={styles.ageRow}>
                 <AgeButton
                   icon="remove"
-                  onPress={() => changeAgeBy(-1)}
+                  onPress={() => {
+                    if (!didHold.current) {
+                      changeAgeBy(-1);
+                      impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+                    }
+                  }}
                   onPressIn={() => startHold(-1)}
                   onPressOut={stopHold}
                   disabled={isMin}
@@ -456,7 +469,12 @@ export default function OnboardingStep2() {
 
                 <AgeButton
                   icon="add"
-                  onPress={() => changeAgeBy(1)}
+                  onPress={() => {
+                    if (!didHold.current) {
+                      changeAgeBy(1);
+                      impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+                    }
+                  }}
                   onPressIn={() => startHold(1)}
                   onPressOut={stopHold}
                   disabled={isMax}
