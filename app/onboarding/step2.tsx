@@ -755,9 +755,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  body: {
-    flex: 1,
-  },
+  body: {},
   titleSection: {
     marginTop: 28,
   },
