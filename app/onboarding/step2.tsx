@@ -1,12 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ImpactFeedbackStyle, impactAsync } from "expo-haptics";
 import { router, type Href } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -15,6 +14,7 @@ import Animated, {
   FadeInUp,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withTiming,
 } from "react-native-reanimated";
 import { Button } from "../../src/components/Button";
@@ -31,6 +31,7 @@ import { getTheme } from "../../src/theme/theme";
 const TOTAL_STEPS = 3;
 const AGE_MIN = 13;
 const AGE_MAX = 100;
+const HOLD_INTERVAL_MS = 120;
 
 type GenderOption = {
   value: OnboardingGender;
@@ -143,6 +144,135 @@ function GenderCard({
   );
 }
 
+function AgeDisplay({
+  age,
+  theme,
+  language,
+}: {
+  age: number | null;
+  theme: ReturnType<typeof getTheme>;
+  language: "tr" | "en";
+}) {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  const prevAge = useRef(age);
+
+  useEffect(() => {
+    if (age !== prevAge.current && age !== null) {
+      scale.value = withSequence(
+        withTiming(1.2, { duration: 100 }),
+        withTiming(1, { duration: 200 }),
+      );
+      opacity.value = withSequence(
+        withTiming(0.3, { duration: 80 }),
+        withTiming(1, { duration: 150 }),
+      );
+    }
+    prevAge.current = age;
+  }, [age, scale, opacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  return (
+    <View style={styles.ageDisplayCenter}>
+      <Animated.Text
+        style={[
+          styles.ageNumber,
+          animatedStyle,
+          {
+            color: age ? theme.colors.text : theme.colors.mutedText,
+            fontFamily: theme.typography.headlineMd.fontFamily,
+          },
+        ]}
+      >
+        {age ?? "—"}
+      </Animated.Text>
+      <Text
+        style={[
+          styles.ageUnitText,
+          {
+            color: theme.colors.mutedText,
+            fontFamily: theme.typography.bodyMd.fontFamily,
+          },
+        ]}
+      >
+        {translate("ageYears", language)}
+      </Text>
+    </View>
+  );
+}
+
+type AgeButtonProps = {
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+  onPressIn: () => void;
+  onPressOut: () => void;
+  disabled: boolean;
+  theme: ReturnType<typeof getTheme>;
+  accessibilityLabel: string;
+};
+
+const AgeButton = ({
+  icon,
+  onPress,
+  onPressIn,
+  onPressOut,
+  disabled,
+  theme,
+  accessibilityLabel,
+}: AgeButtonProps) => {
+  const scale = useSharedValue(1);
+
+  const onPressInAnimated = useCallback(() => {
+    scale.value = withTiming(0.88, { duration: 100 });
+    onPressIn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onPressIn]);
+
+  const onPressOutAnimated = useCallback(() => {
+    // eslint-disable-next-line react-hooks/immutability
+    scale.value = withTiming(1, { duration: 150 });
+    onPressOut();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onPressOut]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const btnColor = disabled ? theme.colors.mutedText : theme.colors.primary;
+  const btnBg = disabled ? "transparent" : theme.colors.cardSoft;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={onPressInAnimated}
+      onPressOut={onPressOutAnimated}
+      disabled={disabled}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      hitSlop={8}
+    >
+      <Animated.View
+        style={[
+          styles.ageButton,
+          animatedStyle,
+          {
+            backgroundColor: btnBg,
+            borderColor: disabled ? theme.colors.border : theme.colors.primary,
+          },
+        ]}
+      >
+        <Ionicons name={icon} size={22} color={btnColor} />
+      </Animated.View>
+    </Pressable>
+  );
+};
+
 export default function OnboardingStep2() {
   const themeMode = useAppStore((s) => s.themeMode);
   const language = useAppStore((s) => s.language);
@@ -158,34 +288,40 @@ export default function OnboardingStep2() {
 
   const canContinue = gender !== null && age !== null;
 
-  const [ageText, setAgeText] = useState(age !== null ? String(age) : "");
+  const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const ageRef = useRef(age);
 
-  const commitAgeFromText = useCallback(
-    (text: string) => {
-      const trimmed = text.trim();
-      if (trimmed === "") {
-        setAgeText("");
-        return;
-      }
-      const parsed = parseInt(trimmed, 10);
-      if (!isNaN(parsed) && parsed >= AGE_MIN && parsed <= AGE_MAX) {
-        setAge(parsed);
-        setAgeText(String(parsed));
-        impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-      } else {
-        setAgeText(age !== null ? String(age) : "");
-      }
+  useEffect(() => {
+    ageRef.current = age;
+  });
+
+  const changeAgeBy = useCallback(
+    (delta: number) => {
+      const current = ageRef.current ?? 25;
+      const next = Math.max(AGE_MIN, Math.min(AGE_MAX, current + delta));
+      setAge(next);
     },
-    [age, setAge],
+    [setAge],
   );
 
-  const handleAgeBlur = useCallback(() => {
-    commitAgeFromText(ageText);
-  }, [ageText, commitAgeFromText]);
+  const startHold = useCallback(
+    (delta: number) => {
+      changeAgeBy(delta);
+      impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+      holdTimer.current = setInterval(() => {
+        changeAgeBy(delta);
+        impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+      }, HOLD_INTERVAL_MS);
+    },
+    [changeAgeBy],
+  );
 
-  const handleAgeSubmit = useCallback(() => {
-    commitAgeFromText(ageText);
-  }, [ageText, commitAgeFromText]);
+  const stopHold = useCallback(() => {
+    if (holdTimer.current !== null) {
+      clearInterval(holdTimer.current);
+      holdTimer.current = null;
+    }
+  }, []);
 
   const handleGenderSelect = useCallback(
     (value: OnboardingGender) => {
@@ -195,20 +331,12 @@ export default function OnboardingStep2() {
     [setGender],
   );
 
-  const changeAgeBy = useCallback(
-    (delta: number) => {
-      const current = age ?? 25;
-      const newAge = Math.max(AGE_MIN, Math.min(AGE_MAX, current + delta));
-      setAge(newAge);
-      setAgeText(String(newAge));
-      impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-    },
-    [age, setAge],
-  );
-
   const handleContinue = () => {
     router.push("/onboarding/step3" as Href);
   };
+
+  const isMin = age === AGE_MIN;
+  const isMax = age === AGE_MAX;
 
   return (
     <Screen>
@@ -303,91 +431,38 @@ export default function OnboardingStep2() {
               {translate("ageLabel", language)}
             </Text>
 
-            <View style={styles.ageInputCard}>
-              <View
-                style={[
-                  styles.ageInputCardInner,
-                  {
-                    backgroundColor: theme.colors.card,
-                    borderRadius: theme.radius.lg,
-                    borderColor: theme.colors.border,
-                  },
-                ]}
-              >
-                <Pressable
+            <View
+              style={[
+                styles.ageCard,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderRadius: theme.radius.lg,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <View style={styles.ageRow}>
+                <AgeButton
+                  icon="remove"
                   onPress={() => changeAgeBy(-1)}
-                  style={[
-                    styles.ageStepperButton,
-                    {
-                      backgroundColor: theme.colors.cardSoft,
-                      borderRadius: theme.radius.full,
-                    },
-                  ]}
+                  onPressIn={() => startHold(-1)}
+                  onPressOut={stopHold}
+                  disabled={isMin}
+                  theme={theme}
                   accessibilityLabel={translate("decrease", language)}
-                  accessibilityRole="button"
-                  hitSlop={8}
-                >
-                  <Ionicons
-                    name="remove"
-                    size={22}
-                    color={theme.colors.primary}
-                  />
-                </Pressable>
-
-                <TextInput
-                  style={[
-                    styles.ageTextInput,
-                    {
-                      color: theme.colors.text,
-                      fontFamily: theme.typography.headlineMd.fontFamily,
-                      backgroundColor: theme.colors.card,
-                    },
-                  ]}
-                  value={ageText}
-                  onChangeText={setAgeText}
-                  onBlur={handleAgeBlur}
-                  onSubmitEditing={handleAgeSubmit}
-                  keyboardType="numeric"
-                  maxLength={3}
-                  placeholder="—"
-                  placeholderTextColor={theme.colors.mutedText}
-                  textAlign="center"
-                  selectTextOnFocus
-                  accessibilityLabel={translate("ageLabel", language)}
-                  returnKeyType="done"
                 />
 
-                <Text
-                  style={[
-                    styles.ageUnitInline,
-                    {
-                      color: theme.colors.mutedText,
-                      fontFamily: theme.typography.bodyMd.fontFamily,
-                    },
-                  ]}
-                >
-                  {translate("ageYears", language)}
-                </Text>
+                <AgeDisplay age={age} theme={theme} language={language} />
 
-                <Pressable
+                <AgeButton
+                  icon="add"
                   onPress={() => changeAgeBy(1)}
-                  style={[
-                    styles.ageStepperButton,
-                    {
-                      backgroundColor: theme.colors.cardSoft,
-                      borderRadius: theme.radius.full,
-                    },
-                  ]}
+                  onPressIn={() => startHold(1)}
+                  onPressOut={stopHold}
+                  disabled={isMax}
+                  theme={theme}
                   accessibilityLabel={translate("increase", language)}
-                  accessibilityRole="button"
-                  hitSlop={8}
-                >
-                  <Ionicons
-                    name="add"
-                    size={22}
-                    color={theme.colors.primary}
-                  />
-                </Pressable>
+                />
               </View>
             </View>
           </View>
@@ -486,32 +561,34 @@ const styles = StyleSheet.create({
     top: 6,
     right: 6,
   },
-  ageInputCard: {
-    alignItems: "center",
+  ageCard: {
+    borderWidth: 1,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
   },
-  ageInputCardInner: {
+  ageRow: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1.5,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    gap: 16,
-    width: "100%",
+    justifyContent: "space-between",
   },
-  ageTextInput: {
-    width: 72,
-    fontSize: 36,
+  ageDisplayCenter: {
+    alignItems: "center",
+    flex: 1,
+  },
+  ageNumber: {
+    fontSize: 32,
     fontWeight: "800",
-    height: 52,
-    padding: 0,
-    textAlign: "center",
+    lineHeight: 38,
   },
-  ageUnitInline: {
-    fontSize: 14,
+  ageUnitText: {
+    fontSize: 13,
+    marginTop: 2,
   },
-  ageStepperButton: {
-    width: 44,
-    height: 44,
+  ageButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
   },
