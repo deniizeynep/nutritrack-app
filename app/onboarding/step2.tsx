@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ImpactFeedbackStyle, impactAsync } from "expo-haptics";
 import { router, type Href } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -31,6 +32,10 @@ import { getTheme } from "../../src/theme/theme";
 const TOTAL_STEPS = 3;
 const AGE_MIN = 13;
 const AGE_MAX = 100;
+const HEIGHT_MIN = 100;
+const HEIGHT_MAX = 250;
+const WEIGHT_MIN = 30;
+const WEIGHT_MAX = 300;
 const HOLD_INTERVAL_MS = 120;
 
 type GenderOption = {
@@ -144,14 +149,12 @@ function GenderCard({
   );
 }
 
-function AgeDisplay({
+function AgeNumberDisplay({
   age,
   theme,
-  language,
 }: {
   age: number | null;
   theme: ReturnType<typeof getTheme>;
-  language: "tr" | "en";
 }) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
@@ -177,31 +180,18 @@ function AgeDisplay({
   }));
 
   return (
-    <View style={styles.ageDisplayCenter}>
-      <Animated.Text
-        style={[
-          styles.ageNumber,
-          animatedStyle,
-          {
-            color: age ? theme.colors.text : theme.colors.mutedText,
-            fontFamily: theme.typography.headlineMd.fontFamily,
-          },
-        ]}
-      >
-        {age ?? "—"}
-      </Animated.Text>
-      <Text
-        style={[
-          styles.ageUnitText,
-          {
-            color: theme.colors.mutedText,
-            fontFamily: theme.typography.bodyMd.fontFamily,
-          },
-        ]}
-      >
-        {translate("ageYears", language)}
-      </Text>
-    </View>
+    <Animated.Text
+      style={[
+        styles.ageNumber,
+        animatedStyle,
+        {
+          color: age ? theme.colors.text : theme.colors.mutedText,
+          fontFamily: theme.typography.headlineMd.fontFamily,
+        },
+      ]}
+    >
+      {age ?? "—"}
+    </Animated.Text>
   );
 }
 
@@ -273,6 +263,87 @@ const AgeButton = ({
   );
 };
 
+function MetricInput({
+  label,
+  value,
+  onChangeText,
+  onBlur,
+  placeholder,
+  unit,
+  theme,
+  keyboardType = "numeric" as const,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  onBlur: () => void;
+  placeholder: string;
+  unit: string;
+  theme: ReturnType<typeof getTheme>;
+  keyboardType?: "numeric" | "decimal-pad";
+}) {
+  const [isFocused, setIsFocused] = useState(false);
+
+  return (
+    <View style={styles.metricContainer}>
+      <Text
+        style={[
+          styles.metricLabel,
+          {
+            color: theme.colors.mutedText,
+            fontFamily: theme.typography.labelMd.fontFamily,
+          },
+        ]}
+      >
+        {label}
+      </Text>
+      <View
+        style={[
+          styles.metricInputWrapper,
+          {
+            backgroundColor: theme.colors.card,
+            borderColor: isFocused ? theme.colors.primary : theme.colors.border,
+            borderRadius: theme.radius.md,
+          },
+        ]}
+      >
+        <TextInput
+          style={[
+            styles.metricInput,
+            {
+              color: theme.colors.text,
+              fontFamily: theme.typography.bodyLg.fontFamily,
+            },
+          ]}
+          value={value}
+          onChangeText={onChangeText}
+          onBlur={() => {
+            setIsFocused(false);
+            onBlur();
+          }}
+          onFocus={() => setIsFocused(true)}
+          placeholder={placeholder}
+          placeholderTextColor={theme.colors.mutedText}
+          keyboardType={keyboardType}
+          selectTextOnFocus
+          returnKeyType="done"
+        />
+        <Text
+          style={[
+            styles.metricUnit,
+            {
+              color: theme.colors.mutedText,
+              fontFamily: theme.typography.bodyMd.fontFamily,
+            },
+          ]}
+        >
+          {unit}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 export default function OnboardingStep2() {
   const themeMode = useAppStore((s) => s.themeMode);
   const language = useAppStore((s) => s.language);
@@ -280,13 +351,15 @@ export default function OnboardingStep2() {
 
   const gender = useOnboardingStore((s) => s.gender);
   const age = useOnboardingStore((s) => s.age);
+  const height = useOnboardingStore((s) => s.height);
+  const weight = useOnboardingStore((s) => s.weight);
   const setGender = useOnboardingStore((s) => s.setGender);
   const setAge = useOnboardingStore((s) => s.setAge);
+  const setHeight = useOnboardingStore((s) => s.setHeight);
+  const setWeight = useOnboardingStore((s) => s.setWeight);
 
   const { height: screenHeight } = useWindowDimensions();
   const isSmallScreen = screenHeight < 700;
-
-  const canContinue = gender !== null && age !== null;
 
   const holdTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const holdInterval = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -297,6 +370,23 @@ export default function OnboardingStep2() {
     ageRef.current = age;
   });
 
+  const [isEditingAge, setIsEditingAge] = useState(false);
+  const [ageEditText, setAgeEditText] = useState("");
+  const ageInputRef = useRef<TextInput>(null);
+
+  const [heightText, setHeightText] = useState(
+    height !== null ? String(height) : "",
+  );
+  const [weightText, setWeightText] = useState(
+    weight !== null ? formatWeightText(weight) : "",
+  );
+
+  const canContinue =
+    gender !== null &&
+    age !== null &&
+    height !== null &&
+    weight !== null;
+
   const changeAgeBy = useCallback(
     (delta: number) => {
       const current = ageRef.current ?? 25;
@@ -306,19 +396,21 @@ export default function OnboardingStep2() {
     [setAge],
   );
 
-  const startHold = useCallback((delta: number) => {
-    didHold.current = false;
-    holdTimeout.current = setTimeout(() => {
-      didHold.current = true;
-      changeAgeBy(delta);
-      impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-      holdInterval.current = setInterval(() => {
+  const startHold = useCallback(
+    (delta: number) => {
+      didHold.current = false;
+      holdTimeout.current = setTimeout(() => {
+        didHold.current = true;
         changeAgeBy(delta);
         impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
-      }, HOLD_INTERVAL_MS);
-    }, 400);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+        holdInterval.current = setInterval(() => {
+          changeAgeBy(delta);
+          impactAsync(ImpactFeedbackStyle.Light).catch(() => {});
+        }, HOLD_INTERVAL_MS);
+      }, 400);
+    },
+    [changeAgeBy],
+  );
 
   const stopHold = useCallback(() => {
     if (holdTimeout.current !== null) {
@@ -338,6 +430,66 @@ export default function OnboardingStep2() {
     },
     [setGender],
   );
+
+  const startEditingAge = () => {
+    setAgeEditText(age !== null ? String(age) : "");
+    setIsEditingAge(true);
+    setTimeout(() => ageInputRef.current?.focus(), 50);
+  };
+
+  const commitAge = useCallback(() => {
+    const trimmed = ageEditText.trim();
+    if (trimmed === "") {
+      setIsEditingAge(false);
+      return;
+    }
+    const parsed = parseInt(trimmed, 10);
+    if (!isNaN(parsed) && parsed >= AGE_MIN && parsed <= AGE_MAX) {
+      setAge(parsed);
+    }
+    setIsEditingAge(false);
+  }, [ageEditText, setAge]);
+
+  const commitHeight = useCallback(() => {
+    const trimmed = heightText.trim();
+    if (trimmed === "") {
+      setHeight(null);
+      setHeightText("");
+      return;
+    }
+    const parsed = parseInt(trimmed, 10);
+    if (!isNaN(parsed) && parsed >= HEIGHT_MIN && parsed <= HEIGHT_MAX) {
+      setHeight(parsed);
+      setHeightText(String(parsed));
+    } else if (height !== null) {
+      setHeightText(String(height));
+    } else {
+      setHeightText("");
+    }
+  }, [heightText, height, setHeight]);
+
+  const commitWeight = useCallback(() => {
+    const trimmed = weightText.trim();
+    if (trimmed === "") {
+      setWeight(null);
+      setWeightText("");
+      return;
+    }
+    const normalized = trimmed.replace(",", ".");
+    const parsed = parseFloat(normalized);
+    if (
+      !isNaN(parsed) &&
+      parsed >= WEIGHT_MIN &&
+      parsed <= WEIGHT_MAX
+    ) {
+      setWeight(parsed);
+      setWeightText(formatWeightText(parsed));
+    } else if (weight !== null) {
+      setWeightText(formatWeightText(weight));
+    } else {
+      setWeightText("");
+    }
+  }, [weightText, weight, setWeight]);
 
   const handleContinue = () => {
     router.push("/onboarding/step3" as Href);
@@ -465,7 +617,61 @@ export default function OnboardingStep2() {
                   accessibilityLabel={translate("decrease", language)}
                 />
 
-                <AgeDisplay age={age} theme={theme} language={language} />
+                {isEditingAge ? (
+                  <View style={styles.ageDisplayCenter}>
+                    <TextInput
+                      ref={ageInputRef}
+                      style={[
+                        styles.ageEditInput,
+                        {
+                          color: theme.colors.text,
+                          fontFamily: theme.typography.headlineMd.fontFamily,
+                        },
+                      ]}
+                      value={ageEditText}
+                      onChangeText={setAgeEditText}
+                      onBlur={commitAge}
+                      onSubmitEditing={commitAge}
+                      keyboardType="numeric"
+                      maxLength={3}
+                      textAlign="center"
+                      selectTextOnFocus
+                      returnKeyType="done"
+                    />
+                    <Text
+                      style={[
+                        styles.ageUnitText,
+                        {
+                          color: theme.colors.mutedText,
+                          fontFamily: theme.typography.bodyMd.fontFamily,
+                        },
+                      ]}
+                    >
+                      {translate("ageYears", language)}
+                    </Text>
+                  </View>
+                ) : (
+                  <Pressable
+                    onPress={startEditingAge}
+                    style={styles.ageDisplayCenter}
+                    accessibilityLabel={`${translate("ageLabel", language)}: ${age ?? "—"}`}
+                    accessibilityRole="button"
+                    accessibilityHint={translate("editField", language)}
+                  >
+                    <AgeNumberDisplay age={age} theme={theme} />
+                    <Text
+                      style={[
+                        styles.ageUnitText,
+                        {
+                          color: theme.colors.mutedText,
+                          fontFamily: theme.typography.bodyMd.fontFamily,
+                        },
+                      ]}
+                    >
+                      {translate("ageYears", language)}
+                    </Text>
+                  </Pressable>
+                )}
 
                 <AgeButton
                   icon="add"
@@ -483,6 +689,31 @@ export default function OnboardingStep2() {
                 />
               </View>
             </View>
+          </View>
+
+          <View
+            style={[styles.metricsRow, isSmallScreen && styles.metricsRowSmall]}
+          >
+            <MetricInput
+              label={translate("height", language)}
+              value={heightText}
+              onChangeText={setHeightText}
+              onBlur={commitHeight}
+              placeholder={translate("heightPlaceholder", language)}
+              unit="cm"
+              theme={theme}
+            />
+
+            <MetricInput
+              label={translate("weight", language)}
+              value={weightText}
+              onChangeText={setWeightText}
+              onBlur={commitWeight}
+              placeholder={translate("weightPlaceholder", language)}
+              unit="kg"
+              theme={theme}
+              keyboardType="decimal-pad"
+            />
           </View>
         </Animated.View>
 
@@ -512,6 +743,11 @@ export default function OnboardingStep2() {
       </View>
     </Screen>
   );
+}
+
+function formatWeightText(value: number): string {
+  if (Number.isInteger(value)) return String(value);
+  return value.toFixed(1);
 }
 
 const styles = StyleSheet.create({
@@ -598,6 +834,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     lineHeight: 38,
   },
+  ageEditInput: {
+    fontSize: 32,
+    fontWeight: "800",
+    height: 44,
+    width: 80,
+    padding: 0,
+    textAlign: "center",
+  },
   ageUnitText: {
     fontSize: 13,
     marginTop: 2,
@@ -609,6 +853,43 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
+  },
+  metricsRow: {
+    marginTop: 18,
+    flexDirection: "row",
+    gap: 12,
+  },
+  metricsRowSmall: {
+    marginTop: 12,
+  },
+  metricContainer: {
+    flex: 1,
+    gap: 6,
+  },
+  metricLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 1.2,
+  },
+  metricInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    minHeight: 50,
+  },
+  metricInput: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "700",
+    padding: 0,
+    height: 40,
+  },
+  metricUnit: {
+    fontSize: 13,
+    fontWeight: "500",
+    marginLeft: 6,
   },
   footer: {
     paddingTop: 8,

@@ -2057,6 +2057,11 @@ export const translations = {
     tr: "Artır",
     en: "Increase",
   },
+
+  editField: {
+    tr: "Düzenlemek için dokun",
+    en: "Tap to edit",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
