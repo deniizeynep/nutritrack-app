@@ -1833,6 +1833,38 @@ export const translations = {
     tr: "Aylık raporu PDF olarak indir",
     en: "Download monthly report as PDF",
   },
+  vitalitySubtitle: {
+    tr: "VITALITY CORE V2",
+    en: "VITALITY CORE V2",
+  },
+  welcomeGreeting: {
+    tr: "Hoş Geldiniz",
+    en: "Welcome",
+  },
+  welcomeGreetingDescription: {
+    tr: "Kişiselleştirilmiş beslenme yolculuğunuz burada başlıyor.\nDaha sağlıklı bir siz için hazır mısınız?",
+    en: "Your personalized nutrition journey starts here.\nAre you ready for a healthier you?",
+  },
+  startJourney: {
+    tr: "YOLCULUĞA BAŞLA",
+    en: "START YOUR JOURNEY",
+  },
+  termsText: {
+    tr: "Devam ederek {termsLink}'nı kabul etmiş olursunuz.",
+    en: "By continuing, you accept the {termsLink}.",
+  },
+  termsLink: {
+    tr: "Kullanım Koşulları",
+    en: "Terms of Use",
+  },
+  vitalityBadge: {
+    tr: "85% Vitality",
+    en: "85% Vitality",
+  },
+  coreHealth: {
+    tr: "Core Health",
+    en: "Core Health",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
