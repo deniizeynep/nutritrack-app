@@ -15,6 +15,8 @@ type ButtonProps = {
   variant?: "primary" | "secondary";
   style?: ViewStyle;
   disabled?: boolean;
+  accessibilityLabel?: string;
+  accessibilityRole?: "button" | "link" | "none";
 };
 
 export function Button({
@@ -23,6 +25,8 @@ export function Button({
   variant = "primary",
   style,
   disabled = false,
+  accessibilityLabel,
+  accessibilityRole = "button",
 }: ButtonProps) {
   const themeMode = useAppStore((state) => state.themeMode);
   const theme = getTheme(themeMode);
@@ -41,6 +45,8 @@ export function Button({
         ]}
         onPress={onPress}
         disabled={disabled}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole={accessibilityRole}
       >
         <LinearGradient
           colors={
@@ -79,6 +85,8 @@ export function Button({
         ]}
         onPress={onPress}
         disabled={disabled}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole={accessibilityRole}
       >
         <Text style={[styles.secondaryText, { color: theme.colors.text }]}>
           {children}
