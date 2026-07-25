@@ -357,6 +357,18 @@ export default function OnboardingStep2() {
                   returnKeyType="done"
                 />
 
+                <Text
+                  style={[
+                    styles.ageUnitInline,
+                    {
+                      color: theme.colors.mutedText,
+                      fontFamily: theme.typography.bodyMd.fontFamily,
+                    },
+                  ]}
+                >
+                  {translate("ageYears", language)}
+                </Text>
+
                 <Pressable
                   onPress={() => changeAgeBy(1)}
                   style={[
@@ -377,18 +389,6 @@ export default function OnboardingStep2() {
                   />
                 </Pressable>
               </View>
-
-              <Text
-                style={[
-                  styles.ageUnitLabel,
-                  {
-                    color: theme.colors.mutedText,
-                    fontFamily: theme.typography.bodyMd.fontFamily,
-                  },
-                ]}
-              >
-                {translate("ageYears", language)}
-              </Text>
             </View>
           </View>
         </Animated.View>
@@ -499,22 +499,21 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   ageTextInput: {
-    flex: 1,
+    width: 72,
     fontSize: 36,
     fontWeight: "800",
     height: 52,
     padding: 0,
     textAlign: "center",
   },
+  ageUnitInline: {
+    fontSize: 14,
+  },
   ageStepperButton: {
     width: 44,
     height: 44,
     alignItems: "center",
     justifyContent: "center",
-  },
-  ageUnitLabel: {
-    fontSize: 13,
-    marginTop: 10,
   },
   footer: {
     paddingTop: 8,
