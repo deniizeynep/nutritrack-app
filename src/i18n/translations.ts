@@ -2007,6 +2007,61 @@ export const translations = {
     tr: "Devam Et",
     en: "Continue",
   },
+
+  onboardingPersonalTitle: {
+    tr: "Kendinden Bahset",
+    en: "Tell Us About Yourself",
+  },
+
+  onboardingPersonalSubtitle: {
+    tr: "Sana özel beslenme planını hazırlarken biyolojik verilerine ihtiyacımız var.",
+    en: "We need your biological data to prepare your personalized nutrition plan.",
+  },
+
+  genderLabel: {
+    tr: "CİNSİYET",
+    en: "GENDER",
+  },
+
+  genderMale: {
+    tr: "Erkek",
+    en: "Male",
+  },
+
+  genderFemale: {
+    tr: "Kadın",
+    en: "Female",
+  },
+
+  genderOther: {
+    tr: "Diğer",
+    en: "Other",
+  },
+
+  ageLabel: {
+    tr: "YAŞ",
+    en: "AGE",
+  },
+
+  ageYears: {
+    tr: "Yaşında",
+    en: "years old",
+  },
+
+  decrease: {
+    tr: "Azalt",
+    en: "Decrease",
+  },
+
+  increase: {
+    tr: "Artır",
+    en: "Increase",
+  },
+
+  editField: {
+    tr: "Düzenlemek için dokun",
+    en: "Tap to edit",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
