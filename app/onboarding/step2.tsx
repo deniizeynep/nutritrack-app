@@ -547,8 +547,12 @@ export default function OnboardingStep2() {
         keyboardVerticalOffset={0}
       >
         <View style={styles.root}>
-          <Animated.View
-            style={styles.body}
+          <Animated.ScrollView
+            style={styles.bodyScroll}
+            contentContainerStyle={styles.bodyScrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            bounces={false}
             entering={FadeInUp.duration(400).springify()}
           >
             <ProgressIndicator
@@ -769,7 +773,7 @@ export default function OnboardingStep2() {
                 keyboardType="decimal-pad"
               />
             </View>
-          </Animated.View>
+          </Animated.ScrollView>
 
           <Animated.View
             style={[
@@ -813,8 +817,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  body: {
+  bodyScroll: {
     flex: 1,
+  },
+  bodyScrollContent: {
+    flexGrow: 1,
   },
   titleSection: {
     marginTop: 28,
