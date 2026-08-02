@@ -272,6 +272,8 @@ export default function WelcomeScreen() {
   const hasCheckedSession = useAuthStore((state) => state.hasCheckedSession);
   const loadMe = useAuthStore((state) => state.loadMe);
 
+  const onboardingCompleted = useAppStore((state) => state.onboardingCompleted);
+
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const heroImageSize = useMemo(
@@ -296,20 +298,20 @@ export default function WelcomeScreen() {
   }, [hasCheckedSession, hasHydrated, isLoading, loadMe]);
 
   useEffect(() => {
-    if (hasCheckedSession && isAuthenticated) {
+    if (hasCheckedSession && (isAuthenticated || onboardingCompleted)) {
       router.replace("/(tabs)/home" as Href);
     }
-  }, [hasCheckedSession, isAuthenticated]);
+  }, [hasCheckedSession, isAuthenticated, onboardingCompleted]);
 
   const contentOpacity = useSharedValue(0);
   const heroScale = useSharedValue(0.85);
 
   useEffect(() => {
-    if (hasCheckedSession && !isAuthenticated) {
+    if (hasCheckedSession && !isAuthenticated && !onboardingCompleted) {
       contentOpacity.value = withTiming(1, { duration: 500 });
       heroScale.value = withDelay(200, withSpring(1, { damping: 12, stiffness: 100 }));
     }
-  }, [hasCheckedSession, isAuthenticated, contentOpacity, heroScale]);
+  }, [hasCheckedSession, isAuthenticated, onboardingCompleted, contentOpacity, heroScale]);
 
   const animatedContentStyle = useAnimatedStyle(() => ({
     opacity: contentOpacity.value,
