@@ -39,28 +39,9 @@ function detectMimeTypeFromUri(imageUri: string) {
   return "image/jpeg";
 }
 
-function getFileNameFromUri(imageUri: string, mimeType: string) {
-  const cleanUri = imageUri.split("?")[0] ?? imageUri;
-  const uriName = cleanUri.split("/").pop();
-
-  if (uriName?.includes(".")) {
-    return uriName;
-  }
-
-  const extension =
-    mimeType === "image/png"
-      ? "png"
-      : mimeType === "image/webp"
-        ? "webp"
-        : "jpg";
-
-  return `food-photo.${extension}`;
-}
-
 export const aiApi = {
   analyzeFoodPhoto: async (imageUri: string, token?: string | null) => {
     const mimeType = detectMimeTypeFromUri(imageUri);
-    const fileName = getFileNameFromUri(imageUri, mimeType);
     const uploadUrl = `${API_CONFIG.baseUrl}/ai/analyze-food`;
 
     const uploadResult = await FileSystem.uploadAsync(uploadUrl, imageUri, {
